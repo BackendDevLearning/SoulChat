@@ -1,13 +1,12 @@
 package sql
 
 import (
-	"kratos-realworld/internal/conf"
-	"kratos-realworld/internal/data"
-
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/google/wire"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
+	"kratos-realworld/internal/conf"
+	"kratos-realworld/internal/data"
 )
 
 var ProviderSet = wire.NewSet(NewData, NewDB, data.NewUserRepo, data.NewProfileRepo, data.NewArticleRepo, data.NewCommentRepo)
@@ -26,7 +25,7 @@ func NewData(c *conf.Data, logger log.Logger, db *gorm.DB) (*Data, func(), error
 }
 
 func NewDB(c *conf.Data) *gorm.DB {
-	db, err := gorm.Open(mysql.Open(c.Database.Dsn), &gorm.Config{
+	db, err := gorm.Open(mysql.Open(c.dsn), &gorm.Config{
 		DisableForeignKeyConstraintWhenMigrating: true,
 	})
 	if err != nil {
