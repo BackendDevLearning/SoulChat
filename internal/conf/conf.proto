@@ -29,9 +29,24 @@ message Server {
 
 message Data {
   message Database {
-    string dsn = 1;
+    string   addr          = 1;
+    string   user          = 2;
+    string   password      = 3;
+    string   database      = 4;
+    int32    max_idle_conn = 5;
+    int32    max_open_conn = 6;
+    int32    max_idle_time = 7;
+    int64 slow_threshold_millisecond = 8;
+  }
+  message Redis {
+    string addr       = 1;
+    string password = 2;
+    int32 db = 3;
+    int32 pool_size = 4;
   }
   Database database = 1;
+  Redis redis = 2;
+  string dsn = 3;
 }
 
 message JWT {
