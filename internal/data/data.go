@@ -5,10 +5,11 @@ import (
 	"gorm.io/gorm"
 	"kratos-realworld/internal/conf"
 	"kratos-realworld/internal/data/cache"
+	"kratos-realworld/internal/data/sql"
 )
 
 // ProviderSet is data providers.
-var ProviderSet = wire.NewSet(NewData, NewDatabase, NewCache, NewCouponRepo, NewPrizeRepo,
+var ProviderSet = wire.NewSet(sql.NewData, NewDatabase, NewCache, NewCouponRepo, NewPrizeRepo,
 	NewResultRepo, NewBlackIpRepo, NewBlackUserRepo, NewLotteryTimesRepo, NewTransaction)
 
 type Data struct {

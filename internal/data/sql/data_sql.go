@@ -1,7 +1,8 @@
-package data
+package sql
 
 import (
 	"kratos-realworld/internal/conf"
+	"kratos-realworld/internal/data"
 
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/google/wire"
@@ -9,7 +10,7 @@ import (
 	"gorm.io/gorm"
 )
 
-var ProviderSet = wire.NewSet(NewData, NewDB, NewUserRepo, NewProfileRepo, NewArticleRepo, NewCommentRepo)
+var ProviderSet = wire.NewSet(NewData, NewDB, data.NewUserRepo, data.NewProfileRepo, data.NewArticleRepo, data.NewCommentRepo)
 
 // Data .
 type Data struct {
@@ -37,12 +38,12 @@ func NewDB(c *conf.Data) *gorm.DB {
 
 func InitDB(db *gorm.DB) {
 	if err := db.AutoMigrate(
-		&User{},
-		&Article{},
-		&Comment{},
-		&ArticleFavorite{},
-		&Following{},
-		); err != nil {
+		&data.User{},
+		&data.Article{},
+		&data.Comment{},
+		&data.ArticleFavorite{},
+		&data.Following{},
+	); err != nil {
 		panic(err)
 	}
 }
