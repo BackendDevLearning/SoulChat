@@ -2,22 +2,25 @@ package data
 
 import (
 	"context"
-	"github.com/BitofferHub/pkg/middlewares/gormcli"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/google/wire"
 	"gorm.io/gorm"
-	"kratos-realworld/internal/biz"
 	"kratos-realworld/internal/conf"
 	"kratos-realworld/internal/data/cache"
+	"kratos-realworld/internal/data/gormcli"
 )
 
 // ProviderSet is data providers.
-var ProviderSet = wire.NewSet(NewData, NewDatabase, NewCache, NewCouponRepo, NewPrizeRepo,
-	NewResultRepo, NewBlackIpRepo, NewBlackUserRepo, NewLotteryTimesRepo, NewTransaction)
+var ProviderSet = wire.NewSet(NewData, NewDatabase, NewCache, NewTransaction, // 你的 data 实例化函数
+	NewUserRepo, NewProfileRepo, NewArticleRepo, NewCommentRepo)
 
 type Data struct {
 	db    *gorm.DB
 	cache *cache.Client
+}
+
+type Transaction interface {
+	InTx(context.Context, func(ctx context.Context) error) error
 }
 
 type contextTxKey struct{}
@@ -43,7 +46,7 @@ func (d *Data) DB(ctx context.Context) *gorm.DB {
 }
 
 // 也就是说，只要 *Data 实现了 InTx(ctx, fn) 方法，它就自动是一个 Transaction，返回的d本身
-func NewTransaction(d *Data) biz.Transaction {
+func NewTransaction(d *Data) Transaction {
 	return d
 }
 

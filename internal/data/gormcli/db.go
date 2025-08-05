@@ -4,9 +4,10 @@ import (
 	"context"
 	"fmt"
 	"github.com/BitofferHub/pkg/middlewares/log"
+
+	//"github.com/BitofferHub/pkg/middlewares/log"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
 	"reflect"
 	"time"
 )
@@ -107,15 +108,15 @@ func newDB(options Options) {
 	connArgs := fmt.Sprintf(dsn, options.user,
 		options.password, options.addr, options.dataBase)
 	if options.slowThresholdMillisecond != 0 {
-		gormLogger := log.NewGormLogger(options.slowThresholdMillisecond)
+		//gormLogger := log.NewGormLogger(options.slowThresholdMillisecond)
 		db, err = gorm.Open(mysql.Open(connArgs), &gorm.Config{
-			Logger: gormLogger,
+			//Logger: gormLogger,
 		})
 	} else {
 		// 没有配置慢查询阈值，直接不输出日志
 		// 不输出到终端
 		db, err = gorm.Open(mysql.Open(connArgs), &gorm.Config{
-			Logger: logger.Default.LogMode(logger.Silent),
+			//Logger: logger.Default.LogMode(logger.Silent),
 		})
 	}
 
