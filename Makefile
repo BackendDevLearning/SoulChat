@@ -69,6 +69,7 @@ stopdb:
 .PHONY: run
 # run
 run:
+	cp openapi.yaml internal/swagger-ui/openapi.yaml
 	kratos run
 
 .PHONY: all

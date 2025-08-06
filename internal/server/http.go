@@ -6,6 +6,7 @@ import (
 	"kratos-realworld/internal/conf"
 	"kratos-realworld/internal/pkg/middleware/auth"
 	"kratos-realworld/internal/service"
+	swaggerui "kratos-realworld/internal/swagger-ui"
 
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/go-kratos/kratos/v2/middleware/logging"
@@ -64,5 +65,10 @@ func NewHTTPServer(c *conf.Server, jwtc *conf.JWT, s *service.ConduitService, lo
 	}
 	srv := http.NewServer(opts...)
 	v1.RegisterConduitHTTPServer(srv, s)
+
+	// 注册 Swagger UI
+	srv.Handle("/openapi.yaml", swaggerui.HandlerOpenapi())
+	srv.HandlePrefix("/swagger-ui/", swaggerui.Handler())
+
 	return srv
 }
