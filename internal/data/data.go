@@ -45,11 +45,6 @@ func (d *Data) DB(ctx context.Context) *gorm.DB {
 	return d.db
 }
 
-// 也就是说，只要 *Data 实现了 InTx(ctx, fn) 方法，它就自动是一个 Transaction，返回的d本身
-func NewTransaction(d *Data) Transaction {
-	return d
-}
-
 func NewData(db *gorm.DB, cache *cache.Client) *Data {
 	dt := &Data{db: db, cache: cache}
 	return dt
@@ -78,7 +73,13 @@ func NewCache(conf *conf.Data) *cache.Client {
 		cache.WithAddr(dt.GetAddr()),
 		cache.WithPassWord(dt.GetPassword()),
 		cache.WithDB(int(dt.GetDb())),
-		cache.WithPoolSize(int(dt.GetPoolSize())))
+		cache.WithPoolSize(int(dt.GetPoolSize())),
+	)
 
 	return cache.GetRedisCli()
+}
+
+// 也就是说，只要 *Data 实现了 InTx(ctx, fn) 方法，它就自动是一个 Transaction，返回的d本身
+func NewTransaction(d *Data) Transaction {
+	return d
 }

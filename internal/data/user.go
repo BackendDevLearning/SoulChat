@@ -4,23 +4,11 @@ import (
 	"context"
 	"kratos-realworld/internal/biz"
 
+	"github.com/go-kratos/kratos/v2/errors"
 	"github.com/go-kratos/kratos/v2/log"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
-
-	"github.com/go-kratos/kratos/v2/errors"
 )
-
-type FollowUser struct {
-	gorm.Model
-	UserID      uint
-	FollowingID uint
-}
-
-type userRepo struct {
-	data *Data
-	log  *log.Helper
-}
 
 type User struct {
 	gorm.Model
@@ -30,6 +18,26 @@ type User struct {
 	Image        string `gorm:"size:1000"`
 	PasswordHash string `gorm:"size:500"`
 	Following    uint32
+
+	// 主页 profile 的一些扩展信息
+	FollowingCount uint32
+	FollowersCount uint32
+}
+
+type FollowUser struct {
+	gorm.Model
+	UserID      uint
+	FollowingID uint
+}
+
+// 指定表名为 followings
+func (FollowUser) TableName() string {
+	return "followings"
+}
+
+type userRepo struct {
+	data *Data
+	log  *log.Helper
 }
 
 func NewUserRepo(data *Data, logger log.Logger) biz.UserRepo {
@@ -148,6 +156,10 @@ func (r *profileRepo) GetProfile(ctx context.Context, username string) (rv *biz.
 		Bio:       u.Bio,
 		Image:     u.Image,
 		Following: false, // fixme
+		ProfileStats: biz.ProfileStats{
+			FollowingCount: u.FollowingCount,
+			FollowersCount: u.FollowersCount,
+		},
 	}, nil
 }
 

@@ -115,6 +115,7 @@ service Conduit {
   rpc FavoriteArticle(FavoriteArticleRequest) returns (SingleArticleReply) {
     option (google.api.http) = {
       post : "/api/articles/{slug}/favorite",
+      body: "*",
     };
   }
 
@@ -263,10 +264,17 @@ message Article {
 }
 
 message Profile {
-  string username = 1;
-  string bio = 2;
-  string image = 3;
-  bool following = 4;
+  string username = 1;  // 用户名
+  string bio = 2;  // 简介
+  string image = 3;  // 头像链接
+  bool following = 4;  // 当前登录用户是否关注了这个人
+
+  ProfileStats profileStats = 5;  // 用户主页 profile 常用的统计信息
+
+  message ProfileStats {
+    uint32 followingCount = 1;  // 关注数（关注了多少人）
+    uint32 followersCount = 2;  // 粉丝数（被多少人关注）
+  }
 }
 
 message Comment {

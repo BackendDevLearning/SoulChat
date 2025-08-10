@@ -2,9 +2,10 @@ package main
 
 import (
 	"flag"
-	"os"
-
 	"kratos-realworld/internal/conf"
+	"kratos-realworld/internal/data/migrate"
+	"kratos-realworld/internal/pkg/env"
+	"os"
 
 	"github.com/go-kratos/kratos/v2"
 	"github.com/go-kratos/kratos/v2/config"
@@ -78,8 +79,15 @@ func main() {
 	}
 	defer cleanup()
 
+	// 仅在开发环境执行数据库中table的创建与迁移
+	if env.IsDev() {
+		if err := migrate.InitDBTable(app.DB); err != nil {
+			log.Fatal("Failed to migrate database:", err)
+		}
+	}
+
 	// start and wait for stop signal
-	if err := app.Run(); err != nil {
+	if err := app.App.Run(); err != nil {
 		panic(err)
 	}
 }

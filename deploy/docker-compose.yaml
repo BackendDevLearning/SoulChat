@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: mysql-SoulChat
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: 123456
+      MYSQL_DATABASE: chat_sql
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./mysql/data:/var/lib/mysql
+    networks:
+      - mysql-SoulChat-net
+
+  redis:
+    image: redis:6.2
+    container_name: redis-SoulChat
+    restart: always
+    command: redis-server --requirepass 123456
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./redis/data:/data
+    networks:
+      - redis-SoulChat-net
+volumes:
+  mysql_data:
+  redis_data:
+
+networks:
+  mysql-SoulChat-net:
+    driver: bridge
+  redis-SoulChat-net:
+    driver: bridge

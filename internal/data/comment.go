@@ -10,8 +10,8 @@ import (
 
 type Comment struct {
 	gorm.Model
-	ArticleSlug string
-	Article     Article `gorm:"references:Slug"`
+	ArticleSlug string  `gorm:"index;size:200"` // 给外键列加索引
+	Article     Article `gorm:"foreignKey:ArticleSlug;references:Slug"`
 	Body        string
 	AuthorID    uint
 	Author      User
@@ -32,15 +32,15 @@ func NewCommentRepo(data *Data, logger log.Logger) biz.CommentRepo {
 func (r *commentRepo) Create(ctx context.Context, in *biz.Comment) (rv *biz.Comment, err error) {
 	c := Comment{
 		ArticleSlug: in.Article.Slug,
-		Body:    in.Body,
-		AuthorID: in.AuthorID,
+		Body:        in.Body,
+		AuthorID:    in.AuthorID,
 	}
 	result := r.data.db.Create(&c)
 	if result.Error != nil {
 		return nil, result.Error
 	}
 	return &biz.Comment{
-		ID: c.ID,
+		ID:      c.ID,
 		Article: &biz.Article{},
 		Body:    c.Body,
 		Author: &biz.Profile{
@@ -60,7 +60,7 @@ func (r *commentRepo) List(ctx context.Context, slug string) (rv []*biz.Comment,
 	rv = make([]*biz.Comment, len(comments))
 	for i, x := range comments {
 		rv[i] = &biz.Comment{
-			ID: x.ID,
+			ID:      x.ID,
 			Article: nil, // fixme
 			Body:    x.Body,
 			Author: &biz.Profile{

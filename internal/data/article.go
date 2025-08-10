@@ -11,7 +11,7 @@ import (
 
 type Article struct {
 	gorm.Model
-	Slug           string `gorm:"size:200"`
+	Slug           string `gorm:"uniqueIndex;size:200"` // 被引用列必须有唯一索引或主键
 	Title          string `gorm:"size:200"`
 	Description    string `gorm:"size:200"`
 	Body           string
@@ -46,6 +46,13 @@ type articleRepo struct {
 	log  *log.Helper
 }
 
+func NewArticleRepo(data *Data, logger log.Logger) biz.ArticleRepo {
+	return &articleRepo{
+		data: data,
+		log:  log.NewHelper(logger),
+	}
+}
+
 func convertArticle(x Article) *biz.Article {
 	return &biz.Article{
 		ID:             x.ID,
@@ -62,13 +69,6 @@ func convertArticle(x Article) *biz.Article {
 			Bio:      x.Author.Bio,
 			Image:    x.Author.Image,
 		},
-	}
-}
-
-func NewArticleRepo(data *Data, logger log.Logger) biz.ArticleRepo {
-	return &articleRepo{
-		data: data,
-		log:  log.NewHelper(logger),
 	}
 }
 

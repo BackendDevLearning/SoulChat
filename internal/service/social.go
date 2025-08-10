@@ -40,6 +40,10 @@ func convertProfile(do *biz.Profile) *v1.Profile {
 		Bio:       do.Bio,
 		Image:     do.Image,
 		Following: do.Following,
+		ProfileStats: &v1.Profile_ProfileStats{
+			FollowingCount: do.ProfileStats.FollowingCount,
+			FollowersCount: do.ProfileStats.FollowersCount,
+		},
 	}
 }
 

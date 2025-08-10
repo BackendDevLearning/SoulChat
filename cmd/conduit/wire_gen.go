@@ -9,6 +9,8 @@ package main
 import (
 	"github.com/go-kratos/kratos/v2"
 	"github.com/go-kratos/kratos/v2/log"
+	"github.com/google/wire"
+	"gorm.io/gorm"
 	"kratos-realworld/internal/biz"
 	"kratos-realworld/internal/conf"
 	"kratos-realworld/internal/data"
@@ -18,8 +20,7 @@ import (
 
 // Injectors from wire.go:
 
-// initApp init kratos application.
-func initApp(confServer *conf.Server, confData *conf.Data, jwt *conf.JWT, logger log.Logger) (*kratos.App, func(), error) {
+func initApp(confServer *conf.Server, confData *conf.Data, jwt *conf.JWT, logger log.Logger) (*CustomApp, func(), error) {
 	db := data.NewDatabase(confData)
 	client := data.NewCache(confData)
 	dataData := data.NewData(db, client)
@@ -33,6 +34,25 @@ func initApp(confServer *conf.Server, confData *conf.Data, jwt *conf.JWT, logger
 	httpServer := server.NewHTTPServer(confServer, jwt, conduitService, logger)
 	grpcServer := server.NewGRPCServer(confServer, conduitService, logger)
 	app := newApp(logger, httpServer, grpcServer)
-	return app, func() {
+	customApp := newCustomApp(app, db)
+	return customApp, func() {
 	}, nil
 }
+
+// wire.go:
+
+type CustomApp struct {
+	App *kratos.App // newApp 返回 *kratos.App
+	DB  *gorm.DB    // data.ProviderSet 里面提供 *gorm.DB，用于在开发环境创建database和对应的table
+}
+
+func newCustomApp(kapp *kratos.App, db *gorm.DB) *CustomApp {
+	return &CustomApp{
+		App: kapp,
+		DB:  db,
+	}
+}
+
+var CustomProviderSet = wire.NewSet(data.ProviderSet, biz.ProviderSet, service.ProviderSet, server.ProviderSet, newApp,
+	newCustomApp,
+)

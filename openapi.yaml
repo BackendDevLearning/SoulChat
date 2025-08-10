@@ -220,6 +220,12 @@ paths:
                   required: true
                   schema:
                     type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/FavoriteArticleRequest'
+                required: true
             responses:
                 "200":
                     description: OK
@@ -456,6 +462,11 @@ components:
                     type: array
                     items:
                         type: string
+        FavoriteArticleRequest:
+            type: object
+            properties:
+                slug:
+                    type: string
         FollowUserRequest:
             type: object
             properties:
@@ -501,11 +512,22 @@ components:
                     type: string
                 following:
                     type: boolean
+                profileStats:
+                    $ref: '#/components/schemas/Profile_ProfileStats'
         ProfileReply:
             type: object
             properties:
                 profile:
                     $ref: '#/components/schemas/Profile'
+        Profile_ProfileStats:
+            type: object
+            properties:
+                followingCount:
+                    type: integer
+                    format: uint32
+                followersCount:
+                    type: integer
+                    format: uint32
         RegisterRequest:
             type: object
             properties:
@@ -558,6 +580,11 @@ components:
                     items:
                         type: string
         UpdateUserRequest:
+            type: object
+            properties:
+                user:
+                    $ref: '#/components/schemas/UpdateUserRequest_User'
+        UpdateUserRequest_User:
             type: object
             properties:
                 email:
