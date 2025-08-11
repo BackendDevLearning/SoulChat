@@ -9,6 +9,7 @@ import (
 	"kratos-realworld/internal/biz"
 	"kratos-realworld/internal/conf"
 	"kratos-realworld/internal/data"
+	"kratos-realworld/internal/model"
 	"kratos-realworld/internal/server"
 	"kratos-realworld/internal/service"
 
@@ -36,6 +37,7 @@ func newCustomApp(kapp *kratos.App, db *gorm.DB) *CustomApp {
 }
 
 var CustomProviderSet = wire.NewSet(
+	model.ProviderSet,   // 最底层数据库配置
 	data.ProviderSet,    // 数据层依赖
 	biz.ProviderSet,     // 业务逻辑层
 	service.ProviderSet, // 接口/服务层

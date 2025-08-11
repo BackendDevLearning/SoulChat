@@ -2,16 +2,12 @@ package migrate
 
 import (
 	"gorm.io/gorm"
-	"kratos-realworld/internal/data"
+	"kratos-realworld/internal/biz/user"
 )
 
 func InitDBTable(db *gorm.DB) error {
 	if err := db.AutoMigrate(
-		&data.User{},
-		&data.Article{},
-		&data.Comment{},
-		&data.ArticleFavorite{},
-		&data.Following{},
+		&user.UserLog{},
 	); err != nil {
 		return err
 	}

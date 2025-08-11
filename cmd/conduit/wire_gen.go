@@ -14,23 +14,21 @@ import (
 	"kratos-realworld/internal/biz"
 	"kratos-realworld/internal/conf"
 	"kratos-realworld/internal/data"
+	"kratos-realworld/internal/data/user"
+	"kratos-realworld/internal/model"
+	"kratos-realworld/internal/model/infra"
 	"kratos-realworld/internal/server"
 	"kratos-realworld/internal/service"
 )
 
 // Injectors from wire.go:
 
-func initApp(confServer *conf.Server, confData *conf.Data, jwt *conf.JWT, logger log.Logger) (*CustomApp, func(), error) {
-	db := data.NewDatabase(confData)
-	client := data.NewCache(confData)
-	dataData := data.NewData(db, client)
-	userRepo := data.NewUserRepo(dataData, logger)
-	profileRepo := data.NewProfileRepo(dataData, logger)
-	userUsecase := biz.NewUserUsecase(userRepo, profileRepo, logger, jwt)
-	articleRepo := data.NewArticleRepo(dataData, logger)
-	commentRepo := data.NewCommentRepo(dataData, logger)
-	socialUsecase := biz.NewSocialUsecase(articleRepo, profileRepo, commentRepo, logger)
-	conduitService := service.NewConduitService(userUsecase, socialUsecase, logger)
+func initApp(confServer *conf.Server, data *conf.Data, jwt *conf.JWT, logger log.Logger) (*CustomApp, func(), error) {
+	db := infra.NewDatabase(data)
+	client := infra.NewCache(data)
+	modelData := model.NewData(db, client)
+	userLogRepo := user.NewUserLogRepo(modelData, logger)
+	conduitService := service.NewConduitService(userLogRepo, logger)
 	httpServer := server.NewHTTPServer(confServer, jwt, conduitService, logger)
 	grpcServer := server.NewGRPCServer(confServer, conduitService, logger)
 	app := newApp(logger, httpServer, grpcServer)
@@ -53,6 +51,6 @@ func newCustomApp(kapp *kratos.App, db *gorm.DB) *CustomApp {
 	}
 }
 
-var CustomProviderSet = wire.NewSet(data.ProviderSet, biz.ProviderSet, service.ProviderSet, server.ProviderSet, newApp,
+var CustomProviderSet = wire.NewSet(model.ProviderSet, data.ProviderSet, biz.ProviderSet, service.ProviderSet, server.ProviderSet, newApp,
 	newCustomApp,
 )
