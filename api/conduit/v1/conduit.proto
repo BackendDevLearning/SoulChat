@@ -209,7 +209,7 @@ message UpdateUserRequest {
 
 message UserReply {
   message User {
-    string email = 1;
+    string phone = 1;
     string token = 2;
     string username = 3;
     string bio = 4;
@@ -235,7 +235,7 @@ message TagListReply { repeated string tags = 1; }
 
 message LoginRequest {
   message User {
-    string email = 1;
+    string phone = 1;
     string password = 2;
   }
   User user = 1;
@@ -244,7 +244,7 @@ message LoginRequest {
 message RegisterRequest {
   message User {
     string username = 1;
-    string email = 2;
+    string phone = 2;
     string password = 3;
   }
   User user = 1;

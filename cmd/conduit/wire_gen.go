@@ -12,6 +12,7 @@ import (
 	"github.com/google/wire"
 	"gorm.io/gorm"
 	"kratos-realworld/internal/biz"
+	user2 "kratos-realworld/internal/biz/user"
 	"kratos-realworld/internal/conf"
 	"kratos-realworld/internal/data"
 	"kratos-realworld/internal/data/user"
@@ -27,8 +28,11 @@ func initApp(confServer *conf.Server, data *conf.Data, jwt *conf.JWT, logger log
 	db := infra.NewDatabase(data)
 	client := infra.NewCache(data)
 	modelData := model.NewData(db, client)
-	userLogRepo := user.NewUserLogRepo(modelData, logger)
-	conduitService := service.NewConduitService(userLogRepo, logger)
+	userLoginRepo := user.NewUserLoginRepo(modelData, logger)
+	userLoginCase := user2.NewUserLoginCase(userLoginRepo, jwt, logger)
+	userRegisterRepo := user.NewUserRegisterRepo(modelData, logger)
+	userRegisterCase := user2.NewUserRegisterCase(userRegisterRepo, jwt, logger)
+	conduitService := service.NewConduitService(userLoginCase, userRegisterCase, logger)
 	httpServer := server.NewHTTPServer(confServer, jwt, conduitService, logger)
 	grpcServer := server.NewGRPCServer(confServer, conduitService, logger)
 	app := newApp(logger, httpServer, grpcServer)

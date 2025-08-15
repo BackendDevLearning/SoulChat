@@ -480,7 +480,7 @@ components:
         LoginRequest_User:
             type: object
             properties:
-                email:
+                phone:
                     type: string
                 password:
                     type: string
@@ -538,7 +538,7 @@ components:
             properties:
                 username:
                     type: string
-                email:
+                phone:
                     type: string
                 password:
                     type: string
@@ -605,7 +605,7 @@ components:
         UserReply_User:
             type: object
             properties:
-                email:
+                phone:
                     type: string
                 token:
                     type: string

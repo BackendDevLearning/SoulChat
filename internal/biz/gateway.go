@@ -3,10 +3,10 @@ package biz
 import "kratos-realworld/internal/biz/user"
 
 type GateWay struct {
-	couponRepo user.UserLogRepo
+	couponRepo user.UserLoginRepo
 }
 
-func NewGatWayCase(pr user.UserLogRepo) *GateWay {
+func NewGatWayCase(pr user.UserLoginRepo) *GateWay {
 	return &GateWay{
 		couponRepo: pr,
 	}

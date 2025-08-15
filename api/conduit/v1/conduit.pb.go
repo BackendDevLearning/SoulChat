@@ -1705,7 +1705,7 @@ func (x *UpdateUserRequest_User) GetImage() string {
 
 type UserReply_User struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Email         string                 `protobuf:"bytes,1,opt,name=email,proto3" json:"email,omitempty"`
+	Phone         string                 `protobuf:"bytes,1,opt,name=phone,proto3" json:"phone,omitempty"`
 	Token         string                 `protobuf:"bytes,2,opt,name=token,proto3" json:"token,omitempty"`
 	Username      string                 `protobuf:"bytes,3,opt,name=username,proto3" json:"username,omitempty"`
 	Bio           string                 `protobuf:"bytes,4,opt,name=bio,proto3" json:"bio,omitempty"`
@@ -1744,9 +1744,9 @@ func (*UserReply_User) Descriptor() ([]byte, []int) {
 	return file_api_conduit_v1_conduit_proto_rawDescGZIP(), []int{16, 0}
 }
 
-func (x *UserReply_User) GetEmail() string {
+func (x *UserReply_User) GetPhone() string {
 	if x != nil {
-		return x.Email
+		return x.Phone
 	}
 	return ""
 }
@@ -1781,7 +1781,7 @@ func (x *UserReply_User) GetImage() string {
 
 type LoginRequest_User struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Email         string                 `protobuf:"bytes,1,opt,name=email,proto3" json:"email,omitempty"`
+	Phone         string                 `protobuf:"bytes,1,opt,name=phone,proto3" json:"phone,omitempty"`
 	Password      string                 `protobuf:"bytes,2,opt,name=password,proto3" json:"password,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1817,9 +1817,9 @@ func (*LoginRequest_User) Descriptor() ([]byte, []int) {
 	return file_api_conduit_v1_conduit_proto_rawDescGZIP(), []int{23, 0}
 }
 
-func (x *LoginRequest_User) GetEmail() string {
+func (x *LoginRequest_User) GetPhone() string {
 	if x != nil {
-		return x.Email
+		return x.Phone
 	}
 	return ""
 }
@@ -1834,7 +1834,7 @@ func (x *LoginRequest_User) GetPassword() string {
 type RegisterRequest_User struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Username      string                 `protobuf:"bytes,1,opt,name=username,proto3" json:"username,omitempty"`
-	Email         string                 `protobuf:"bytes,2,opt,name=email,proto3" json:"email,omitempty"`
+	Phone         string                 `protobuf:"bytes,2,opt,name=phone,proto3" json:"phone,omitempty"`
 	Password      string                 `protobuf:"bytes,3,opt,name=password,proto3" json:"password,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1877,9 +1877,9 @@ func (x *RegisterRequest_User) GetUsername() string {
 	return ""
 }
 
-func (x *RegisterRequest_User) GetEmail() string {
+func (x *RegisterRequest_User) GetPhone() string {
 	if x != nil {
-		return x.Email
+		return x.Phone
 	}
 	return ""
 }
@@ -2007,7 +2007,7 @@ const file_api_conduit_v1_conduit_proto_rawDesc = "" +
 	"\tUserReply\x120\n" +
 	"\x04user\x18\x01 \x01(\v2\x1c.realworld.v1.UserReply.UserR\x04user\x1av\n" +
 	"\x04User\x12\x14\n" +
-	"\x05email\x18\x01 \x01(\tR\x05email\x12\x14\n" +
+	"\x05phone\x18\x01 \x01(\tR\x05phone\x12\x14\n" +
 	"\x05token\x18\x02 \x01(\tR\x05token\x12\x1a\n" +
 	"\busername\x18\x03 \x01(\tR\busername\x12\x10\n" +
 	"\x03bio\x18\x04 \x01(\tR\x03bio\x12\x14\n" +
@@ -2028,13 +2028,13 @@ const file_api_conduit_v1_conduit_proto_rawDesc = "" +
 	"\fLoginRequest\x123\n" +
 	"\x04user\x18\x01 \x01(\v2\x1f.realworld.v1.LoginRequest.UserR\x04user\x1a8\n" +
 	"\x04User\x12\x14\n" +
-	"\x05email\x18\x01 \x01(\tR\x05email\x12\x1a\n" +
+	"\x05phone\x18\x01 \x01(\tR\x05phone\x12\x1a\n" +
 	"\bpassword\x18\x02 \x01(\tR\bpassword\"\x9f\x01\n" +
 	"\x0fRegisterRequest\x126\n" +
 	"\x04user\x18\x01 \x01(\v2\".realworld.v1.RegisterRequest.UserR\x04user\x1aT\n" +
 	"\x04User\x12\x1a\n" +
 	"\busername\x18\x01 \x01(\tR\busername\x12\x14\n" +
-	"\x05email\x18\x02 \x01(\tR\x05email\x12\x1a\n" +
+	"\x05phone\x18\x02 \x01(\tR\x05phone\x12\x1a\n" +
 	"\bpassword\x18\x03 \x01(\tR\bpassword\"\xec\x02\n" +
 	"\aArticle\x12\x12\n" +
 	"\x04slug\x18\x01 \x01(\tR\x04slug\x12\x14\n" +
