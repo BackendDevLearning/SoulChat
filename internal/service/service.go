@@ -2,7 +2,7 @@ package service
 
 import (
 	"github.com/google/wire"
-	bizUser "kratos-realworld/internal/biz/user"
+	bizUser "kratos-realworld/internal/biz"
 
 	"github.com/go-kratos/kratos/v2/log"
 	v1 "kratos-realworld/api/conduit/v1"
@@ -13,19 +13,12 @@ var ProviderSet = wire.NewSet(NewConduitService)
 
 type ConduitService struct {
 	v1.UnimplementedConduitServer
-
-	ur  *bizUser.UserRegisterCase
-	ul  *bizUser.UserLoginCase
+	ur  *bizUser.GateWay
 	log *log.Helper
 }
 
-func NewConduitService(ul *bizUser.UserLoginCase, ur *bizUser.UserRegisterCase, logger log.Logger) *ConduitService {
+func NewConduitService(ur *bizUser.GateWay, logger log.Logger) *ConduitService {
 	return &ConduitService{
-		ul:  ul,
 		ur:  ur,
 		log: log.NewHelper(logger)}
-}
-
-func (s *ConduitService) UR() *bizUser.UserRegisterCase {
-	return s.ur
 }
