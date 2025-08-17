@@ -27,38 +27,26 @@ service Conduit {
 
 
 message LoginRequest {
-  message User {
-    string phone = 1;
-    string password = 2;
-  }
-  User user = 1;
+  string phone = 1;
+  string password = 2;
 }
 
 message LoginReply {
-  message User {
-    int32 code = 1;
-    string res = 2;
-    string token = 3;
-  }
-  User user = 1;
+  int32 code = 1;
+  string res = 2;
+  string token = 3;
 }
 
 message RegisterRequest {
-  message User {
-    string username = 1;
-    string phone = 2;
-    string password = 3;
-  }
-  User user = 1;
+  string username = 1;
+  string phone = 2;
+  string password = 3;
 }
 
 message RegisterReply {
-  message User {
-    int32 code = 1;
-    string res = 2;
-    string token = 3;
-  }
-  User user = 1;
+  int32 code = 1;
+  string res = 2;
+  string token = 3;
 }
 
 

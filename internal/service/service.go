@@ -14,12 +14,12 @@ var ProviderSet = wire.NewSet(NewConduitService)
 type ConduitService struct {
 	v1.UnimplementedConduitServer
 
-	gc  *bizUser.GateWayUsecase
+	gt  *bizUser.GateWayUsecase
 	log *log.Helper
 }
 
-func NewConduitService(gc *bizUser.GateWayUsecase, logger log.Logger) *ConduitService {
+func NewConduitService(gt *bizUser.GateWayUsecase, logger log.Logger) *ConduitService {
 	return &ConduitService{
-		gc:  gc,
+		gt:  gt,
 		log: log.NewHelper(logger)}
 }

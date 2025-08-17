@@ -22,6 +22,6 @@ func (m *UserTB) TableName() string {
 }
 
 type UserRepo interface {
-	CreateUser(ctx context.Context, userRegister *UserTB) error
-	GetUserByPhone(ctx context.Context, phone string) error
+	CreateUser(ctx context.Context, userRegister *UserTB) (string, error)
+	GetUserByPhone(ctx context.Context, phone string) (*UserTB, error)
 }

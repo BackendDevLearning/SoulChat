@@ -7,7 +7,7 @@ import (
 
 func InitDBTable(db *gorm.DB) error {
 	if err := db.AutoMigrate(
-		&user.UserRegisterTB{},
+		&user.UserTB{},
 	); err != nil {
 		return err
 	}

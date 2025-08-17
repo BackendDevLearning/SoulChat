@@ -1,3 +1,17 @@
 package service
 
-// 跟前端的交互的struct
+const (
+	ReqUuid          = "uuid"
+	UserInfoPrefix   = "userinfo_"
+	SessionKeyPrefix = "session_"
+)
+
+const (
+	GenderMale   = "male"
+	GenderFeMale = "female"
+)
+
+const (
+	SessionKey   = "user_session"
+	CookieExpire = 3600
+)
