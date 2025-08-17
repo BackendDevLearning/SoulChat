@@ -6,22 +6,22 @@ import (
 	v1 "kratos-realworld/api/conduit/v1"
 )
 
-func (cs *ConduitService) Login(ctx *gin.Context, req *v1.LoginRequest) (*v1.LoginReply, error) {
+func (cs *ConduitService) Login(ctx context.context, req *v1.LoginRequest) (*v1.LoginReply, error) {
 	res := &v1.LoginReply{
 		Code:  0,
 		Res:   "success",
 		Token: "",
 	}
 
-	session, err := cs.gt.Login(ctx, req.Phone, req.Password)
+	// session, err := cs.gt.Login(ctx, req.Phone, req.Password)
 
-	if err != nil {
-		res.Code = 1
-		res.Res = "servce Login error"
-	}
+	// if err != nil {
+	// 	res.Code = 1
+	// 	res.Res = "servce Login error"
+	// }
 
-	// 登陆成功，设置cookie
-	ctx.SetCookie(SessionKey, session, CookieExpire, "/", "", false, true)
+	// // 登陆成功，设置cookie
+	// ctx.SetCookie(SessionKey, session, CookieExpire, "/", "", false, true)
 
 	return res, nil
 }
@@ -37,6 +37,10 @@ func (cs *ConduitService) Register(ctx context.Context, req *v1.RegisterRequest)
 	if err != nil {
 		res.Code = 1
 		res.Res = result
+	}
+    if result != "" {
+		res.Res = result
+		res.Code = 1
 	}
 	return res, nil
 }
