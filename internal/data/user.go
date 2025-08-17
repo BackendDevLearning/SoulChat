@@ -1,11 +1,12 @@
 package data
 
 import (
+	"context"
+	"fmt"
+	"github.com/go-kratos/kratos/v2/log"
 	bizUser "kratos-realworld/internal/biz/user"
 	"kratos-realworld/internal/model"
-
-	"context"
-	"github.com/go-kratos/kratos/v2/log"
+	"kratos-realworld/internal/service"
 )
 
 type UserRepo struct {
@@ -21,11 +22,20 @@ func NewUserRepo(data *model.Data, logger log.Logger) bizUser.UserRepo {
 }
 
 func (r *UserRepo) GetUserByPhone(ctx context.Context, phone string) (*bizUser.UserTB, error) {
+	redisKey := service.UserInfoPrefix + phone
+	val, ok, err := r.data.Cache().Get(context.Background(), redisKey)
+
+	if err != nil {
+		return nil, err
+	}
+
+	fmt.Println(ok, val)
+
 	u := new(bizUser.UserTB)
 	result := r.data.DB().Where("phone = ?", phone).First(u)
 
 	if result.Error != nil {
-		return "phone is nil", result.Error
+		return u, result.Error
 	}
 	return u, nil
 }

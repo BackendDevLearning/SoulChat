@@ -23,6 +23,10 @@ func (d *Data) DB() *gorm.DB {
 	return d.db
 }
 
+func (d *Data) Cache() *cache.Client {
+	return d.cache
+}
+
 type Transaction interface {
 	InTx(context.Context, func(ctx context.Context) error) error
 }

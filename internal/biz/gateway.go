@@ -34,6 +34,8 @@ func (gc *GateWayUsecase) Register(ctx context.Context, username string, phone s
 
 	name_db, err := gc.ur.GetUserByPhone(ctx, phone)
 
+	fmt.Println("smc", name_db)
+
 	if err != nil {
 		return "gc.ur.GetUserByPhone(ctx, phone) error", err
 	}
@@ -55,10 +57,11 @@ func (gc *GateWayUsecase) Login(ctx context.Context, phone string, password stri
 		res = "phone cannot be empty"
 		return res, errors.New(422, "PHONE_EMPTY", "phone cannot be empty")
 	}
-	user, err := cache.
-	if err != nil {
-		return "", err
-	}
+
+	//user, err := cache.
+	//if err != nil {
+	//	return "", err
+	//}
 	return res, nil
 }
 

@@ -27,7 +27,7 @@ func initApp(confServer *conf.Server, confData *conf.Data, jwt *conf.JWT, logger
 	client := infra.NewCache(confData)
 	modelData := model.NewData(db, client)
 	userRepo := data.NewUserRepo(modelData, logger)
-	gateWayUsecase := biz.NewGatWayCase(userRepo, jwt, logger)
+	gateWayUsecase := biz.NewGatWayUsecase(userRepo, jwt, logger)
 	conduitService := service.NewConduitService(gateWayUsecase, logger)
 	httpServer := server.NewHTTPServer(confServer, jwt, conduitService, logger)
 	grpcServer := server.NewGRPCServer(confServer, conduitService, logger)

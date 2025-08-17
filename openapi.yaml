@@ -48,11 +48,6 @@ components:
         LoginReply:
             type: object
             properties:
-                user:
-                    $ref: '#/components/schemas/LoginReply_User'
-        LoginReply_User:
-            type: object
-            properties:
                 code:
                     type: integer
                     format: int32
@@ -63,21 +58,11 @@ components:
         LoginRequest:
             type: object
             properties:
-                user:
-                    $ref: '#/components/schemas/LoginRequest_User'
-        LoginRequest_User:
-            type: object
-            properties:
                 phone:
                     type: string
                 password:
                     type: string
         RegisterReply:
-            type: object
-            properties:
-                user:
-                    $ref: '#/components/schemas/RegisterReply_User'
-        RegisterReply_User:
             type: object
             properties:
                 code:
@@ -88,11 +73,6 @@ components:
                 token:
                     type: string
         RegisterRequest:
-            type: object
-            properties:
-                user:
-                    $ref: '#/components/schemas/RegisterRequest_User'
-        RegisterRequest_User:
             type: object
             properties:
                 username:
