@@ -18,10 +18,10 @@ type UserTB struct {
 }
 
 func (m *UserTB) TableName() string {
-	return "t_user_register"
+	return "t_user"
 }
 
 type UserRepo interface {
-	CreateUser(ctx context.Context, userRegister *UserRegisterTB) error
-	GetUserByPhone(ctx context.Context, email string) error
+	CreateUser(ctx context.Context, userRegister *UserTB) error
+	GetUserByPhone(ctx context.Context, phone string) error
 }

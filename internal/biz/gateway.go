@@ -1,63 +1,64 @@
 package biz
 
 import (
-	"errors"
+	"context"
 	"fmt"
-	"kratos-realworld/internal/biz/user"
+	bizUser "kratos-realworld/internal/biz/user"
 	"kratos-realworld/internal/conf"
 	"kratos-realworld/internal/pkg/middleware/auth"
 
-	"context"
+	"github.com/go-kratos/kratos/v2/errors"
 	"github.com/go-kratos/kratos/v2/log"
 )
 
-type GateWay struct {
-	UserRepo user.UserRepo
-	jwtc     *conf.JWT
-	log      *log.Helper
+type GateWayUsecase struct {
+	ur bizUser.UserRepo
+
+	jwtc *conf.JWT
+	log  *log.Helper
 }
 
-func NewGatWayCase(ur user.UserRepo, jwtc *conf.JWT, logger log.Logger) *GateWay {
-	return &GateWay{
-		UserRepo: ur,
-		jwtc:     jwtc,
-		log:      logger,
+func NewGatWayUsecase(ur bizUser.UserRepo, jwtc *conf.JWT, logger log.Logger) *GateWayUsecase {
+	return &GateWayUsecase{
+		ur:   ur,
+		jwtc: jwtc,
+		log:  log.NewHelper(logger),
 	}
 }
 
-func (ur *GateWay) Register(ctx context.Context, username, phone, password string) error {
-	userRegister := &user.UserRegisterTB{
+func (gc *GateWayUsecase) Register(ctx context.Context, username string, phone string, password string) error {
+	userRegister := &bizUser.UserTB{
 		Phone:        phone,
 		UserName:     username,
-		PasswordHash: user.HashPassword(password),
+		PasswordHash: hashPassword(password),
 	}
-	if err := ur.CreateUser(ctx, userRegister); err != nil {
+	if err := gc.ur.CreateUser(ctx, userRegister); err != nil {
 		fmt.Errorf("")
 		return err
 	}
 	return nil
 }
 
-func (ur *GateWay) generateToken(userID uint) string {
+func (ur *GateWayUsecase) generateToken(userID uint) string {
 	return auth.GenerateToken(ur.jwtc.Secret, userID)
 }
 
-func (r *GateWay) GetUserByPhone(ctx context.Context, phone string) error {
-	u := new(bizUser.UserRegisterTB)
-	result := r.data.DB().Where("phone = ?", phone).First(u)
-
-	if result.Error != nil {
+func (gc *GateWayUsecase) Login(ctx context.Context, phone string, password string) error {
+	if len(phone) == 0 {
+		return errors.New(422, "PHONE_EMPTY", "phone cannot be empty")
+	}
+	u, err := gc.ur.GetUserByPhone(ctx, phone, password)
+	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (ul *GateWay) Login(ctx context.Context, phone, password string) error {
-	if len(phone) == 0 {
-		return nil, errors.New(422, "email", "cannot be empty")
-	}
-	u, err := ul.ul.GetUserByPhone(ctx, phone)
-	if err != nil {
+func (gc *GateWayUsecase) GetUserByPhone(ctx context.Context, phone string) error {
+	u := new(bizUser.UserTB)
+	result := gc.ur.GetUserByPhone(ctx, phone)
+
+	if err := result.Error; err != nil {
 		return err
 	}
 	return nil

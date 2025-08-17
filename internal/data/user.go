@@ -21,7 +21,7 @@ func NewUserRepo(data *model.Data, logger log.Logger) bizUser.UserRepo {
 }
 
 func (r *UserRepo) GetUserByPhone(ctx context.Context, phone string) error {
-	u := new(bizUser.UserRegisterTB)
+	u := new(bizUser.UserTB)
 	result := r.data.DB().Where("phone = ?", phone).First(u)
 
 	if result.Error != nil {
@@ -30,7 +30,7 @@ func (r *UserRepo) GetUserByPhone(ctx context.Context, phone string) error {
 	return nil
 }
 
-func (r *UserRepo) CreateUser(ctx context.Context, userRegister *bizUser.UserRegisterTB) error {
+func (r *UserRepo) CreateUser(ctx context.Context, userRegister *bizUser.UserTB) error {
 	rv := r.data.DB().Create(userRegister)
 	return rv.Error
 }

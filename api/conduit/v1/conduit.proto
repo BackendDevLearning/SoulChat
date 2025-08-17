@@ -3,20 +3,20 @@ syntax = "proto3";
 package realworld.v1;
 
 import "google/api/annotations.proto";
-import "google/protobuf/timestamp.proto";
+//import "google/protobuf/timestamp.proto";
 
 option go_package = "kratos-realworld/api/conduit/v1;v1";
 
 // The greeting service definition.
 service Conduit {
-  rpc Login(LoginRequest) returns (LoginRequest) {
+  rpc Login(LoginRequest) returns (LoginReply) {
     option (google.api.http) = {
       post : "/api/users/login",
       body : "*",
     };
   }
 
-  rpc Register(RegisterRequest) returns (RegisterResponse) {
+  rpc Register(RegisterRequest) returns (RegisterReply) {
     option (google.api.http) = {
       post : "/api/users",
       body : "*",
@@ -27,26 +27,38 @@ service Conduit {
 
 
 message LoginRequest {
-  string phone = 1;
-  string password = 2;
+  message User {
+    string phone = 1;
+    string password = 2;
+  }
+  User user = 1;
 }
 
-message LoginResponse {
-  int32 code = 1;
-  string res = 2;
-  string token = 3;
+message LoginReply {
+  message User {
+    int32 code = 1;
+    string res = 2;
+    string token = 3;
+  }
+  User user = 1;
 }
 
 message RegisterRequest {
-  string username = 1;
-  string phone = 2;
-  string password = 3;
+  message User {
+    string username = 1;
+    string phone = 2;
+    string password = 3;
+  }
+  User user = 1;
 }
 
-message RegisterResponse {
-  int32 code = 1;
-  string res = 2;
-  string token = 3;
+message RegisterReply {
+  message User {
+    int32 code = 1;
+    string res = 2;
+    string token = 3;
+  }
+  User user = 1;
 }
 
 

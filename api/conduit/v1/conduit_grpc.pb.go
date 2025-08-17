@@ -19,25 +19,8 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Conduit_Login_FullMethodName             = "/realworld.v1.Conduit/Login"
-	Conduit_Register_FullMethodName          = "/realworld.v1.Conduit/Register"
-	Conduit_GetCurrentUser_FullMethodName    = "/realworld.v1.Conduit/GetCurrentUser"
-	Conduit_UpdateUser_FullMethodName        = "/realworld.v1.Conduit/UpdateUser"
-	Conduit_GetProfile_FullMethodName        = "/realworld.v1.Conduit/GetProfile"
-	Conduit_FollowUser_FullMethodName        = "/realworld.v1.Conduit/FollowUser"
-	Conduit_UnfollowUser_FullMethodName      = "/realworld.v1.Conduit/UnfollowUser"
-	Conduit_ListArticles_FullMethodName      = "/realworld.v1.Conduit/ListArticles"
-	Conduit_FeedArticles_FullMethodName      = "/realworld.v1.Conduit/FeedArticles"
-	Conduit_GetArticle_FullMethodName        = "/realworld.v1.Conduit/GetArticle"
-	Conduit_CreateArticle_FullMethodName     = "/realworld.v1.Conduit/CreateArticle"
-	Conduit_UpdateArticle_FullMethodName     = "/realworld.v1.Conduit/UpdateArticle"
-	Conduit_DeleteArticle_FullMethodName     = "/realworld.v1.Conduit/DeleteArticle"
-	Conduit_AddComment_FullMethodName        = "/realworld.v1.Conduit/AddComment"
-	Conduit_GetComments_FullMethodName       = "/realworld.v1.Conduit/GetComments"
-	Conduit_DeleteComment_FullMethodName     = "/realworld.v1.Conduit/DeleteComment"
-	Conduit_FavoriteArticle_FullMethodName   = "/realworld.v1.Conduit/FavoriteArticle"
-	Conduit_UnfavoriteArticle_FullMethodName = "/realworld.v1.Conduit/UnfavoriteArticle"
-	Conduit_GetTags_FullMethodName           = "/realworld.v1.Conduit/GetTags"
+	Conduit_Login_FullMethodName    = "/realworld.v1.Conduit/Login"
+	Conduit_Register_FullMethodName = "/realworld.v1.Conduit/Register"
 )
 
 // ConduitClient is the client API for Conduit service.
@@ -46,25 +29,8 @@ const (
 //
 // The greeting service definition.
 type ConduitClient interface {
-	Login(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*UserReply, error)
-	Register(ctx context.Context, in *RegisterRequest, opts ...grpc.CallOption) (*UserReply, error)
-	GetCurrentUser(ctx context.Context, in *GetCurrentUserRequest, opts ...grpc.CallOption) (*UserReply, error)
-	UpdateUser(ctx context.Context, in *UpdateUserRequest, opts ...grpc.CallOption) (*UserReply, error)
-	GetProfile(ctx context.Context, in *GetProfileRequest, opts ...grpc.CallOption) (*ProfileReply, error)
-	FollowUser(ctx context.Context, in *FollowUserRequest, opts ...grpc.CallOption) (*ProfileReply, error)
-	UnfollowUser(ctx context.Context, in *UnfollowUserRequest, opts ...grpc.CallOption) (*ProfileReply, error)
-	ListArticles(ctx context.Context, in *ListArticlesRequest, opts ...grpc.CallOption) (*MultipleArticlesReply, error)
-	FeedArticles(ctx context.Context, in *FeedArticlesRequest, opts ...grpc.CallOption) (*MultipleArticlesReply, error)
-	GetArticle(ctx context.Context, in *GetArticleRequest, opts ...grpc.CallOption) (*SingleArticleReply, error)
-	CreateArticle(ctx context.Context, in *CreateArticleRequest, opts ...grpc.CallOption) (*SingleArticleReply, error)
-	UpdateArticle(ctx context.Context, in *UpdateArticleRequest, opts ...grpc.CallOption) (*SingleArticleReply, error)
-	DeleteArticle(ctx context.Context, in *DeleteArticleRequest, opts ...grpc.CallOption) (*SingleArticleReply, error)
-	AddComment(ctx context.Context, in *AddCommentRequest, opts ...grpc.CallOption) (*SingleCommentReply, error)
-	GetComments(ctx context.Context, in *AddCommentRequest, opts ...grpc.CallOption) (*MultipleCommentsReply, error)
-	DeleteComment(ctx context.Context, in *DeleteCommentRequest, opts ...grpc.CallOption) (*SingleCommentReply, error)
-	FavoriteArticle(ctx context.Context, in *FavoriteArticleRequest, opts ...grpc.CallOption) (*SingleArticleReply, error)
-	UnfavoriteArticle(ctx context.Context, in *UnfavoriteArticleRequest, opts ...grpc.CallOption) (*SingleArticleReply, error)
-	GetTags(ctx context.Context, in *GetTagsRequest, opts ...grpc.CallOption) (*TagListReply, error)
+	Login(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*LoginReply, error)
+	Register(ctx context.Context, in *RegisterRequest, opts ...grpc.CallOption) (*RegisterReply, error)
 }
 
 type conduitClient struct {
@@ -75,9 +41,9 @@ func NewConduitClient(cc grpc.ClientConnInterface) ConduitClient {
 	return &conduitClient{cc}
 }
 
-func (c *conduitClient) Login(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*UserReply, error) {
+func (c *conduitClient) Login(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*LoginReply, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(UserReply)
+	out := new(LoginReply)
 	err := c.cc.Invoke(ctx, Conduit_Login_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -85,180 +51,10 @@ func (c *conduitClient) Login(ctx context.Context, in *LoginRequest, opts ...grp
 	return out, nil
 }
 
-func (c *conduitClient) Register(ctx context.Context, in *RegisterRequest, opts ...grpc.CallOption) (*UserReply, error) {
+func (c *conduitClient) Register(ctx context.Context, in *RegisterRequest, opts ...grpc.CallOption) (*RegisterReply, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(UserReply)
+	out := new(RegisterReply)
 	err := c.cc.Invoke(ctx, Conduit_Register_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *conduitClient) GetCurrentUser(ctx context.Context, in *GetCurrentUserRequest, opts ...grpc.CallOption) (*UserReply, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(UserReply)
-	err := c.cc.Invoke(ctx, Conduit_GetCurrentUser_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *conduitClient) UpdateUser(ctx context.Context, in *UpdateUserRequest, opts ...grpc.CallOption) (*UserReply, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(UserReply)
-	err := c.cc.Invoke(ctx, Conduit_UpdateUser_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *conduitClient) GetProfile(ctx context.Context, in *GetProfileRequest, opts ...grpc.CallOption) (*ProfileReply, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(ProfileReply)
-	err := c.cc.Invoke(ctx, Conduit_GetProfile_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *conduitClient) FollowUser(ctx context.Context, in *FollowUserRequest, opts ...grpc.CallOption) (*ProfileReply, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(ProfileReply)
-	err := c.cc.Invoke(ctx, Conduit_FollowUser_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *conduitClient) UnfollowUser(ctx context.Context, in *UnfollowUserRequest, opts ...grpc.CallOption) (*ProfileReply, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(ProfileReply)
-	err := c.cc.Invoke(ctx, Conduit_UnfollowUser_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *conduitClient) ListArticles(ctx context.Context, in *ListArticlesRequest, opts ...grpc.CallOption) (*MultipleArticlesReply, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(MultipleArticlesReply)
-	err := c.cc.Invoke(ctx, Conduit_ListArticles_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *conduitClient) FeedArticles(ctx context.Context, in *FeedArticlesRequest, opts ...grpc.CallOption) (*MultipleArticlesReply, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(MultipleArticlesReply)
-	err := c.cc.Invoke(ctx, Conduit_FeedArticles_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *conduitClient) GetArticle(ctx context.Context, in *GetArticleRequest, opts ...grpc.CallOption) (*SingleArticleReply, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(SingleArticleReply)
-	err := c.cc.Invoke(ctx, Conduit_GetArticle_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *conduitClient) CreateArticle(ctx context.Context, in *CreateArticleRequest, opts ...grpc.CallOption) (*SingleArticleReply, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(SingleArticleReply)
-	err := c.cc.Invoke(ctx, Conduit_CreateArticle_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *conduitClient) UpdateArticle(ctx context.Context, in *UpdateArticleRequest, opts ...grpc.CallOption) (*SingleArticleReply, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(SingleArticleReply)
-	err := c.cc.Invoke(ctx, Conduit_UpdateArticle_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *conduitClient) DeleteArticle(ctx context.Context, in *DeleteArticleRequest, opts ...grpc.CallOption) (*SingleArticleReply, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(SingleArticleReply)
-	err := c.cc.Invoke(ctx, Conduit_DeleteArticle_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *conduitClient) AddComment(ctx context.Context, in *AddCommentRequest, opts ...grpc.CallOption) (*SingleCommentReply, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(SingleCommentReply)
-	err := c.cc.Invoke(ctx, Conduit_AddComment_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *conduitClient) GetComments(ctx context.Context, in *AddCommentRequest, opts ...grpc.CallOption) (*MultipleCommentsReply, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(MultipleCommentsReply)
-	err := c.cc.Invoke(ctx, Conduit_GetComments_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *conduitClient) DeleteComment(ctx context.Context, in *DeleteCommentRequest, opts ...grpc.CallOption) (*SingleCommentReply, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(SingleCommentReply)
-	err := c.cc.Invoke(ctx, Conduit_DeleteComment_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *conduitClient) FavoriteArticle(ctx context.Context, in *FavoriteArticleRequest, opts ...grpc.CallOption) (*SingleArticleReply, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(SingleArticleReply)
-	err := c.cc.Invoke(ctx, Conduit_FavoriteArticle_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *conduitClient) UnfavoriteArticle(ctx context.Context, in *UnfavoriteArticleRequest, opts ...grpc.CallOption) (*SingleArticleReply, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(SingleArticleReply)
-	err := c.cc.Invoke(ctx, Conduit_UnfavoriteArticle_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *conduitClient) GetTags(ctx context.Context, in *GetTagsRequest, opts ...grpc.CallOption) (*TagListReply, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(TagListReply)
-	err := c.cc.Invoke(ctx, Conduit_GetTags_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -271,25 +67,8 @@ func (c *conduitClient) GetTags(ctx context.Context, in *GetTagsRequest, opts ..
 //
 // The greeting service definition.
 type ConduitServer interface {
-	Login(context.Context, *LoginRequest) (*UserReply, error)
-	Register(context.Context, *RegisterRequest) (*UserReply, error)
-	GetCurrentUser(context.Context, *GetCurrentUserRequest) (*UserReply, error)
-	UpdateUser(context.Context, *UpdateUserRequest) (*UserReply, error)
-	GetProfile(context.Context, *GetProfileRequest) (*ProfileReply, error)
-	FollowUser(context.Context, *FollowUserRequest) (*ProfileReply, error)
-	UnfollowUser(context.Context, *UnfollowUserRequest) (*ProfileReply, error)
-	ListArticles(context.Context, *ListArticlesRequest) (*MultipleArticlesReply, error)
-	FeedArticles(context.Context, *FeedArticlesRequest) (*MultipleArticlesReply, error)
-	GetArticle(context.Context, *GetArticleRequest) (*SingleArticleReply, error)
-	CreateArticle(context.Context, *CreateArticleRequest) (*SingleArticleReply, error)
-	UpdateArticle(context.Context, *UpdateArticleRequest) (*SingleArticleReply, error)
-	DeleteArticle(context.Context, *DeleteArticleRequest) (*SingleArticleReply, error)
-	AddComment(context.Context, *AddCommentRequest) (*SingleCommentReply, error)
-	GetComments(context.Context, *AddCommentRequest) (*MultipleCommentsReply, error)
-	DeleteComment(context.Context, *DeleteCommentRequest) (*SingleCommentReply, error)
-	FavoriteArticle(context.Context, *FavoriteArticleRequest) (*SingleArticleReply, error)
-	UnfavoriteArticle(context.Context, *UnfavoriteArticleRequest) (*SingleArticleReply, error)
-	GetTags(context.Context, *GetTagsRequest) (*TagListReply, error)
+	Login(context.Context, *LoginRequest) (*LoginReply, error)
+	Register(context.Context, *RegisterRequest) (*RegisterReply, error)
 	mustEmbedUnimplementedConduitServer()
 }
 
@@ -300,62 +79,11 @@ type ConduitServer interface {
 // pointer dereference when methods are called.
 type UnimplementedConduitServer struct{}
 
-func (UnimplementedConduitServer) Login(context.Context, *LoginRequest) (*UserReply, error) {
+func (UnimplementedConduitServer) Login(context.Context, *LoginRequest) (*LoginReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Login not implemented")
 }
-func (UnimplementedConduitServer) Register(context.Context, *RegisterRequest) (*UserReply, error) {
+func (UnimplementedConduitServer) Register(context.Context, *RegisterRequest) (*RegisterReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Register not implemented")
-}
-func (UnimplementedConduitServer) GetCurrentUser(context.Context, *GetCurrentUserRequest) (*UserReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetCurrentUser not implemented")
-}
-func (UnimplementedConduitServer) UpdateUser(context.Context, *UpdateUserRequest) (*UserReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method UpdateUser not implemented")
-}
-func (UnimplementedConduitServer) GetProfile(context.Context, *GetProfileRequest) (*ProfileReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetProfile not implemented")
-}
-func (UnimplementedConduitServer) FollowUser(context.Context, *FollowUserRequest) (*ProfileReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method FollowUser not implemented")
-}
-func (UnimplementedConduitServer) UnfollowUser(context.Context, *UnfollowUserRequest) (*ProfileReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method UnfollowUser not implemented")
-}
-func (UnimplementedConduitServer) ListArticles(context.Context, *ListArticlesRequest) (*MultipleArticlesReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ListArticles not implemented")
-}
-func (UnimplementedConduitServer) FeedArticles(context.Context, *FeedArticlesRequest) (*MultipleArticlesReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method FeedArticles not implemented")
-}
-func (UnimplementedConduitServer) GetArticle(context.Context, *GetArticleRequest) (*SingleArticleReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetArticle not implemented")
-}
-func (UnimplementedConduitServer) CreateArticle(context.Context, *CreateArticleRequest) (*SingleArticleReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method CreateArticle not implemented")
-}
-func (UnimplementedConduitServer) UpdateArticle(context.Context, *UpdateArticleRequest) (*SingleArticleReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method UpdateArticle not implemented")
-}
-func (UnimplementedConduitServer) DeleteArticle(context.Context, *DeleteArticleRequest) (*SingleArticleReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method DeleteArticle not implemented")
-}
-func (UnimplementedConduitServer) AddComment(context.Context, *AddCommentRequest) (*SingleCommentReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method AddComment not implemented")
-}
-func (UnimplementedConduitServer) GetComments(context.Context, *AddCommentRequest) (*MultipleCommentsReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetComments not implemented")
-}
-func (UnimplementedConduitServer) DeleteComment(context.Context, *DeleteCommentRequest) (*SingleCommentReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method DeleteComment not implemented")
-}
-func (UnimplementedConduitServer) FavoriteArticle(context.Context, *FavoriteArticleRequest) (*SingleArticleReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method FavoriteArticle not implemented")
-}
-func (UnimplementedConduitServer) UnfavoriteArticle(context.Context, *UnfavoriteArticleRequest) (*SingleArticleReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method UnfavoriteArticle not implemented")
-}
-func (UnimplementedConduitServer) GetTags(context.Context, *GetTagsRequest) (*TagListReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetTags not implemented")
 }
 func (UnimplementedConduitServer) mustEmbedUnimplementedConduitServer() {}
 func (UnimplementedConduitServer) testEmbeddedByValue()                 {}
@@ -414,312 +142,6 @@ func _Conduit_Register_Handler(srv interface{}, ctx context.Context, dec func(in
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Conduit_GetCurrentUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetCurrentUserRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ConduitServer).GetCurrentUser(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Conduit_GetCurrentUser_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ConduitServer).GetCurrentUser(ctx, req.(*GetCurrentUserRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Conduit_UpdateUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UpdateUserRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ConduitServer).UpdateUser(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Conduit_UpdateUser_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ConduitServer).UpdateUser(ctx, req.(*UpdateUserRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Conduit_GetProfile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetProfileRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ConduitServer).GetProfile(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Conduit_GetProfile_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ConduitServer).GetProfile(ctx, req.(*GetProfileRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Conduit_FollowUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(FollowUserRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ConduitServer).FollowUser(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Conduit_FollowUser_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ConduitServer).FollowUser(ctx, req.(*FollowUserRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Conduit_UnfollowUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UnfollowUserRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ConduitServer).UnfollowUser(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Conduit_UnfollowUser_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ConduitServer).UnfollowUser(ctx, req.(*UnfollowUserRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Conduit_ListArticles_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ListArticlesRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ConduitServer).ListArticles(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Conduit_ListArticles_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ConduitServer).ListArticles(ctx, req.(*ListArticlesRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Conduit_FeedArticles_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(FeedArticlesRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ConduitServer).FeedArticles(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Conduit_FeedArticles_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ConduitServer).FeedArticles(ctx, req.(*FeedArticlesRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Conduit_GetArticle_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetArticleRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ConduitServer).GetArticle(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Conduit_GetArticle_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ConduitServer).GetArticle(ctx, req.(*GetArticleRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Conduit_CreateArticle_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CreateArticleRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ConduitServer).CreateArticle(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Conduit_CreateArticle_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ConduitServer).CreateArticle(ctx, req.(*CreateArticleRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Conduit_UpdateArticle_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UpdateArticleRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ConduitServer).UpdateArticle(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Conduit_UpdateArticle_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ConduitServer).UpdateArticle(ctx, req.(*UpdateArticleRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Conduit_DeleteArticle_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(DeleteArticleRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ConduitServer).DeleteArticle(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Conduit_DeleteArticle_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ConduitServer).DeleteArticle(ctx, req.(*DeleteArticleRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Conduit_AddComment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(AddCommentRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ConduitServer).AddComment(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Conduit_AddComment_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ConduitServer).AddComment(ctx, req.(*AddCommentRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Conduit_GetComments_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(AddCommentRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ConduitServer).GetComments(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Conduit_GetComments_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ConduitServer).GetComments(ctx, req.(*AddCommentRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Conduit_DeleteComment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(DeleteCommentRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ConduitServer).DeleteComment(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Conduit_DeleteComment_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ConduitServer).DeleteComment(ctx, req.(*DeleteCommentRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Conduit_FavoriteArticle_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(FavoriteArticleRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ConduitServer).FavoriteArticle(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Conduit_FavoriteArticle_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ConduitServer).FavoriteArticle(ctx, req.(*FavoriteArticleRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Conduit_UnfavoriteArticle_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UnfavoriteArticleRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ConduitServer).UnfavoriteArticle(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Conduit_UnfavoriteArticle_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ConduitServer).UnfavoriteArticle(ctx, req.(*UnfavoriteArticleRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Conduit_GetTags_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetTagsRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ConduitServer).GetTags(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Conduit_GetTags_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ConduitServer).GetTags(ctx, req.(*GetTagsRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 // Conduit_ServiceDesc is the grpc.ServiceDesc for Conduit service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -734,74 +156,6 @@ var Conduit_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Register",
 			Handler:    _Conduit_Register_Handler,
-		},
-		{
-			MethodName: "GetCurrentUser",
-			Handler:    _Conduit_GetCurrentUser_Handler,
-		},
-		{
-			MethodName: "UpdateUser",
-			Handler:    _Conduit_UpdateUser_Handler,
-		},
-		{
-			MethodName: "GetProfile",
-			Handler:    _Conduit_GetProfile_Handler,
-		},
-		{
-			MethodName: "FollowUser",
-			Handler:    _Conduit_FollowUser_Handler,
-		},
-		{
-			MethodName: "UnfollowUser",
-			Handler:    _Conduit_UnfollowUser_Handler,
-		},
-		{
-			MethodName: "ListArticles",
-			Handler:    _Conduit_ListArticles_Handler,
-		},
-		{
-			MethodName: "FeedArticles",
-			Handler:    _Conduit_FeedArticles_Handler,
-		},
-		{
-			MethodName: "GetArticle",
-			Handler:    _Conduit_GetArticle_Handler,
-		},
-		{
-			MethodName: "CreateArticle",
-			Handler:    _Conduit_CreateArticle_Handler,
-		},
-		{
-			MethodName: "UpdateArticle",
-			Handler:    _Conduit_UpdateArticle_Handler,
-		},
-		{
-			MethodName: "DeleteArticle",
-			Handler:    _Conduit_DeleteArticle_Handler,
-		},
-		{
-			MethodName: "AddComment",
-			Handler:    _Conduit_AddComment_Handler,
-		},
-		{
-			MethodName: "GetComments",
-			Handler:    _Conduit_GetComments_Handler,
-		},
-		{
-			MethodName: "DeleteComment",
-			Handler:    _Conduit_DeleteComment_Handler,
-		},
-		{
-			MethodName: "FavoriteArticle",
-			Handler:    _Conduit_FavoriteArticle_Handler,
-		},
-		{
-			MethodName: "UnfavoriteArticle",
-			Handler:    _Conduit_UnfavoriteArticle_Handler,
-		},
-		{
-			MethodName: "GetTags",
-			Handler:    _Conduit_GetTags_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

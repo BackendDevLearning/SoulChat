@@ -5,27 +5,30 @@ import (
 	v1 "kratos-realworld/api/conduit/v1"
 )
 
-func (s *ConduitService) Login(ctx context.Context, req *v1.LoginRequest) (reply *v1.LoginResponse, err error) {
-	u, err := s.ur.Login(ctx, req.User.Phone, req.User.Password)
+func (cs *ConduitService) Login(ctx context.Context, req *v1.LoginRequest) (reply *v1.LoginReply, err error) {
+	u, err := cs.gc.Login(ctx, req.User.Phone, req.User.Password)
 	if err != nil {
 		return nil, err
 	}
-	return &v1.UserReply{
-		code: 0,
-		res:  "success",
+	return &v1.LoginReply{
+		User: &v1.LoginReply_User{
+			Code:  200,
+			Res:   "success",
+			Token: "123456",
+		},
 	}, nil
 }
 
-func (s *ConduitService) Register(ctx context.Context, req *v1.RegisterRequest) (reply *v1.RegisterResponse, err error) {
-	u, err := s.ur.Register(ctx, req.User.Username, req.User.Phone, req.User.Password)
+func (cs *ConduitService) Register(ctx context.Context, req *v1.RegisterRequest) (reply *v1.RegisterReply, err error) {
+	u, err := cs.gc.Register(ctx, req.User.Username, req.User.Phone, req.User.Password)
 	if err != nil {
 		return nil, err
 	}
-	return &v1.UserReply{
-		User: &v1.UserReply_User{
-			Phone:    u.Phone,
-			Username: u.Username,
-			Token:    u.Token,
+	return &v1.RegisterReply{
+		User: &v1.RegisterReply_User{
+			Code:  u.Code,
+			Res:   u.Res,
+			Token: u.Token,
 		},
 	}, nil
 }

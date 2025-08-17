@@ -12,10 +12,8 @@ import (
 	"github.com/google/wire"
 	"gorm.io/gorm"
 	"kratos-realworld/internal/biz"
-	user2 "kratos-realworld/internal/biz/user"
 	"kratos-realworld/internal/conf"
 	"kratos-realworld/internal/data"
-	"kratos-realworld/internal/data/user"
 	"kratos-realworld/internal/model"
 	"kratos-realworld/internal/model/infra"
 	"kratos-realworld/internal/server"
@@ -24,15 +22,13 @@ import (
 
 // Injectors from wire.go:
 
-func initApp(confServer *conf.Server, data *conf.Data, jwt *conf.JWT, logger log.Logger) (*CustomApp, func(), error) {
-	db := infra.NewDatabase(data)
-	client := infra.NewCache(data)
+func initApp(confServer *conf.Server, confData *conf.Data, jwt *conf.JWT, logger log.Logger) (*CustomApp, func(), error) {
+	db := infra.NewDatabase(confData)
+	client := infra.NewCache(confData)
 	modelData := model.NewData(db, client)
-	userLoginRepo := user.NewUserLoginRepo(modelData, logger)
-	userLoginCase := user2.NewUserLoginCase(userLoginRepo, jwt, logger)
-	userRegisterRepo := user.NewUserRegisterRepo(modelData, logger)
-	userRegisterCase := user2.NewUserRegisterCase(userRegisterRepo, jwt, logger)
-	conduitService := service.NewConduitService(userLoginCase, userRegisterCase, logger)
+	userRepo := data.NewUserRepo(modelData, logger)
+	gateWayUsecase := biz.NewGatWayCase(userRepo, jwt, logger)
+	conduitService := service.NewConduitService(gateWayUsecase, logger)
 	httpServer := server.NewHTTPServer(confServer, jwt, conduitService, logger)
 	grpcServer := server.NewGRPCServer(confServer, conduitService, logger)
 	app := newApp(logger, httpServer, grpcServer)
