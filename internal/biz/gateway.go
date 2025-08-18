@@ -3,11 +3,12 @@ package biz
 import (
 	"context"
 	"fmt"
-	"github.com/go-kratos/kratos/v2/errors"
-	"github.com/go-kratos/kratos/v2/log"
 	bizUser "kratos-realworld/internal/biz/user"
 	"kratos-realworld/internal/conf"
 	"kratos-realworld/internal/pkg/middleware/auth"
+
+	"github.com/go-kratos/kratos/v2/errors"
+	"github.com/go-kratos/kratos/v2/log"
 )
 
 type GateWayUsecase struct {
@@ -17,7 +18,7 @@ type GateWayUsecase struct {
 	log  *log.Helper
 }
 
-func NewGatWayUsecase(ur bizUser.UserRepo, jwtc *conf.JWT, logger log.Logger) *GateWayUsecase {
+func NewGateWayUsecase(ur bizUser.UserRepo, jwtc *conf.JWT, logger log.Logger) *GateWayUsecase {
 	return &GateWayUsecase{
 		ur:   ur,
 		jwtc: jwtc,
@@ -25,30 +26,40 @@ func NewGatWayUsecase(ur bizUser.UserRepo, jwtc *conf.JWT, logger log.Logger) *G
 	}
 }
 
-func (gc *GateWayUsecase) Register(ctx context.Context, username string, phone string, password string) (string, error) {
+type RegisterReply struct {
+	Phone    string
+	UserName string
+	Token    string
+}
+
+func (gc *GateWayUsecase) Register(ctx context.Context, username string, phone string, password string) (*RegisterReply, error) {
+	// 构建新用户
 	userRegister := &bizUser.UserTB{
 		Phone:        phone,
 		UserName:     username,
 		PasswordHash: hashPassword(password),
 	}
 
-	name_db, err := gc.ur.GetUserByPhone(ctx, phone)
-
-	fmt.Println("smc", name_db)
-
+	// 先查数据库：手机号是否已存在
+	existing, err := gc.ur.GetUserByPhone(ctx, phone)
 	if err != nil {
-		return "gc.ur.GetUserByPhone(ctx, phone) error", err
+		return nil, fmt.Errorf("failed to query user by phone: %w", err)
+	}
+	if existing != nil {
+		return nil, fmt.Errorf("phone already registered")
 	}
 
-	if name_db != nil {
-		return "Phont is used", nil
+	// 插入用户
+	if err := gc.ur.CreateUser(ctx, userRegister); err != nil {
+		return nil, fmt.Errorf("failed to create user: %w", err)
 	}
 
-	if result, err := gc.ur.CreateUser(ctx, userRegister); err != nil {
-		fmt.Errorf("")
-		return result, err
-	}
-	return "", nil
+	// 插入成功，返回数据库里刚创建的用户信息和Token
+	return &RegisterReply{
+		Phone:    phone,
+		UserName: username,
+		Token:    gc.generateToken(userRegister.ID),
+	}, nil
 }
 
 func (gc *GateWayUsecase) Login(ctx context.Context, phone string, password string) (string, error) {
@@ -65,6 +76,6 @@ func (gc *GateWayUsecase) Login(ctx context.Context, phone string, password stri
 	return res, nil
 }
 
-func (ur *GateWayUsecase) generateToken(userID uint) string {
-	return auth.GenerateToken(ur.jwtc.Secret, userID)
+func (gc *GateWayUsecase) generateToken(userID uint) string {
+	return auth.GenerateToken(gc.jwtc.Secret, userID)
 }

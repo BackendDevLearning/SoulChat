@@ -9,33 +9,21 @@ option go_package = "kratos-realworld/api/conduit/v1;v1";
 
 // The greeting service definition.
 service Conduit {
-  rpc Login(LoginRequest) returns (LoginReply) {
-    option (google.api.http) = {
-      post : "/api/users/login",
-      body : "*",
-    };
-  }
-
   rpc Register(RegisterRequest) returns (RegisterReply) {
     option (google.api.http) = {
       post : "/api/users",
       body : "*",
     };
   }
+
+  rpc Login(LoginRequest) returns (LoginReply) {
+    option (google.api.http) = {
+      post : "/api/users/login",
+      body : "*",
+    };
+  }
 }
 
-
-
-message LoginRequest {
-  string phone = 1;
-  string password = 2;
-}
-
-message LoginReply {
-  int32 code = 1;
-  string res = 2;
-  string token = 3;
-}
 
 message RegisterRequest {
   string username = 1;
@@ -48,5 +36,18 @@ message RegisterReply {
   string res = 2;
   string token = 3;
 }
+
+message LoginRequest {
+  string phone = 1;
+  string password = 2;
+}
+
+message LoginReply {
+  int32 code = 1;
+  string res = 2;
+  string token = 3;
+}
+
+
 
 

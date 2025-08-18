@@ -10,7 +10,6 @@ type UserTB struct {
 	UserName     string     `gorm:"column:UserName;type:varchar(50);comment:账号;NOT NULL" json:"UserName"`
 	Phone        string     `gorm:"column:Phone;type:varchar(20);comment:手机号码;NOT NULL" json:"Phone"`
 	PasswordHash string     `gorm:"column:PassWord;type:text;comment:密码;NOT NULL" json:"PassWord"`
-	Token        string     `gorm:"column:Token;type:varchar(50);comment:Token" json:"Token"`
 	Bio          string     `gorm:"column:Bio;type:text;comment:简介" json:"Bio"`
 	Image        string     `gorm:"column:Image;type:varchar(255);comment:头像链接" json:"Image"`
 	SysCreated   *time.Time `gorm:"autoCreateTime;column:sys_created;type:datetime;default null;comment:创建时间;NOT NULL" json:"sys_created"`
@@ -22,6 +21,6 @@ func (m *UserTB) TableName() string {
 }
 
 type UserRepo interface {
-	CreateUser(ctx context.Context, userRegister *UserTB) (string, error)
+	CreateUser(ctx context.Context, userRegister *UserTB) error
 	GetUserByPhone(ctx context.Context, phone string) (*UserTB, error)
 }

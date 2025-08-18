@@ -2,11 +2,14 @@ package data
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	"github.com/go-kratos/kratos/v2/log"
+	"gorm.io/gorm"
 	bizUser "kratos-realworld/internal/biz/user"
 	"kratos-realworld/internal/model"
 	"kratos-realworld/internal/service"
+
+	"github.com/go-kratos/kratos/v2/log"
 )
 
 type UserRepo struct {
@@ -21,6 +24,14 @@ func NewUserRepo(data *model.Data, logger log.Logger) bizUser.UserRepo {
 	}
 }
 
+func (r *UserRepo) CreateUser(ctx context.Context, userRegister *bizUser.UserTB) error {
+	rv := r.data.DB().Create(userRegister)
+	if rv.Error != nil {
+		return fmt.Errorf("failed to create user: %w", rv.Error)
+	}
+	return nil
+}
+
 func (r *UserRepo) GetUserByPhone(ctx context.Context, phone string) (*bizUser.UserTB, error) {
 	redisKey := service.UserInfoPrefix + phone
 	val, ok, err := r.data.Cache().Get(context.Background(), redisKey)
@@ -31,19 +42,19 @@ func (r *UserRepo) GetUserByPhone(ctx context.Context, phone string) (*bizUser.U
 
 	fmt.Println(ok, val)
 
-	u := new(bizUser.UserTB)
+	u := &bizUser.UserTB{}
 	result := r.data.DB().Where("phone = ?", phone).First(u)
 
-	if result.Error != nil {
-		return u, result.Error
+	// 没查到用户，不算错误，返回nil, nil
+	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+		return nil, nil
 	}
-	return u, nil
-}
 
-func (r *UserRepo) CreateUser(ctx context.Context, userRegister *bizUser.UserTB) (string, error) {
-	rv := r.data.DB().Create(userRegister)
-	if rv.Error != nil {
-		return "data createuser failed, in data", rv.Error
+	// 数据库报错，如断开连接
+	if result.Error != nil {
+		return nil, result.Error
 	}
-	return "", nil
+
+	// 成功查询到用户，返回查询结果
+	return u, nil
 }
