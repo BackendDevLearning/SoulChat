@@ -2,9 +2,11 @@ package biz
 
 import (
 	"context"
+	"fmt"
 	bizUser "kratos-realworld/internal/biz/user"
 	"kratos-realworld/internal/conf"
 	"kratos-realworld/internal/pkg/middleware/auth"
+	"time"
 
 	"github.com/go-kratos/kratos/v2/errors"
 	"github.com/go-kratos/kratos/v2/log"
@@ -53,11 +55,16 @@ func (gc *GateWayUsecase) Register(ctx context.Context, username string, phone s
 		return nil, errors.New(500, "CREATE_USER_FAILED", "failed to create user")
 	}
 
+	token, err := gc.generateToken(user.ID)
+	if err != nil {
+		return nil, errors.New(500, "CREATE_TOKEN_FAILED", "failed to create token")
+	}
+
 	// 插入成功，返回数据库里刚创建的用户信息和Token
 	return &UserRegisterReply{
 		Phone:    phone,
 		UserName: username,
-		Token:    gc.generateToken(user.ID),
+		Token:    token,
 	}, nil
 }
 
@@ -86,13 +93,23 @@ func (gc *GateWayUsecase) Login(ctx context.Context, phone string, password stri
 		return nil, errors.New(401, "INVALID_PASSWORD", "password is incorrect")
 	}
 
+	token, err := gc.generateToken(user.ID)
+	if err != nil {
+		return nil, errors.New(500, "CREATE_TOKEN_FAILED", "failed to create token")
+	}
+
 	return &UserLoginReply{
 		Phone:    res.Phone,
 		UserName: res.UserName,
-		Token:    gc.generateToken(user.ID),
+		Token:    token,
 	}, nil
 }
 
-func (gc *GateWayUsecase) generateToken(userID uint) string {
-	return auth.GenerateToken(gc.jwtc.Secret, userID)
+func (gc *GateWayUsecase) generateToken(userID uint) (string, error) {
+	expire, err := time.ParseDuration(gc.jwtc.Expire)
+	if err != nil {
+		return "", fmt.Errorf("invalid JWT expire configuration: %w", err)
+	}
+
+	return auth.GenerateToken(gc.jwtc.Secret, userID, expire)
 }

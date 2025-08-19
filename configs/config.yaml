@@ -28,3 +28,4 @@ data:
 
 jwt:
   secret: "hello"
+  expire: "24h"

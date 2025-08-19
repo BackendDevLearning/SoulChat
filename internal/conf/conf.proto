@@ -51,4 +51,5 @@ message Data {
 
 message JWT {
   string secret = 1;
+  string expire = 2;
 }

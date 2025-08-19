@@ -197,6 +197,7 @@ func (x *Data) GetDsn() string {
 type JWT struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Secret        string                 `protobuf:"bytes,1,opt,name=secret,proto3" json:"secret,omitempty"`
+	Expire        string                 `protobuf:"bytes,2,opt,name=expire,proto3" json:"expire,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -234,6 +235,13 @@ func (*JWT) Descriptor() ([]byte, []int) {
 func (x *JWT) GetSecret() string {
 	if x != nil {
 		return x.Secret
+	}
+	return ""
+}
+
+func (x *JWT) GetExpire() string {
+	if x != nil {
+		return x.Expire
 	}
 	return ""
 }
@@ -564,9 +572,10 @@ const file_internal_conf_conf_proto_rawDesc = "" +
 	"\x04addr\x18\x01 \x01(\tR\x04addr\x12\x1a\n" +
 	"\bpassword\x18\x02 \x01(\tR\bpassword\x12\x0e\n" +
 	"\x02db\x18\x03 \x01(\x05R\x02db\x12\x1b\n" +
-	"\tpool_size\x18\x04 \x01(\x05R\bpoolSize\"\x1d\n" +
+	"\tpool_size\x18\x04 \x01(\x05R\bpoolSize\"5\n" +
 	"\x03JWT\x12\x16\n" +
-	"\x06secret\x18\x01 \x01(\tR\x06secretB%Z#kratos-realworld/internal/conf;confb\x06proto3"
+	"\x06secret\x18\x01 \x01(\tR\x06secret\x12\x16\n" +
+	"\x06expire\x18\x02 \x01(\tR\x06expireB%Z#kratos-realworld/internal/conf;confb\x06proto3"
 
 var (
 	file_internal_conf_conf_proto_rawDescOnce sync.Once

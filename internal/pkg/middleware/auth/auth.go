@@ -2,7 +2,6 @@ package auth
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -18,18 +17,23 @@ type CurrentUser struct {
 	UserID uint
 }
 
-func GenerateToken(secret string, userid uint) string {
+// GenerateToken JWT格式: header.payload.signature
+func GenerateToken(secret string, userid uint, expire time.Duration) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"userid": userid,
-		"nbf":    time.Date(2015, 10, 10, 12, 0, 0, 0, time.UTC).Unix(),
+		//"nbf":    time.Date(2000, 10, 10, 12, 0, 0, 0, time.UTC).Unix(),
+		"iat": time.Now().Unix(),             // 签发时间 Issued At
+		"nbf": time.Now().Unix(),             // 生效时间 Not Before
+		"exp": time.Now().Add(expire).Unix(), // 过期时间 Expiration Time
 	})
 
-	// Sign and get the complete encoded token as a string using the secret
+	// 根据secret生成最终token string
 	tokenString, err := token.SignedString([]byte(secret))
 	if err != nil {
-		panic(err)
+		return "", fmt.Errorf("failed to sign token: %w", err)
 	}
-	return tokenString
+
+	return tokenString, nil
 }
 
 func JWTAuth(secret string) middleware.Middleware {
@@ -39,13 +43,13 @@ func JWTAuth(secret string) middleware.Middleware {
 				tokenString := tr.RequestHeader().Get("Authorization")
 				auths := strings.SplitN(tokenString, " ", 2)
 				if len(auths) != 2 || !strings.EqualFold(auths[0], "Token") {
-					return nil, errors.New("jwt token missing")
+					return nil, fmt.Errorf("jwt token missing")
 				}
 
 				token, err := jwt.Parse(auths[1], func(token *jwt.Token) (interface{}, error) {
 					// Don't forget to validate the alg is what you expect:
 					if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-						return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
+						return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 					}
 					return []byte(secret), nil
 				})
@@ -60,7 +64,7 @@ func JWTAuth(secret string) middleware.Middleware {
 						ctx = WithContext(ctx, &CurrentUser{UserID: uint(u.(float64))})
 					}
 				} else {
-					return nil, errors.New("Token Invalid")
+					return nil, fmt.Errorf("token invalid")
 				}
 			}
 			return handler(ctx, req)
