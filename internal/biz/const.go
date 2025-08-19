@@ -5,25 +5,33 @@ import (
 	"encoding/hex"
 	"fmt"
 	"golang.org/x/crypto/bcrypt"
+	"regexp"
 )
-
-// 对data结构
-// data 存，data取的结构
-type UserRegisterTB struct {
-	Phone    string
-	Username string
-	Password string
-}
 
 type UserRegisterReply struct {
 	Phone    string
-	Username string
-	Token    string
+	UserName string
 	Bio      string
 	Image    string
+	Token    string
 }
 
-// biz的一些公共函数
+type UserLoginReply struct {
+	Phone    string
+	UserName string
+	Bio      string
+	Image    string
+	Token    string
+}
+
+// IsValidPhone 校验手机号是否符合规则
+func IsValidPhone(phone string) bool {
+	// 中国大陆手机号规则：以 1 开头，第二位是 3-9，后面 9 位数字，总长度 11 位
+	reg := regexp.MustCompile(`^1[3-9]\d{9}$`)
+	return reg.MatchString(phone)
+}
+
+// 密码映射为hash存储到数据库
 func hashPassword(pwd string) string {
 	b, err := bcrypt.GenerateFromPassword([]byte(pwd), bcrypt.DefaultCost)
 	if err != nil {
@@ -32,6 +40,7 @@ func hashPassword(pwd string) string {
 	return string(b)
 }
 
+// 验证密码
 func verifyPassword(hashed, input string) bool {
 	if err := bcrypt.CompareHashAndPassword([]byte(hashed), []byte(input)); err != nil {
 		return false

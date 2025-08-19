@@ -33,7 +33,7 @@ message RegisterRequest {
 
 message RegisterReply {
   int32 code = 1;
-  string res = 2;
+  Res res = 2;
   string token = 3;
 }
 
@@ -43,9 +43,15 @@ message LoginRequest {
 }
 
 message LoginReply {
-  int32 code = 1;
-  string res = 2;
+  int32 code = 1;  // 0=成功, 1=失败
+  Res res = 2;  // 业务信息
   string token = 3;
+}
+
+message Res {
+  int32 code = 1;  // 业务状态码，例如 200、422
+  string reason = 2;  // 原因
+  string msg = 3;  // 详细描述信息
 }
 
 

@@ -27,7 +27,7 @@ func NewUserRepo(data *model.Data, logger log.Logger) bizUser.UserRepo {
 func (r *UserRepo) CreateUser(ctx context.Context, userRegister *bizUser.UserTB) error {
 	rv := r.data.DB().Create(userRegister)
 	if rv.Error != nil {
-		return fmt.Errorf("failed to create user: %w", rv.Error)
+		return rv.Error
 	}
 	return nil
 }
@@ -45,9 +45,9 @@ func (r *UserRepo) GetUserByPhone(ctx context.Context, phone string) (*bizUser.U
 	u := &bizUser.UserTB{}
 	result := r.data.DB().Where("phone = ?", phone).First(u)
 
-	// 没查到用户，不算错误，返回nil, nil
+	// 没查到用户，不算错误，返回nil, gorm.ErrRecordNotFound
 	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-		return nil, nil
+		return nil, gorm.ErrRecordNotFound
 	}
 
 	// 数据库报错，如断开连接

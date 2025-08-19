@@ -85,7 +85,7 @@ func (x *RegisterRequest) GetPassword() string {
 type RegisterReply struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Code          int32                  `protobuf:"varint,1,opt,name=code,proto3" json:"code,omitempty"`
-	Res           string                 `protobuf:"bytes,2,opt,name=res,proto3" json:"res,omitempty"`
+	Res           *Res                   `protobuf:"bytes,2,opt,name=res,proto3" json:"res,omitempty"`
 	Token         string                 `protobuf:"bytes,3,opt,name=token,proto3" json:"token,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -128,11 +128,11 @@ func (x *RegisterReply) GetCode() int32 {
 	return 0
 }
 
-func (x *RegisterReply) GetRes() string {
+func (x *RegisterReply) GetRes() *Res {
 	if x != nil {
 		return x.Res
 	}
-	return ""
+	return nil
 }
 
 func (x *RegisterReply) GetToken() string {
@@ -196,8 +196,8 @@ func (x *LoginRequest) GetPassword() string {
 
 type LoginReply struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Code          int32                  `protobuf:"varint,1,opt,name=code,proto3" json:"code,omitempty"`
-	Res           string                 `protobuf:"bytes,2,opt,name=res,proto3" json:"res,omitempty"`
+	Code          int32                  `protobuf:"varint,1,opt,name=code,proto3" json:"code,omitempty"` // 0=成功, 1=失败
+	Res           *Res                   `protobuf:"bytes,2,opt,name=res,proto3" json:"res,omitempty"`    // 业务信息
 	Token         string                 `protobuf:"bytes,3,opt,name=token,proto3" json:"token,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -240,16 +240,76 @@ func (x *LoginReply) GetCode() int32 {
 	return 0
 }
 
-func (x *LoginReply) GetRes() string {
+func (x *LoginReply) GetRes() *Res {
 	if x != nil {
 		return x.Res
 	}
-	return ""
+	return nil
 }
 
 func (x *LoginReply) GetToken() string {
 	if x != nil {
 		return x.Token
+	}
+	return ""
+}
+
+type Res struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Code          int32                  `protobuf:"varint,1,opt,name=code,proto3" json:"code,omitempty"`    // 业务状态码，例如 200、422
+	Reason        string                 `protobuf:"bytes,2,opt,name=reason,proto3" json:"reason,omitempty"` // 原因
+	Msg           string                 `protobuf:"bytes,3,opt,name=msg,proto3" json:"msg,omitempty"`       // 详细描述信息
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Res) Reset() {
+	*x = Res{}
+	mi := &file_api_conduit_v1_conduit_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Res) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Res) ProtoMessage() {}
+
+func (x *Res) ProtoReflect() protoreflect.Message {
+	mi := &file_api_conduit_v1_conduit_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Res.ProtoReflect.Descriptor instead.
+func (*Res) Descriptor() ([]byte, []int) {
+	return file_api_conduit_v1_conduit_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *Res) GetCode() int32 {
+	if x != nil {
+		return x.Code
+	}
+	return 0
+}
+
+func (x *Res) GetReason() string {
+	if x != nil {
+		return x.Reason
+	}
+	return ""
+}
+
+func (x *Res) GetMsg() string {
+	if x != nil {
+		return x.Msg
 	}
 	return ""
 }
@@ -262,19 +322,23 @@ const file_api_conduit_v1_conduit_proto_rawDesc = "" +
 	"\x0fRegisterRequest\x12\x1a\n" +
 	"\busername\x18\x01 \x01(\tR\busername\x12\x14\n" +
 	"\x05phone\x18\x02 \x01(\tR\x05phone\x12\x1a\n" +
-	"\bpassword\x18\x03 \x01(\tR\bpassword\"K\n" +
+	"\bpassword\x18\x03 \x01(\tR\bpassword\"^\n" +
 	"\rRegisterReply\x12\x12\n" +
-	"\x04code\x18\x01 \x01(\x05R\x04code\x12\x10\n" +
-	"\x03res\x18\x02 \x01(\tR\x03res\x12\x14\n" +
+	"\x04code\x18\x01 \x01(\x05R\x04code\x12#\n" +
+	"\x03res\x18\x02 \x01(\v2\x11.realworld.v1.ResR\x03res\x12\x14\n" +
 	"\x05token\x18\x03 \x01(\tR\x05token\"@\n" +
 	"\fLoginRequest\x12\x14\n" +
 	"\x05phone\x18\x01 \x01(\tR\x05phone\x12\x1a\n" +
-	"\bpassword\x18\x02 \x01(\tR\bpassword\"H\n" +
+	"\bpassword\x18\x02 \x01(\tR\bpassword\"[\n" +
 	"\n" +
 	"LoginReply\x12\x12\n" +
-	"\x04code\x18\x01 \x01(\x05R\x04code\x12\x10\n" +
-	"\x03res\x18\x02 \x01(\tR\x03res\x12\x14\n" +
-	"\x05token\x18\x03 \x01(\tR\x05token2\xc4\x01\n" +
+	"\x04code\x18\x01 \x01(\x05R\x04code\x12#\n" +
+	"\x03res\x18\x02 \x01(\v2\x11.realworld.v1.ResR\x03res\x12\x14\n" +
+	"\x05token\x18\x03 \x01(\tR\x05token\"C\n" +
+	"\x03Res\x12\x12\n" +
+	"\x04code\x18\x01 \x01(\x05R\x04code\x12\x16\n" +
+	"\x06reason\x18\x02 \x01(\tR\x06reason\x12\x10\n" +
+	"\x03msg\x18\x03 \x01(\tR\x03msg2\xc4\x01\n" +
 	"\aConduit\x12]\n" +
 	"\bRegister\x12\x1d.realworld.v1.RegisterRequest\x1a\x1b.realworld.v1.RegisterReply\"\x15\x82\xd3\xe4\x93\x02\x0f:\x01*\"\n" +
 	"/api/users\x12Z\n" +
@@ -292,23 +356,26 @@ func file_api_conduit_v1_conduit_proto_rawDescGZIP() []byte {
 	return file_api_conduit_v1_conduit_proto_rawDescData
 }
 
-var file_api_conduit_v1_conduit_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_api_conduit_v1_conduit_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_api_conduit_v1_conduit_proto_goTypes = []any{
 	(*RegisterRequest)(nil), // 0: realworld.v1.RegisterRequest
 	(*RegisterReply)(nil),   // 1: realworld.v1.RegisterReply
 	(*LoginRequest)(nil),    // 2: realworld.v1.LoginRequest
 	(*LoginReply)(nil),      // 3: realworld.v1.LoginReply
+	(*Res)(nil),             // 4: realworld.v1.Res
 }
 var file_api_conduit_v1_conduit_proto_depIdxs = []int32{
-	0, // 0: realworld.v1.Conduit.Register:input_type -> realworld.v1.RegisterRequest
-	2, // 1: realworld.v1.Conduit.Login:input_type -> realworld.v1.LoginRequest
-	1, // 2: realworld.v1.Conduit.Register:output_type -> realworld.v1.RegisterReply
-	3, // 3: realworld.v1.Conduit.Login:output_type -> realworld.v1.LoginReply
-	2, // [2:4] is the sub-list for method output_type
-	0, // [0:2] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+	4, // 0: realworld.v1.RegisterReply.res:type_name -> realworld.v1.Res
+	4, // 1: realworld.v1.LoginReply.res:type_name -> realworld.v1.Res
+	0, // 2: realworld.v1.Conduit.Register:input_type -> realworld.v1.RegisterRequest
+	2, // 3: realworld.v1.Conduit.Login:input_type -> realworld.v1.LoginRequest
+	1, // 4: realworld.v1.Conduit.Register:output_type -> realworld.v1.RegisterReply
+	3, // 5: realworld.v1.Conduit.Login:output_type -> realworld.v1.LoginReply
+	4, // [4:6] is the sub-list for method output_type
+	2, // [2:4] is the sub-list for method input_type
+	2, // [2:2] is the sub-list for extension type_name
+	2, // [2:2] is the sub-list for extension extendee
+	0, // [0:2] is the sub-list for field type_name
 }
 
 func init() { file_api_conduit_v1_conduit_proto_init() }
@@ -322,7 +389,7 @@ func file_api_conduit_v1_conduit_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_api_conduit_v1_conduit_proto_rawDesc), len(file_api_conduit_v1_conduit_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   4,
+			NumMessages:   5,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
