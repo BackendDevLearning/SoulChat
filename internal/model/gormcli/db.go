@@ -105,8 +105,11 @@ func Init(options ...Option) {
 
 func newDB(options Options) {
 	var err error
+
+	// 根据config中的参数拼接dsn
 	connArgs := fmt.Sprintf(dsn, options.user,
 		options.password, options.addr, options.dataBase)
+
 	if options.slowThresholdMillisecond != 0 {
 		//gormLogger := log.NewGormLogger(options.slowThresholdMillisecond)
 		db, err = gorm.Open(mysql.Open(connArgs), &gorm.Config{

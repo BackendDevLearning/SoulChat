@@ -52,7 +52,7 @@ components:
                     type: integer
                     format: int32
                 res:
-                    type: string
+                    $ref: '#/components/schemas/Res'
                 token:
                     type: string
         LoginRequest:
@@ -69,7 +69,7 @@ components:
                     type: integer
                     format: int32
                 res:
-                    type: string
+                    $ref: '#/components/schemas/Res'
                 token:
                     type: string
         RegisterRequest:
@@ -80,6 +80,16 @@ components:
                 phone:
                     type: string
                 password:
+                    type: string
+        Res:
+            type: object
+            properties:
+                code:
+                    type: integer
+                    format: int32
+                reason:
+                    type: string
+                msg:
                     type: string
 tags:
     - name: Conduit

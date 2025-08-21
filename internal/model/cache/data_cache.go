@@ -16,13 +16,19 @@ type Client struct {
 }
 
 type Options struct {
+	addr     string // 地址，IP:PORT
 	passWord string
 	db       int
 	poolSize int
-	addr     string // 地址，IP:PORT
 }
 
 type Option func(*Options)
+
+func WithAddr(addr string) Option {
+	return func(o *Options) {
+		o.addr = addr
+	}
+}
 
 func WithPassWord(passWord string) Option {
 	return func(o *Options) {
@@ -42,18 +48,13 @@ func WithPoolSize(poolSize int) Option {
 	}
 }
 
-func WithAddr(addr string) Option {
-	return func(o *Options) {
-		o.addr = addr
-	}
-}
 func newOptions(opts ...Option) Options {
 	// 默认配置
 	options := Options{
 		addr:     "127.0.0.1:6379",
+		passWord: "",
 		db:       0,
 		poolSize: 10,
-		passWord: "",
 	}
 	for _, opt := range opts {
 		opt(&options)
@@ -61,7 +62,7 @@ func newOptions(opts ...Option) Options {
 	return options
 }
 
-// initRedis 初始化db连接
+// Init 初始化db连接
 func Init(options ...Option) {
 	newRedisConn(newOptions(options...))
 }
@@ -93,7 +94,7 @@ func GetRedisCli() *Client {
 	return client
 }
 
-// pipeline 批量操作
+// Pipeline 批量操作
 func (client *Client) Pipeline(ctx context.Context, pipeFunc func(pipe redis.Pipeliner) error) error {
 	conn := redisConn.Conn()
 	defer conn.Close()

@@ -24,7 +24,6 @@ data:
     pool_size: 20
     read_timeout: 2s
     write_timeout: 2s
-  dsn: "root:dangerous@tcp(127.0.0.1:3306)/realworld?charset=utf8mb4&parseTime=True&loc=Local"
 
 jwt:
   secret: "hello"
