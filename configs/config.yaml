@@ -8,7 +8,7 @@ server:
 
 data:
   database:
-    addr: 192.168.5.51:3306
+    addr: 192.168.218.131:5306
     user: root
     password: "123456"
     database: chat_sql
@@ -18,7 +18,7 @@ data:
     slow_threshold_millisecond: 10 # SQL执行超过10ms，就算慢sql
 
   redis:
-    addr: 192.168.5.52:6379
+    addr: 192.168.218.131:5379
     password: "123456"
     db: 8
     pool_size: 20

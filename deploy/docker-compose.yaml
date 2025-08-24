@@ -9,7 +9,7 @@ services:
       MYSQL_ROOT_PASSWORD: 123456
       MYSQL_DATABASE: chat_sql
     ports:
-      - "3306:3306"
+      - "5306:3306"
     volumes:
       - ./mysql/data:/var/lib/mysql
     networks:
@@ -21,7 +21,7 @@ services:
     restart: always
     command: redis-server --requirepass 123456
     ports:
-      - "6379:6379"
+      - "5379:6379"
     volumes:
       - ./redis/data:/data
     networks:

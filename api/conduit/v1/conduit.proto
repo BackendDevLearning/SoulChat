@@ -22,6 +22,16 @@ service Conduit {
       body : "*",
     };
   }
+
+  rpc UpdatePassword(UpdateRequest) returns (UpdateReply) {
+    option (google.api.http) = {
+      post:"/api/users/updatepassword",
+      body: "*",
+    };
+  }
+
+
+
 }
 
 
@@ -46,6 +56,17 @@ message LoginReply {
   int32 code = 1;  // 0=成功, 1=失败
   Res res = 2;  // 业务信息
   string token = 3;
+}
+
+message UpdateRequest {
+  string phone = 1;
+  string old_password = 2;
+  string new_password = 3;
+}
+
+message UpdateReply {
+  int32 code = 1;  // 0=成功, 1=失败
+  Res res = 2;  // 业务信息
 }
 
 message Res {
