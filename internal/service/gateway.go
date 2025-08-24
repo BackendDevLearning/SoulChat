@@ -44,20 +44,24 @@ func (cs *ConduitService) Login(ctx context.Context, req *v1.LoginRequest) (*v1.
 		Res:   ErrorToRes(err),
 		Token: res.Token,
 	}, nil
+}
 
-	//res := &v1.LoginReply{
-	//	Code:  0,
-	//	Res:   "success",
-	//	Token: "",
-	//}
+func (cs *ConduitService) UpdatePassword(ctx context.Context, req *v1.UpdateRequest) (*v1.UpdateReply, error) {
+	res, err := cs.gt.UpdatePassword(ctx, req.Phone, req.OldPassword, req.NewPassword)
+	if err != nil {
+		log.Printf("Login error! %v", err)
 
-	//session, err = cs.gt.Login(ctx, req.Phone, req.Password)
+		return &v1.UpdateReply{
+			Code: 1,
+			Res:  ErrorToRes(err),
+		}, nil
+	}
 
-	//if err != nil {
-	//	res.Code = 1
-	//	res.Res = "servce Login error"
-	//}
+	log.Printf("new password: %s", res)
 
-	// 登陆成功，设置cookie
-	//ctx.SetCookie(SessionKey, session, CookieExpire, "/", "", false, true)
+	return &v1.UpdateReply{
+		Code: 0,
+		Res:  ErrorToRes(err),
+	}, nil
+
 }

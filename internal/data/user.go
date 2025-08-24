@@ -80,3 +80,63 @@ func (r *UserRepo) GetUserByPhone(ctx context.Context, phone string) (*bizUser.U
 
 	return user, nil
 }
+
+func (r *UserRepo) GetPasswordByPhone(ctx context.Context, phone string) (string, error) {
+	redisKey := UserRedisKey(UserCachePrefix, phone)
+	val, ok, err := r.data.Cache().Get(ctx, redisKey)
+	if err != nil {
+		r.log.Warnf("failed to get password from cache, fallback to DB: %v", err)
+	}
+
+	if ok {
+		// log 打印一下 success 和 值
+		return val, nil
+	}
+
+	// 2. 缓存没有 → 查数据库
+	//result 是一个 *gorm.DB，里面有：
+	//result.Error → 是否有错误（连接失败 / SQL 错误）
+	//result.RowsAffected → 影响的行数（0 表示没查到）
+	var password string
+	result := r.data.DB().Model(&bizUser.UserTB{}).Select("password").Where("phone = ?", phone).Scan(&password)
+
+	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+		return "", gorm.ErrRecordNotFound
+	}
+	if result.Error != nil {
+		return "", result.Error
+	}
+
+	// 3. 回写缓存
+	if err := r.data.Cache().Set(ctx, redisKey, password, UserCacheTTL); err != nil {
+		r.log.Warnf("failed to write password to cache, but DB query succeeded: %v", err)
+	} else {
+		r.log.Debugf("password cached successfully, phone=%s", phone)
+	}
+
+	return password, nil
+}
+
+func (r *UserRepo) UpdatePassword(ctx context.Context, phone string, new_password string) (string, error) {
+
+	result := r.data.DB().Model(&bizUser.UserTB{}).Where("phone = ?", phone).Update("password", new_password)
+
+	if result.Error != nil {
+		return "", result.Error
+	}
+
+	if result.RowsAffected == 0 {
+		return "", gorm.ErrRecordNotFound
+	}
+
+	// 同步更新缓存
+	redisKey := UserRedisKey(UserCachePrefix, phone)
+	if err := r.data.Cache().Delete(ctx, redisKey); err != nil {
+		r.log.Warnf("failed to delete password in cache: %v", err)
+	} else {
+		r.log.Debugf("password delete in cache successfully, phone=%s", phone)
+	}
+
+	return new_password, nil
+
+}

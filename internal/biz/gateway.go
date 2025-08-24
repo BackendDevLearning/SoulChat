@@ -105,6 +105,34 @@ func (gc *GateWayUsecase) Login(ctx context.Context, phone string, password stri
 	}, nil
 }
 
+func (gc *GateWayUsecase) UpdatePassword(ctx context.Context, new_password string, old_password string, phone string) (string, error) {
+	if !IsValidPhone(phone) {
+		return "invalid phone number format", nil
+	}
+
+	dataPassword, err := gc.ur.GetPasswordByPhone(ctx, phone)
+
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		return "failed to query user by phone", nil
+	}
+
+	old_password = hashPassword(old_password)
+	new_password = hashPassword(new_password)
+
+	// 密码输入错误
+	if !verifyPassword(dataPassword, old_password) {
+		return "password is incorrect", nil
+	}
+
+	res, err := gc.ur.UpdatePassword(ctx, phone, new_password)
+
+	if err != nil {
+		return "update data error", err
+	}
+
+	return res, nil
+}
+
 func (gc *GateWayUsecase) generateToken(userID uint) (string, error) {
 	expire, err := time.ParseDuration(gc.jwtc.Expire)
 	if err != nil {
