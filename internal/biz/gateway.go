@@ -38,26 +38,26 @@ func (gc *GateWayUsecase) Register(ctx context.Context, username string, phone s
 
 	// 验证输入phone是否有效
 	if !IsValidPhone(user.Phone) {
-		return nil, errors.New(422, "INVALID_PHONE", "invalid phone number format")
+		return nil, NewErr(ErrCodeInvalidPhone, INVALID_PHONE, "invalid phone number format")
 	}
 
 	// 先查数据库：手机号是否已存在
 	existing, err := gc.ur.GetUserByPhone(ctx, phone)
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, errors.New(500, "DB_QUERY_FAILED", "failed to query user by phone")
+		return nil, NewErr(ErrCodeDBQueryFailed, DB_QUERY_FAILED, "failed to query user by phone")
 	}
 	if existing != nil {
-		return nil, errors.New(422, "PHONE_ALREADY_REGISTERED", "phone already registered")
+		return nil, NewErr(ErrCodePhoneAlreadyRegistered, PHONE_ALREADY_REGISTERED, "phone already registered")
 	}
 
 	// 插入用户
 	if err := gc.ur.CreateUser(ctx, user); err != nil {
-		return nil, errors.New(500, "CREATE_USER_FAILED", "failed to create user")
+		return nil, NewErr(ErrCodeCreateUserFailed, CREATE_USER_FAILED, "failed to create user")
 	}
 
 	token, err := gc.generateToken(user.ID)
 	if err != nil {
-		return nil, errors.New(500, "CREATE_TOKEN_FAILED", "failed to create token")
+		return nil, NewErr(ErrCodeCreateTokenFailed, CREATE_TOKEN_FAILED, "failed to create token")
 	}
 
 	// 插入成功，返回数据库里刚创建的用户信息和Token
@@ -75,27 +75,27 @@ func (gc *GateWayUsecase) Login(ctx context.Context, phone string, password stri
 	}
 
 	if !IsValidPhone(user.Phone) {
-		return nil, errors.New(422, "INVALID_PHONE", "invalid phone number format")
+		return nil, NewErr(ErrCodeInvalidPhone, INVALID_PHONE, "invalid phone number format")
 	}
 
 	res, err := gc.ur.GetUserByPhone(ctx, user.Phone)
 
 	// 查询，判断用户是否已经注册
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, errors.New(500, "DB_QUERY_FAILED", "failed to query user by phone")
+		return nil, NewErr(ErrCodeDBQueryFailed, DB_QUERY_FAILED, "failed to query user by phone")
 	}
 	if res == nil {
-		return nil, errors.New(422, "PHONE_NOT_FOUND", "phone number not registered")
+		return nil, NewErr(ErrCodePhoneNotFound, PHONE_NOT_FOUND, "phone number not registered")
 	}
 
 	// 密码输入错误
 	if !verifyPassword(res.PasswordHash, password) {
-		return nil, errors.New(401, "INVALID_PASSWORD", "password is incorrect")
+		return nil, NewErr(ErrCodeInvalidPassword, INVALID_PASSWORD, "password is incorrect")
 	}
 
 	token, err := gc.generateToken(user.ID)
 	if err != nil {
-		return nil, errors.New(500, "CREATE_TOKEN_FAILED", "failed to create token")
+		return nil, NewErr(ErrCodeCreateTokenFailed, CREATE_TOKEN_FAILED, "failed to create token")
 	}
 
 	return &UserLoginReply{
