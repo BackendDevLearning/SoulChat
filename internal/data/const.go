@@ -1,13 +1,153 @@
 package data
 
 import (
+	"context"
+	"errors"
 	"fmt"
+	"reflect"
+	"strconv"
+	"strings"
 	"time"
 )
 
-// UserRedisKey 根据不同参数生成redisKey user:<field>:<value>
-func UserRedisKey(cachePrefix, value interface{}) string {
-	return fmt.Sprintf("%s:%v", cachePrefix, value)
+// UserRedisKey 根据不同参数生成redisKey <prefix1>:<prefix2>:<value>
+func UserRedisKey(cachePrefix, subPrefix, value interface{}) string {
+	return fmt.Sprintf("%s:%v:%v", cachePrefix, subPrefix, value)
+}
+
+// HSetStruct 将结构体struct转换成map并逐个写入 Redis Hash
+func (r *UserRepo) HSetStruct(ctx context.Context, key string, obj interface{}) error {
+	values := StructToMap(obj)
+
+	// HSet批量写入
+	_, err := r.data.Cache().HMSet(ctx, key, values)
+	if err != nil {
+		r.log.Warnf("failed to cache user data: %v", err)
+		return err
+	}
+
+	r.data.Cache().Expire(ctx, key, UserCacheTTL)
+	r.log.Debugf("user data cached successfully, set TTL to %s for key %s", UserCacheTTL, key)
+
+	return nil
+}
+
+// HGetStruct 从 Redis Hash 获取值
+func (r *UserRepo) HGetStruct(ctx context.Context, key string, obj interface{}) error {
+	// HLen判断该数据是否放在redis缓存中
+	length, err := r.data.Cache().HLen(ctx, key)
+	if err != nil {
+		r.log.Warnf("failed to get hash length, fallback to DB: %v", err)
+		return err
+	}
+	if length == 0 {
+		r.log.Debugf("hash key %s is empty", key)
+		return errors.New("cache miss")
+	}
+
+	res, err := r.data.Cache().HGetAll(ctx, key)
+	if err != nil {
+		r.log.Warnf("failed to get from cache, fallback to DB: %v", err)
+		return err
+	}
+
+	err = MapToStruct(res, obj)
+	if err != nil {
+		r.log.Warnf("failed to map redis result to struct: %v", err)
+		return err
+	}
+
+	r.data.Cache().Expire(ctx, key, UserCacheTTL)
+	r.log.Debugf("get data from cache successfully, refreshed TTL to %s for key %s", UserCacheTTL, key)
+	return nil
+}
+
+// StructToMap 把struct转成map
+func StructToMap(obj interface{}) map[string]interface{} {
+	res := make(map[string]interface{})
+	v := reflect.ValueOf(obj)
+	t := reflect.TypeOf(obj)
+
+	// 如果是指针，取 Elem
+	if v.Kind() == reflect.Ptr {
+		v = v.Elem()
+		t = t.Elem()
+	}
+
+	for i := 0; i < t.NumField(); i++ {
+		field := t.Field(i)
+		value := v.Field(i).Interface()
+
+		// 用 json tag 做 key（没有就用字段名）
+		tag := field.Tag.Get("json")
+		if tag == "" {
+			tag = strings.ToLower(field.Name)
+		}
+		res[tag] = value
+	}
+	return res
+}
+
+// MapToStruct 将 map[string]string 自动填充到 struct 指针 obj 中
+func MapToStruct(data map[string]string, obj interface{}) error {
+	v := reflect.ValueOf(obj)
+	if v.Kind() != reflect.Ptr || v.IsNil() {
+		return errors.New("obj must be a non-nil pointer")
+	}
+
+	v = v.Elem()
+	t := v.Type()
+
+	for i := 0; i < t.NumField(); i++ {
+		field := t.Field(i)
+		tag := field.Tag.Get("json")
+		if tag == "" {
+			tag = strings.ToLower(field.Name)
+		}
+
+		val, ok := data[tag]
+		if !ok {
+			continue
+		}
+
+		f := v.Field(i)
+		if !f.CanSet() {
+			continue
+		}
+
+		switch f.Kind() {
+		case reflect.String:
+			f.SetString(val)
+		case reflect.Int, reflect.Int64:
+			n, err := strconv.ParseInt(val, 10, 64)
+			if err != nil {
+				continue
+			}
+			f.SetInt(n)
+		case reflect.Uint, reflect.Uint64:
+			n, err := strconv.ParseUint(val, 10, 64)
+			if err != nil {
+				continue
+			}
+			f.SetUint(n)
+		case reflect.Bool:
+			b, err := strconv.ParseBool(val)
+			if err != nil {
+				continue
+			}
+			f.SetBool(b)
+		case reflect.Struct:
+			if f.Type() == reflect.TypeOf(time.Time{}) {
+				t, err := time.Parse(time.RFC3339, val)
+				if err != nil {
+					continue
+				}
+				f.Set(reflect.ValueOf(t))
+			}
+		}
+	}
+
+	return nil
 }
 
 const (

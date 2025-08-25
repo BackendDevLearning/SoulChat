@@ -440,7 +440,7 @@ func (client *Client) HSet(ctx context.Context, key, field string, value interfa
 }
 
 // HMSet 设置hash key对应的value
-func (client *Client) HMSet(ctx context.Context, key string, value map[string]string) (bool, error) {
+func (client *Client) HMSet(ctx context.Context, key string, value map[string]interface{}) (bool, error) {
 	conn := redisConn.Conn()
 	defer conn.Close()
 	ret, err := conn.HMSet(ctx, key, value).Result()
