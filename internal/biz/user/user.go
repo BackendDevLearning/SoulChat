@@ -23,6 +23,6 @@ func (m *UserTB) TableName() string {
 type UserRepo interface {
 	CreateUser(ctx context.Context, userRegister *UserTB) error
 	GetUserByPhone(ctx context.Context, phone string) (*UserTB, error)
-	UpdatePassword(ctx context.Context, phone string, new_password string) (string, error)
 	GetPasswordByPhone(ctx context.Context, phone string) (string, error)
+	UpdatePassword(ctx context.Context, phone string, newPasswordHash string) error
 }

@@ -25,7 +25,7 @@ service Conduit {
 
   rpc UpdatePassword(UpdateRequest) returns (UpdateReply) {
     option (google.api.http) = {
-      post:"/api/users/updatepassword",
+      post:"/api/users/updatePassword",
       body: "*",
     };
   }

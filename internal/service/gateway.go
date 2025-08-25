@@ -47,9 +47,9 @@ func (cs *ConduitService) Login(ctx context.Context, req *v1.LoginRequest) (*v1.
 }
 
 func (cs *ConduitService) UpdatePassword(ctx context.Context, req *v1.UpdateRequest) (*v1.UpdateReply, error) {
-	res, err := cs.gt.UpdatePassword(ctx, req.Phone, req.OldPassword, req.NewPassword)
+	err := cs.gt.UpdatePassword(ctx, req.Phone, req.OldPassword, req.NewPassword)
 	if err != nil {
-		log.Printf("Login error! %v", err)
+		log.Printf("UpdatePassword error! %v", err)
 
 		return &v1.UpdateReply{
 			Code: 1,
@@ -57,11 +57,8 @@ func (cs *ConduitService) UpdatePassword(ctx context.Context, req *v1.UpdateRequ
 		}, nil
 	}
 
-	log.Printf("new password: %s", res)
-
 	return &v1.UpdateReply{
 		Code: 0,
 		Res:  ErrorToRes(err),
 	}, nil
-
 }
