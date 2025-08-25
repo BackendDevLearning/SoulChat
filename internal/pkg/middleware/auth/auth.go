@@ -21,10 +21,12 @@ type CurrentUser struct {
 func GenerateToken(secret string, userid uint, expire time.Duration) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"userid": userid,
-		//"nbf":    time.Date(2000, 10, 10, 12, 0, 0, 0, time.UTC).Unix(),
-		"iat": time.Now().Unix(),             // 签发时间 Issued At
-		"nbf": time.Now().Unix(),             // 生效时间 Not Before
-		"exp": time.Now().Add(expire).Unix(), // 过期时间 Expiration Time
+		// 开发阶段直接写死
+		"nbf": time.Date(2000, 10, 10, 12, 0, 0, 0, time.UTC).Unix(),
+		// 实际token添加过期时间
+		//"iat": time.Now().Unix(),             // 签发时间 Issued At
+		//"nbf": time.Now().Unix(),             // 生效时间 Not Before
+		//"exp": time.Now().Add(expire).Unix(), // 过期时间 Expiration Time
 	})
 
 	// 根据secret生成最终token string

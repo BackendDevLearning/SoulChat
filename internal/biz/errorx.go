@@ -21,10 +21,11 @@ const (
 	ErrCodePhoneAlreadyRegistered = 42203
 	ErrCodeInvalidPassword        = 40101
 	ErrCodeCreateTokenFailed      = 50001
+	ErrCodeUpdatePasswordFailed   = 50002
 
 	// 数据库、redis缓存相关
-	ErrCodeDBQueryFailed    = 50002
-	ErrCodeCreateUserFailed = 50003
+	ErrCodeDBQueryFailed    = 50010
+	ErrCodeCreateUserFailed = 50011
 )
 
 // error reason
@@ -39,6 +40,7 @@ const (
 	PHONE_ALREADY_REGISTERED = "PHONE_ALREADY_REGISTERED"
 	INVALID_PASSWORD         = "INVALID_PASSWORD"
 	CREATE_TOKEN_FAILED      = "CREATE_TOKEN_FAILED"
+	UPDATE_PASSWORD_FAILED   = "UPDATE_PASSWORD_FAILED"
 
 	// 数据库相关
 	DB_QUERY_FAILED    = "DB_QUERY_FAILED"

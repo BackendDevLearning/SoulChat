@@ -105,32 +105,36 @@ func (gc *GateWayUsecase) Login(ctx context.Context, phone string, password stri
 	}, nil
 }
 
-func (gc *GateWayUsecase) UpdatePassword(ctx context.Context, new_password string, old_password string, phone string) (string, error) {
+func (gc *GateWayUsecase) UpdatePassword(ctx context.Context, phone, oldPassword, newPassword string) error {
 	if !IsValidPhone(phone) {
-		return "invalid phone number format", nil
+		return NewErr(ErrCodeInvalidPhone, INVALID_PHONE, "invalid phone number format")
+	}
+
+	if oldPassword == newPassword {
+		return NewErr(ErrCodeInvalidPassword, INVALID_PASSWORD, "new password cannot be the same as the old password")
 	}
 
 	dataPassword, err := gc.ur.GetPasswordByPhone(ctx, phone)
 
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-		return "failed to query user by phone", nil
+		return NewErr(ErrCodeDBQueryFailed, DB_QUERY_FAILED, "failed to query user by phone")
 	}
-
-	old_password = hashPassword(old_password)
-	new_password = hashPassword(new_password)
+	if dataPassword == "" {
+		return NewErr(ErrCodePhoneNotFound, PHONE_NOT_FOUND, "phone number not registered")
+	}
 
 	// 密码输入错误
-	if !verifyPassword(dataPassword, old_password) {
-		return "password is incorrect", nil
+	if !verifyPassword(dataPassword, oldPassword) {
+		return NewErr(ErrCodeInvalidPassword, INVALID_PASSWORD, "password is incorrect")
 	}
 
-	res, err := gc.ur.UpdatePassword(ctx, phone, new_password)
-
+	newPasswordHash := hashPassword(newPassword)
+	err = gc.ur.UpdatePassword(ctx, phone, newPasswordHash)
 	if err != nil {
-		return "update data error", err
+		return NewErr(ErrCodeUpdatePasswordFailed, UPDATE_PASSWORD_FAILED, "failed to update password")
 	}
 
-	return res, nil
+	return nil
 }
 
 func (gc *GateWayUsecase) generateToken(userID uint) (string, error) {
