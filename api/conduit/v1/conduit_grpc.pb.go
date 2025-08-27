@@ -22,6 +22,8 @@ const (
 	Conduit_Register_FullMethodName       = "/realworld.v1.Conduit/Register"
 	Conduit_Login_FullMethodName          = "/realworld.v1.Conduit/Login"
 	Conduit_UpdatePassword_FullMethodName = "/realworld.v1.Conduit/UpdatePassword"
+	Conduit_FollowUser_FullMethodName     = "/realworld.v1.Conduit/FollowUser"
+	Conduit_UnfollowUser_FullMethodName   = "/realworld.v1.Conduit/UnfollowUser"
 )
 
 // ConduitClient is the client API for Conduit service.
@@ -33,6 +35,8 @@ type ConduitClient interface {
 	Register(ctx context.Context, in *RegisterRequest, opts ...grpc.CallOption) (*RegisterReply, error)
 	Login(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*LoginReply, error)
 	UpdatePassword(ctx context.Context, in *UpdateRequest, opts ...grpc.CallOption) (*UpdateReply, error)
+	FollowUser(ctx context.Context, in *FollowUserRequest, opts ...grpc.CallOption) (*FollowFanReply, error)
+	UnfollowUser(ctx context.Context, in *UnfollowUserRequest, opts ...grpc.CallOption) (*FollowFanReply, error)
 }
 
 type conduitClient struct {
@@ -73,6 +77,26 @@ func (c *conduitClient) UpdatePassword(ctx context.Context, in *UpdateRequest, o
 	return out, nil
 }
 
+func (c *conduitClient) FollowUser(ctx context.Context, in *FollowUserRequest, opts ...grpc.CallOption) (*FollowFanReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(FollowFanReply)
+	err := c.cc.Invoke(ctx, Conduit_FollowUser_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *conduitClient) UnfollowUser(ctx context.Context, in *UnfollowUserRequest, opts ...grpc.CallOption) (*FollowFanReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(FollowFanReply)
+	err := c.cc.Invoke(ctx, Conduit_UnfollowUser_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ConduitServer is the server API for Conduit service.
 // All implementations must embed UnimplementedConduitServer
 // for forward compatibility.
@@ -82,6 +106,8 @@ type ConduitServer interface {
 	Register(context.Context, *RegisterRequest) (*RegisterReply, error)
 	Login(context.Context, *LoginRequest) (*LoginReply, error)
 	UpdatePassword(context.Context, *UpdateRequest) (*UpdateReply, error)
+	FollowUser(context.Context, *FollowUserRequest) (*FollowFanReply, error)
+	UnfollowUser(context.Context, *UnfollowUserRequest) (*FollowFanReply, error)
 	mustEmbedUnimplementedConduitServer()
 }
 
@@ -100,6 +126,12 @@ func (UnimplementedConduitServer) Login(context.Context, *LoginRequest) (*LoginR
 }
 func (UnimplementedConduitServer) UpdatePassword(context.Context, *UpdateRequest) (*UpdateReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdatePassword not implemented")
+}
+func (UnimplementedConduitServer) FollowUser(context.Context, *FollowUserRequest) (*FollowFanReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method FollowUser not implemented")
+}
+func (UnimplementedConduitServer) UnfollowUser(context.Context, *UnfollowUserRequest) (*FollowFanReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UnfollowUser not implemented")
 }
 func (UnimplementedConduitServer) mustEmbedUnimplementedConduitServer() {}
 func (UnimplementedConduitServer) testEmbeddedByValue()                 {}
@@ -176,6 +208,42 @@ func _Conduit_UpdatePassword_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Conduit_FollowUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(FollowUserRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ConduitServer).FollowUser(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Conduit_FollowUser_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ConduitServer).FollowUser(ctx, req.(*FollowUserRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Conduit_UnfollowUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UnfollowUserRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ConduitServer).UnfollowUser(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Conduit_UnfollowUser_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ConduitServer).UnfollowUser(ctx, req.(*UnfollowUserRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Conduit_ServiceDesc is the grpc.ServiceDesc for Conduit service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -194,6 +262,14 @@ var Conduit_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UpdatePassword",
 			Handler:    _Conduit_UpdatePassword_Handler,
+		},
+		{
+			MethodName: "FollowUser",
+			Handler:    _Conduit_FollowUser_Handler,
+		},
+		{
+			MethodName: "UnfollowUser",
+			Handler:    _Conduit_UnfollowUser_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

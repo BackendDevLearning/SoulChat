@@ -30,6 +30,19 @@ service Conduit {
     };
   }
 
+  rpc FollowUser(FollowUserRequest) returns (FollowFanReply) {
+    option (google.api.http) = {
+      post : "/api/profiles/{target_id}/follow",
+      body : "*",
+    };
+  }
+
+  rpc UnfollowUser(UnfollowUserRequest) returns (FollowFanReply) {
+    option (google.api.http) = {
+      delete : "/api/profiles/{target_id}/unfollow",
+    };
+  }
+
 
 
 }
@@ -67,6 +80,25 @@ message UpdateRequest {
 message UpdateReply {
   int32 code = 1;  // 0=成功, 1=失败
   Res res = 2;  // 业务信息
+}
+
+message FollowUserRequest { string target_id = 1; }
+
+message UnfollowUserRequest { string target_id = 1; }
+
+message FollowFanReply {
+  int32 code = 1;
+  Res res = 2;
+  message RelationData  {
+    // 当前用户信息
+    uint32 self_id = 1;
+    uint32 follow_count = 2; // 我的关注数
+
+    // 对方用户信息
+    uint32 target_id = 3;
+    uint32 fan_count = 4;    // 对方的粉丝数
+  }
+  RelationData data = 3;
 }
 
 message Res {
