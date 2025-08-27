@@ -24,6 +24,13 @@ type UserLoginReply struct {
 	Token    string
 }
 
+type UserFollowFanReply struct {
+	SelfID      uint32
+	FollowCount uint32
+	TargetID    uint32
+	FanCount    uint32
+}
+
 // IsValidPhone 校验手机号是否符合规则
 func IsValidPhone(phone string) bool {
 	// 中国大陆手机号规则：以 1 开头，第二位是 3-9，后面 9 位数字，总长度 11 位

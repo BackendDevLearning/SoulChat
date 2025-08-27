@@ -7,6 +7,48 @@ info:
     description: The greeting service definition.
     version: 0.0.1
 paths:
+    /api/profiles/{targetId}/follow:
+        post:
+            tags:
+                - Conduit
+            operationId: Conduit_FollowUser
+            parameters:
+                - name: targetId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/FollowUserRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/FollowFanReply'
+    /api/profiles/{targetId}/unfollow:
+        delete:
+            tags:
+                - Conduit
+            operationId: Conduit_UnfollowUser
+            parameters:
+                - name: targetId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/FollowFanReply'
     /api/users:
         post:
             tags:
@@ -63,6 +105,38 @@ paths:
                                 $ref: '#/components/schemas/UpdateReply'
 components:
     schemas:
+        FollowFanReply:
+            type: object
+            properties:
+                code:
+                    type: integer
+                    format: int32
+                res:
+                    $ref: '#/components/schemas/Res'
+                data:
+                    $ref: '#/components/schemas/FollowFanReply_RelationData'
+        FollowFanReply_RelationData:
+            type: object
+            properties:
+                selfId:
+                    type: integer
+                    description: 当前用户信息
+                    format: uint32
+                followCount:
+                    type: integer
+                    format: uint32
+                targetId:
+                    type: integer
+                    description: 对方用户信息
+                    format: uint32
+                fanCount:
+                    type: integer
+                    format: uint32
+        FollowUserRequest:
+            type: object
+            properties:
+                targetId:
+                    type: string
         LoginReply:
             type: object
             properties:
