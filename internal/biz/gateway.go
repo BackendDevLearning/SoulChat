@@ -3,6 +3,7 @@ package biz
 import (
 	"context"
 	"fmt"
+	bizProfile "kratos-realworld/internal/biz/profile"
 	bizUser "kratos-realworld/internal/biz/user"
 	"kratos-realworld/internal/conf"
 	"kratos-realworld/internal/pkg/middleware/auth"
@@ -15,14 +16,16 @@ import (
 
 type GateWayUsecase struct {
 	ur bizUser.UserRepo
+	pr bizProfile.ProfileRepo
 
 	jwtc *conf.JWT
 	log  *log.Helper
 }
 
-func NewGateWayUsecase(ur bizUser.UserRepo, jwtc *conf.JWT, logger log.Logger) *GateWayUsecase {
+func NewGateWayUsecase(ur bizUser.UserRepo, pr bizProfile.ProfileRepo, jwtc *conf.JWT, logger log.Logger) *GateWayUsecase {
 	return &GateWayUsecase{
 		ur:   ur,
+		pr:   pr,
 		jwtc: jwtc,
 		log:  log.NewHelper(logger),
 	}
@@ -53,6 +56,14 @@ func (gc *GateWayUsecase) Register(ctx context.Context, username string, phone s
 	// 插入用户
 	if err := gc.ur.CreateUser(ctx, user); err != nil {
 		return nil, NewErr(ErrCodeCreateUserFailed, CREATE_USER_FAILED, "failed to create user")
+	}
+
+	// 首次注册创建用户后，同时创建当前用户的空白主页profile，后续可以更新完善信息
+	userProfile := &bizProfile.ProfileTB{
+		UserID: user.ID,
+	}
+	if err := gc.pr.CreateProfile(ctx, userProfile); err != nil {
+		return nil, NewErr(ErrCodeCreateUserFailed, CREATE_USER_FAILED, "failed to create user profile")
 	}
 
 	token, err := gc.generateToken(user.ID)
