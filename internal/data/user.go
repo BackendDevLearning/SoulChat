@@ -29,7 +29,7 @@ func (r *UserRepo) CreateUser(ctx context.Context, userRegister *bizUser.UserTB)
 	}
 
 	redisKey := UserRedisKey(UserCachePrefix, "ID", userRegister.ID)
-	_ = r.HSetStruct(ctx, redisKey, userRegister)
+	_ = HSetStruct(ctx, r.data, r.log, redisKey, userRegister)
 
 	return nil
 }
@@ -38,14 +38,14 @@ func (r *UserRepo) GetUserByPhone(ctx context.Context, phone string) (*bizUser.U
 	user := &bizUser.UserTB{}
 	redisKey := UserRedisKey(UserCachePrefix, "Phone", phone)
 
-	err := r.HGetStruct(ctx, redisKey, user)
+	err := HGetStruct(ctx, r.data, r.log, redisKey, user)
 	if err != nil {
 		r.log.Warnf("failed to get from cache, fallback to DB: %v", err)
 	} else {
 		return user, nil
 	}
 
-	result := r.data.DB().Where("phone = ?", phone).First(user)
+	result := r.data.DB().Where(&bizUser.UserTB{Phone: phone}).First(user)
 
 	// 没查到用户，不算错误，返回nil, gorm.ErrRecordNotFound
 	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
@@ -58,7 +58,7 @@ func (r *UserRepo) GetUserByPhone(ctx context.Context, phone string) (*bizUser.U
 	}
 
 	// 即使缓存写入失败，也不会影响主流程，仅打印日志，不把错误传到service层
-	_ = r.HSetStruct(ctx, redisKey, user)
+	_ = HSetStruct(ctx, r.data, r.log, redisKey, user)
 
 	return user, nil
 }
@@ -76,7 +76,7 @@ func (r *UserRepo) GetPasswordByPhone(ctx context.Context, phone string) (string
 	//result 是一个 *gorm.DB，里面有：
 	//result.Error → 是否有错误（连接失败 / SQL 错误）
 	//result.RowsAffected → 影响的行数（0 表示没查到）
-	res := r.data.DB().Model(&bizUser.UserTB{}).Select("password").Where("phone = ?", phone).Scan(&password)
+	res := r.data.DB().Model(&bizUser.UserTB{}).Select("password").Where(&bizUser.UserTB{Phone: phone}).Scan(&password)
 	if errors.Is(res.Error, gorm.ErrRecordNotFound) {
 		return "", gorm.ErrRecordNotFound
 	}
@@ -96,7 +96,7 @@ func (r *UserRepo) GetPasswordByPhone(ctx context.Context, phone string) (string
 }
 
 func (r *UserRepo) UpdatePassword(ctx context.Context, phone string, newPasswordHash string) error {
-	result := r.data.DB().Model(&bizUser.UserTB{}).Where("phone = ?", phone).Update("password", newPasswordHash)
+	result := r.data.DB().Model(&bizUser.UserTB{}).Where(&bizUser.UserTB{Phone: phone}).Update("password", newPasswordHash)
 
 	if result.Error != nil {
 		return result.Error

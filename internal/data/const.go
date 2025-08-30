@@ -4,10 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"kratos-realworld/internal/model"
 	"reflect"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/go-kratos/kratos/v2/log"
 )
 
 // UserRedisKey 根据不同参数生成redisKey <prefix1>:<prefix2>:<value>
@@ -16,49 +19,49 @@ func UserRedisKey(cachePrefix, subPrefix, value interface{}) string {
 }
 
 // HSetStruct 将结构体struct转换成map并逐个写入 Redis Hash
-func (r *UserRepo) HSetStruct(ctx context.Context, key string, obj interface{}) error {
+func HSetStruct(ctx context.Context, data *model.Data, log *log.Helper, key string, obj interface{}) error {
 	values := StructToMap(obj)
 
 	// HSet批量写入
-	_, err := r.data.Cache().HMSet(ctx, key, values)
+	_, err := data.Cache().HMSet(ctx, key, values)
 	if err != nil {
-		r.log.Warnf("failed to cache user data: %v", err)
+		log.Warnf("failed to cache data: %v", err)
 		return err
 	}
 
-	r.data.Cache().Expire(ctx, key, UserCacheTTL)
-	r.log.Debugf("user data cached successfully, set TTL to %s for key %s", UserCacheTTL, key)
+	data.Cache().Expire(ctx, key, UserCacheTTL)
+	log.Debugf("data cached successfully, set TTL to %s for key %s", UserCacheTTL, key)
 
 	return nil
 }
 
 // HGetStruct 从 Redis Hash 获取值
-func (r *UserRepo) HGetStruct(ctx context.Context, key string, obj interface{}) error {
+func HGetStruct(ctx context.Context, data *model.Data, log *log.Helper, key string, obj interface{}) error {
 	// HLen判断该数据是否放在redis缓存中
-	length, err := r.data.Cache().HLen(ctx, key)
+	length, err := data.Cache().HLen(ctx, key)
 	if err != nil {
-		r.log.Warnf("failed to get hash length, fallback to DB: %v", err)
+		log.Warnf("failed to get hash length, fallback to DB: %v", err)
 		return err
 	}
 	if length == 0 {
-		r.log.Debugf("hash key %s is empty", key)
+		log.Debugf("hash key %s is empty", key)
 		return errors.New("cache miss")
 	}
 
-	res, err := r.data.Cache().HGetAll(ctx, key)
+	res, err := data.Cache().HGetAll(ctx, key)
 	if err != nil {
-		r.log.Warnf("failed to get from cache, fallback to DB: %v", err)
+		log.Warnf("failed to get from cache, fallback to DB: %v", err)
 		return err
 	}
 
 	err = MapToStruct(res, obj)
 	if err != nil {
-		r.log.Warnf("failed to map redis result to struct: %v", err)
+		log.Warnf("failed to map redis result to struct: %v", err)
 		return err
 	}
 
-	r.data.Cache().Expire(ctx, key, UserCacheTTL)
-	r.log.Debugf("get data from cache successfully, refreshed TTL to %s for key %s", UserCacheTTL, key)
+	data.Cache().Expire(ctx, key, UserCacheTTL)
+	log.Debugf("get data from cache successfully, refreshed TTL to %s for key %s", UserCacheTTL, key)
 	return nil
 }
 
@@ -77,6 +80,11 @@ func StructToMap(obj interface{}) map[string]interface{} {
 	for i := 0; i < t.NumField(); i++ {
 		field := t.Field(i)
 		value := v.Field(i).Interface()
+
+		// 忽略嵌套 struct
+		if reflect.TypeOf(value).Kind() == reflect.Struct {
+			continue
+		}
 
 		// 用 json tag 做 key（没有就用字段名）
 		tag := field.Tag.Get("json")
