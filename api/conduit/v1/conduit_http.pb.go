@@ -20,6 +20,7 @@ var _ = binding.EncodeURL
 const _ = http.SupportPackageIsVersion1
 
 const OperationConduitFollowUser = "/realworld.v1.Conduit/FollowUser"
+const OperationConduitGetProfile = "/realworld.v1.Conduit/GetProfile"
 const OperationConduitLogin = "/realworld.v1.Conduit/Login"
 const OperationConduitRegister = "/realworld.v1.Conduit/Register"
 const OperationConduitUnfollowUser = "/realworld.v1.Conduit/UnfollowUser"
@@ -27,6 +28,7 @@ const OperationConduitUpdatePassword = "/realworld.v1.Conduit/UpdatePassword"
 
 type ConduitHTTPServer interface {
 	FollowUser(context.Context, *FollowUserRequest) (*FollowFanReply, error)
+	GetProfile(context.Context, *GetProfileRequest) (*GetProfileReply, error)
 	Login(context.Context, *LoginRequest) (*LoginReply, error)
 	Register(context.Context, *RegisterRequest) (*RegisterReply, error)
 	UnfollowUser(context.Context, *UnfollowUserRequest) (*FollowFanReply, error)
@@ -38,6 +40,7 @@ func RegisterConduitHTTPServer(s *http.Server, srv ConduitHTTPServer) {
 	r.POST("/api/users", _Conduit_Register0_HTTP_Handler(srv))
 	r.POST("/api/users/login", _Conduit_Login0_HTTP_Handler(srv))
 	r.POST("/api/users/updatePassword", _Conduit_UpdatePassword0_HTTP_Handler(srv))
+	r.GET("/api/profiles/{user_id}", _Conduit_GetProfile0_HTTP_Handler(srv))
 	r.POST("/api/profiles/{target_id}/follow", _Conduit_FollowUser0_HTTP_Handler(srv))
 	r.DELETE("/api/profiles/{target_id}/unfollow", _Conduit_UnfollowUser0_HTTP_Handler(srv))
 }
@@ -108,6 +111,28 @@ func _Conduit_UpdatePassword0_HTTP_Handler(srv ConduitHTTPServer) func(ctx http.
 	}
 }
 
+func _Conduit_GetProfile0_HTTP_Handler(srv ConduitHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in GetProfileRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationConduitGetProfile)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.GetProfile(ctx, req.(*GetProfileRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*GetProfileReply)
+		return ctx.Result(200, reply)
+	}
+}
+
 func _Conduit_FollowUser0_HTTP_Handler(srv ConduitHTTPServer) func(ctx http.Context) error {
 	return func(ctx http.Context) error {
 		var in FollowUserRequest
@@ -157,6 +182,7 @@ func _Conduit_UnfollowUser0_HTTP_Handler(srv ConduitHTTPServer) func(ctx http.Co
 
 type ConduitHTTPClient interface {
 	FollowUser(ctx context.Context, req *FollowUserRequest, opts ...http.CallOption) (rsp *FollowFanReply, err error)
+	GetProfile(ctx context.Context, req *GetProfileRequest, opts ...http.CallOption) (rsp *GetProfileReply, err error)
 	Login(ctx context.Context, req *LoginRequest, opts ...http.CallOption) (rsp *LoginReply, err error)
 	Register(ctx context.Context, req *RegisterRequest, opts ...http.CallOption) (rsp *RegisterReply, err error)
 	UnfollowUser(ctx context.Context, req *UnfollowUserRequest, opts ...http.CallOption) (rsp *FollowFanReply, err error)
@@ -178,6 +204,19 @@ func (c *ConduitHTTPClientImpl) FollowUser(ctx context.Context, in *FollowUserRe
 	opts = append(opts, http.Operation(OperationConduitFollowUser))
 	opts = append(opts, http.PathTemplate(pattern))
 	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *ConduitHTTPClientImpl) GetProfile(ctx context.Context, in *GetProfileRequest, opts ...http.CallOption) (*GetProfileReply, error) {
+	var out GetProfileReply
+	pattern := "/api/profiles/{user_id}"
+	path := binding.EncodeURL(pattern, in, true)
+	opts = append(opts, http.Operation(OperationConduitGetProfile))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
 	if err != nil {
 		return nil, err
 	}

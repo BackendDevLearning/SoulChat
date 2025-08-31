@@ -148,7 +148,7 @@ func (gc *GateWayUsecase) UpdatePassword(ctx context.Context, phone, oldPassword
 	return nil
 }
 
-func (gc *GateWayUsecase) generateToken(userID uint) (string, error) {
+func (gc *GateWayUsecase) generateToken(userID uint32) (string, error) {
 	expire, err := time.ParseDuration(gc.jwtc.Expire)
 	if err != nil {
 		return "", fmt.Errorf("invalid JWT expire configuration: %w", err)

@@ -49,6 +49,24 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/FollowFanReply'
+    /api/profiles/{userId}:
+        get:
+            tags:
+                - Conduit
+            operationId: Conduit_GetProfile
+            parameters:
+                - name: userId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetProfileReply'
     /api/users:
         post:
             tags:
@@ -136,6 +154,52 @@ components:
             type: object
             properties:
                 targetId:
+                    type: string
+        GetProfileReply:
+            type: object
+            properties:
+                code:
+                    type: integer
+                    format: int32
+                res:
+                    $ref: '#/components/schemas/Res'
+                data:
+                    $ref: '#/components/schemas/GetProfileReply_ProfileData'
+        GetProfileReply_ProfileData:
+            type: object
+            properties:
+                userId:
+                    type: integer
+                    format: uint32
+                tags:
+                    type: string
+                followCount:
+                    type: integer
+                    format: uint32
+                fanCount:
+                    type: integer
+                    format: uint32
+                viewCount:
+                    type: integer
+                    format: uint32
+                noteCount:
+                    type: integer
+                    format: uint32
+                receivedLikeCount:
+                    type: integer
+                    format: uint32
+                collectedCount:
+                    type: integer
+                    format: uint32
+                commentCount:
+                    type: integer
+                    format: uint32
+                lastLoginIp:
+                    type: string
+                lastActive:
+                    type: string
+                    format: RFC3339
+                status:
                     type: string
         LoginReply:
             type: object

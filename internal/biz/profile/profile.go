@@ -6,19 +6,19 @@ import (
 )
 
 type ProfileTB struct {
-	ID     uint `gorm:"column:id;type:int(10) unsigned;primary_key;AUTO_INCREMENT" json:"id"`
-	UserID uint `gorm:"column:user_id;type:int(10) unsigned;not null;uniqueIndex;comment:关联的用户ID" json:"user_id"`
+	ID     uint32 `gorm:"column:id;type:int(10) unsigned;primary_key;AUTO_INCREMENT" json:"id"`
+	UserID uint32 `gorm:"column:user_id;type:int(10) unsigned;not null;uniqueIndex;comment:关联的用户ID" json:"user_id"`
 
 	Tags string `gorm:"column:tags;type:varchar(255);comment:用户标签/兴趣;default:null" json:"tags"`
 
-	FollowCount int `gorm:"column:follow_count;type:int(10) unsigned;default:0;comment:关注数量" json:"follow_count"`
-	FanCount    int `gorm:"column:fan_count;type:int(10) unsigned;default:0;comment:粉丝数量" json:"fan_count"`
+	FollowCount uint32 `gorm:"column:follow_count;type:int(10) unsigned;default:0;comment:关注数量" json:"follow_count"`
+	FanCount    uint32 `gorm:"column:fan_count;type:int(10) unsigned;default:0;comment:粉丝数量" json:"fan_count"`
 
-	ViewCount         int `gorm:"column:view_count;type:int(10) unsigned;default:0;comment:主页浏览次数" json:"view_count"`
-	NoteCount         int `gorm:"column:note_count;type:int(10) unsigned;default:0;comment:笔记数量" json:"note_count"`
-	ReceivedLikeCount int `gorm:"column:received_like_count;type:int(10) unsigned;default:0;comment:获得点赞数" json:"received_like_count"`
-	CollectedCount    int `gorm:"column:collected_count;type:int(10) unsigned;default:0;comment:获得收藏数" json:"collected_count"`
-	CommentCount      int `gorm:"column:comment_count;type:int(10) unsigned;default:0;comment:评论数量" json:"comment_count"`
+	ViewCount         uint32 `gorm:"column:view_count;type:int(10) unsigned;default:0;comment:主页浏览次数" json:"view_count"`
+	NoteCount         uint32 `gorm:"column:note_count;type:int(10) unsigned;default:0;comment:笔记数量" json:"note_count"`
+	ReceivedLikeCount uint32 `gorm:"column:received_like_count;type:int(10) unsigned;default:0;comment:获得点赞数" json:"received_like_count"`
+	CollectedCount    uint32 `gorm:"column:collected_count;type:int(10) unsigned;default:0;comment:获得收藏数" json:"collected_count"`
+	CommentCount      uint32 `gorm:"column:comment_count;type:int(10) unsigned;default:0;comment:评论数量" json:"comment_count"`
 
 	// 扩展字段
 	LastLoginIP string     `gorm:"column:last_login_ip;type:varchar(45);comment:最后登录IP;default:null" json:"last_login_ip"`
@@ -35,7 +35,7 @@ func (p *ProfileTB) TableName() string {
 
 type ProfileRepo interface {
 	CreateProfile(ctx context.Context, profile *ProfileTB) error
-	GetProfileByUserID(ctx context.Context, userID uint) (*ProfileTB, error)
+	GetProfileByUserID(ctx context.Context, userID uint32) (*ProfileTB, error)
 	UpdateProfile(ctx context.Context, profile *ProfileTB) error
 
 	// 增量更新统计字段

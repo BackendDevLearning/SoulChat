@@ -6,11 +6,11 @@ import (
 	"fmt"
 	"kratos-realworld/internal/model"
 	"reflect"
-	"strconv"
 	"strings"
 	"time"
 
 	"github.com/go-kratos/kratos/v2/log"
+	"github.com/mitchellh/mapstructure"
 )
 
 // UserRedisKey 根据不同参数生成redisKey <prefix1>:<prefix2>:<value>
@@ -98,62 +98,22 @@ func StructToMap(obj interface{}) map[string]interface{} {
 
 // MapToStruct 将 map[string]string 自动填充到 struct 指针 obj 中
 func MapToStruct(data map[string]string, obj interface{}) error {
-	v := reflect.ValueOf(obj)
-	if v.Kind() != reflect.Ptr || v.IsNil() {
-		return errors.New("obj must be a non-nil pointer")
+	// 转换成 map[string]interface{}
+	m := make(map[string]interface{}, len(data))
+	for k, v := range data {
+		m[k] = v
 	}
 
-	v = v.Elem()
-	t := v.Type()
-
-	for i := 0; i < t.NumField(); i++ {
-		field := t.Field(i)
-		tag := field.Tag.Get("json")
-		if tag == "" {
-			tag = strings.ToLower(field.Name)
-		}
-
-		val, ok := data[tag]
-		if !ok {
-			continue
-		}
-
-		f := v.Field(i)
-		if !f.CanSet() {
-			continue
-		}
-
-		switch f.Kind() {
-		case reflect.String:
-			f.SetString(val)
-		case reflect.Int, reflect.Int64:
-			n, err := strconv.ParseInt(val, 10, 64)
-			if err != nil {
-				continue
-			}
-			f.SetInt(n)
-		case reflect.Uint, reflect.Uint64:
-			n, err := strconv.ParseUint(val, 10, 64)
-			if err != nil {
-				continue
-			}
-			f.SetUint(n)
-		case reflect.Bool:
-			b, err := strconv.ParseBool(val)
-			if err != nil {
-				continue
-			}
-			f.SetBool(b)
-		case reflect.Struct:
-			if f.Type() == reflect.TypeOf(time.Time{}) {
-				t, err := time.Parse(time.RFC3339, val)
-				if err != nil {
-					continue
-				}
-				f.Set(reflect.ValueOf(t))
-			}
-		}
+	decoder, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
+		TagName:          "json",
+		Result:           obj,
+		WeaklyTypedInput: true,
+	})
+	if err != nil {
+		return err
 	}
+
+	_ = decoder.Decode(m)
 
 	return nil
 }

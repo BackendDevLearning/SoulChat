@@ -3,7 +3,7 @@ syntax = "proto3";
 package realworld.v1;
 
 import "google/api/annotations.proto";
-//import "google/protobuf/timestamp.proto";
+import "google/protobuf/timestamp.proto";
 
 option go_package = "kratos-realworld/api/conduit/v1;v1";
 
@@ -27,6 +27,12 @@ service Conduit {
     option (google.api.http) = {
       post:"/api/users/updatePassword",
       body: "*",
+    };
+  }
+
+  rpc GetProfile(GetProfileRequest) returns (GetProfileReply) {
+    option (google.api.http) = {
+      get : "/api/profiles/{user_id}",
     };
   }
 
@@ -82,6 +88,31 @@ message UpdateReply {
   Res res = 2;  // 业务信息
 }
 
+message GetProfileRequest { string user_id = 1; }
+
+message GetProfileReply {
+  int32 code = 1;
+  Res res = 2;
+  message ProfileData {
+    uint32 user_id = 2;
+    string tags = 3;
+
+    uint32 follow_count = 4;
+    uint32 fan_count = 5;
+
+    uint32 view_count = 6;
+    uint32 note_count = 7;
+    uint32 received_like_count = 8;
+    uint32 collected_count = 9;
+    uint32 comment_count = 10;
+
+    string last_login_ip = 11;
+    google.protobuf.Timestamp last_active = 12;
+    string status = 13;
+  }
+  ProfileData data = 3;
+}
+
 message FollowUserRequest { string target_id = 1; }
 
 message UnfollowUserRequest { string target_id = 1; }
@@ -89,7 +120,7 @@ message UnfollowUserRequest { string target_id = 1; }
 message FollowFanReply {
   int32 code = 1;
   Res res = 2;
-  message RelationData  {
+  message RelationData {
     // 当前用户信息
     uint32 self_id = 1;
     uint32 follow_count = 2; // 我的关注数
