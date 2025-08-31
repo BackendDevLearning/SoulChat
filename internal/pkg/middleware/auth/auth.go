@@ -18,7 +18,7 @@ type CurrentUser struct {
 }
 
 // GenerateToken JWT格式: header.payload.signature
-func GenerateToken(secret string, userid uint, expire time.Duration) (string, error) {
+func GenerateToken(secret string, userid uint32, expire time.Duration) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"userid": userid,
 		// 开发阶段直接写死

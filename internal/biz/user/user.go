@@ -7,7 +7,7 @@ import (
 )
 
 type UserTB struct {
-	ID           uint   `gorm:"column:id;type:int(10) unsigned;primary_key;AUTO_INCREMENT" json:"id"`
+	ID           uint32 `gorm:"column:id;type:int(10) unsigned;primary_key;AUTO_INCREMENT" json:"id"`
 	UserName     string `gorm:"column:UserName;type:varchar(50);comment:账号;NOT NULL" json:"UserName"`
 	Phone        string `gorm:"column:Phone;type:varchar(20);comment:手机号码;NOT NULL" json:"Phone"`
 	PasswordHash string `gorm:"column:PassWord;type:text;comment:密码;NOT NULL" json:"PassWord"`

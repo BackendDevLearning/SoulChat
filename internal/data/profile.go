@@ -28,16 +28,15 @@ func (r *ProfileRepo) CreateProfile(ctx context.Context, profile *bizProfile.Pro
 		return rv.Error
 	}
 
-	redisKey := UserRedisKey(UserCachePrefix, "profile", profile.UserID)
+	redisKey := UserRedisKey(UserCachePrefix, "Profile", profile.UserID)
 	_ = HSetStruct(ctx, r.data, r.log, redisKey, profile)
 
 	return nil
 }
 
-func (r *ProfileRepo) GetProfileByUserID(ctx context.Context, userID uint) (*bizProfile.ProfileTB, error) {
+func (r *ProfileRepo) GetProfileByUserID(ctx context.Context, userID uint32) (*bizProfile.ProfileTB, error) {
 	profile := &bizProfile.ProfileTB{}
-	redisKey := UserRedisKey(UserCachePrefix, "profile", userID)
-
+	redisKey := UserRedisKey(UserCachePrefix, "Profile", userID)
 	err := HGetStruct(ctx, r.data, r.log, redisKey, profile)
 	if err != nil {
 		r.log.Warnf("failed to get from cache, fallback to DB: %v", err)
@@ -45,7 +44,7 @@ func (r *ProfileRepo) GetProfileByUserID(ctx context.Context, userID uint) (*biz
 		return profile, nil
 	}
 
-	result := r.data.DB().Where(&bizProfile.ProfileTB{UserID: userID}).First(profile)
+	result := r.data.DB().Where("user_id = ?", userID).First(profile)
 
 	// 没查到用户的profile，不算错误，返回nil, gorm.ErrRecordNotFound
 	if errors.Is(result.Error, gorm.ErrRecordNotFound) {

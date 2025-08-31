@@ -28,7 +28,7 @@ func (r *UserRepo) CreateUser(ctx context.Context, userRegister *bizUser.UserTB)
 		return rv.Error
 	}
 
-	redisKey := UserRedisKey(UserCachePrefix, "ID", userRegister.ID)
+	redisKey := UserRedisKey(UserCachePrefix, "Phone", userRegister.Phone)
 	_ = HSetStruct(ctx, r.data, r.log, redisKey, userRegister)
 
 	return nil
@@ -45,7 +45,7 @@ func (r *UserRepo) GetUserByPhone(ctx context.Context, phone string) (*bizUser.U
 		return user, nil
 	}
 
-	result := r.data.DB().Where(&bizUser.UserTB{Phone: phone}).First(user)
+	result := r.data.DB().Where("Phone = ?", phone).First(user)
 
 	// 没查到用户，不算错误，返回nil, gorm.ErrRecordNotFound
 	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
@@ -76,7 +76,7 @@ func (r *UserRepo) GetPasswordByPhone(ctx context.Context, phone string) (string
 	//result 是一个 *gorm.DB，里面有：
 	//result.Error → 是否有错误（连接失败 / SQL 错误）
 	//result.RowsAffected → 影响的行数（0 表示没查到）
-	res := r.data.DB().Model(&bizUser.UserTB{}).Select("password").Where(&bizUser.UserTB{Phone: phone}).Scan(&password)
+	res := r.data.DB().Model(&bizUser.UserTB{}).Select("password").Where("Phone = ?", phone).Scan(&password)
 	if errors.Is(res.Error, gorm.ErrRecordNotFound) {
 		return "", gorm.ErrRecordNotFound
 	}
@@ -96,7 +96,7 @@ func (r *UserRepo) GetPasswordByPhone(ctx context.Context, phone string) (string
 }
 
 func (r *UserRepo) UpdatePassword(ctx context.Context, phone string, newPasswordHash string) error {
-	result := r.data.DB().Model(&bizUser.UserTB{}).Where(&bizUser.UserTB{Phone: phone}).Update("password", newPasswordHash)
+	result := r.data.DB().Model(&bizUser.UserTB{}).Where("Phone = ?", phone).Update("password", newPasswordHash)
 
 	if result.Error != nil {
 		return result.Error
@@ -106,9 +106,11 @@ func (r *UserRepo) UpdatePassword(ctx context.Context, phone string, newPassword
 		return gorm.ErrRecordNotFound
 	}
 
-	// 同步更新缓存
+	// 同步更新缓存，两种更新策略：delete or update
 	redisKey := UserRedisKey(UserCachePrefix, "Phone", phone)
-	if _, err := r.data.Cache().HDel(ctx, redisKey, "PassWord"); err != nil {
+	// 只删掉缓存hash里面的password字段，下次登录的时候，这个key对应的缓存hash还存在，但是取不到密码，会出密码无效的问题
+	//if _, err := r.data.Cache().HDel(ctx, redisKey, "PassWord"); err != nil {
+	if err := r.data.Cache().Delete(ctx, redisKey); err != nil {
 		r.log.Warnf("failed to delete password in cache: %v", err)
 	} else {
 		r.log.Debugf("password delete in cache successfully, phone=%s", phone)

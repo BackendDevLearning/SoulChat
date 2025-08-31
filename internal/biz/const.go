@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"golang.org/x/crypto/bcrypt"
 	"regexp"
+	"time"
 )
 
 type UserRegisterReply struct {
@@ -22,6 +23,23 @@ type UserLoginReply struct {
 	Bio      string
 	Image    string
 	Token    string
+}
+
+type UserProfileReply struct {
+	UserID uint32
+	Tags   string
+
+	FollowCount       uint32
+	FanCount          uint32
+	ViewCount         uint32
+	NoteCount         uint32
+	ReceivedLikeCount uint32
+	CollectedCount    uint32
+	CommentCount      uint32
+
+	LastLoginIP string
+	LastActive  *time.Time
+	Status      string
 }
 
 type UserFollowFanReply struct {
