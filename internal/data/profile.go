@@ -40,24 +40,23 @@ func (r *ProfileRepo) GetProfileByUserID(ctx context.Context, userID uint32) (*b
 	err := HGetStruct(ctx, r.data, r.log, redisKey, profile)
 	if err != nil {
 		r.log.Warnf("failed to get from cache, fallback to DB: %v", err)
-	} else {
-		return profile, nil
 	}
+	// 缓存没有命中
+	if profile.SysCreated == nil {
+		result := r.data.DB().Where("user_id = ?", userID).First(profile)
 
-	result := r.data.DB().Where("user_id = ?", userID).First(profile)
+		// 没查到用户的profile，不算错误，返回nil, gorm.ErrRecordNotFound
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			return nil, gorm.ErrRecordNotFound
+		}
 
-	// 没查到用户的profile，不算错误，返回nil, gorm.ErrRecordNotFound
-	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-		return nil, gorm.ErrRecordNotFound
+		// 数据库报错，如断开连接
+		if result.Error != nil {
+			return nil, result.Error
+		}
+
+		_ = HSetStruct(ctx, r.data, r.log, redisKey, profile)
 	}
-
-	// 数据库报错，如断开连接
-	if result.Error != nil {
-		return nil, result.Error
-	}
-
-	_ = HSetStruct(ctx, r.data, r.log, redisKey, profile)
-
 	return profile, nil
 }
 
