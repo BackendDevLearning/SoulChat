@@ -5,22 +5,6 @@ import (
 	"time"
 )
 
-type FollowTB struct {
-	ID uint32 `gorm:"column:id;type:int(10) unsigned;primary_key;AUTO_INCREMENT" json:"id"`
-
-	// 关注者ID（谁去关注别人）
-	FollowerID uint32 `gorm:"column:follower_id;type:int(10) unsigned;not null;uniqueIndex:idx_follower_followee;comment:关注者ID" json:"follower_id"`
-
-	// 被关注者ID（谁被关注）
-	FolloweeID uint32 `gorm:"column:followee_id;type:int(10) unsigned;not null;uniqueIndex:idx_follower_followee;comment:被关注者ID" json:"followee_id"`
-
-	// 状态，normal=正常，deleted=取消关注、拉黑等
-	Status string `gorm:"column:status;type:varchar(20);default:'normal';comment:关注状态 normal/cancel" json:"status"`
-
-	SysCreated *time.Time `gorm:"autoCreateTime;column:sys_created;type:datetime;default null;comment:创建时间;NOT NULL" json:"sys_created"`
-	SysUpdated *time.Time `gorm:"autoUpdateTime;column:sys_updated;type:datetime;default null;comment:修改时间;NOT NULL" json:"sys_updated"`
-}
-
 type ProfileTB struct {
 	ID     uint32 `gorm:"column:id;type:int(10) unsigned;primary_key;AUTO_INCREMENT" json:"id"`
 	UserID uint32 `gorm:"column:user_id;type:int(10) unsigned;not null;uniqueIndex;comment:关联的用户ID" json:"user_id"`
@@ -45,8 +29,28 @@ type ProfileTB struct {
 	SysUpdated *time.Time `gorm:"autoUpdateTime;column:sys_updated;type:datetime;default null;comment:修改时间;NOT NULL" json:"sys_updated"`
 }
 
+type FollowTB struct {
+	ID uint32 `gorm:"column:id;type:int(10) unsigned;primary_key;AUTO_INCREMENT" json:"id"`
+
+	// 关注者ID（谁去关注别人）
+	FollowerID uint32 `gorm:"column:follower_id;type:int(10) unsigned;not null;uniqueIndex:idx_follower_followee;comment:关注者ID" json:"follower_id"`
+
+	// 被关注者ID（谁被关注）
+	FolloweeID uint32 `gorm:"column:followee_id;type:int(10) unsigned;not null;uniqueIndex:idx_follower_followee;comment:被关注者ID" json:"followee_id"`
+
+	// 状态，normal=正常，deleted=取消关注、拉黑等
+	Status string `gorm:"column:status;type:varchar(20);default:'normal';comment:关注状态 normal/cancel" json:"status"`
+
+	SysCreated *time.Time `gorm:"autoCreateTime;column:sys_created;type:datetime;default null;comment:创建时间;NOT NULL" json:"sys_created"`
+	SysUpdated *time.Time `gorm:"autoUpdateTime;column:sys_updated;type:datetime;default null;comment:修改时间;NOT NULL" json:"sys_updated"`
+}
+
 func (p *ProfileTB) TableName() string {
 	return "t_user_profile"
+}
+
+func (f *FollowTB) TableName() string {
+	return "t_user_follow_relationships"
 }
 
 type ProfileRepo interface {

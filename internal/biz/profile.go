@@ -2,8 +2,10 @@ package biz
 
 import (
 	"context"
+	"gorm.io/gorm"
 	bizProfile "kratos-realworld/internal/biz/profile"
 	"kratos-realworld/internal/conf"
+	"kratos-realworld/internal/pkg/middleware/auth"
 	"strconv"
 
 	"github.com/go-kratos/kratos/v2/log"
@@ -48,9 +50,58 @@ func (pc *ProfileUsecase) GetProfile(ctx context.Context, userID string) (*UserP
 }
 
 func (pc *ProfileUsecase) FollowUser(ctx context.Context, targetID string) (*UserFollowFanReply, error) {
+	userID := auth.FromContext(ctx)
+
+	// 1. 插入关注关系
+	follow := FollowTB{FollowerID: userID, FolloweeID: targetID}
+	if err := pc.data.DB().Create(&follow).Error; err != nil {
+		if errors.Is(err, gorm.ErrDuplicatedKey) {
+			return nil, errors.New("already followed")
+		}
+		return nil, err
+	}
+
+	// 2. 更新双方 profile
+	pc.data.DB().Model(&ProfileTB{}).Where("user_id = ?", userID).
+		Update("follow_count", gorm.Expr("follow_count + 1"))
+	pc.data.DB().Model(&ProfileTB{}).Where("user_id = ?", targetID).
+		Update("fan_count", gorm.Expr("fan_count + 1"))
+
+	// 3. 检查是否形成双向关注
+	var cnt int64
+	pc.data.DB().Model(&FollowTB{}).
+		Where("follower_id = ? AND followee_id = ?", targetID, userID).
+		Count(&cnt)
+
+	return &UserFollowFanReply{
+		MutualFollow: cnt > 0,
+	}, nil
+
 	return &UserFollowFanReply{}, nil
 }
 
 func (pc *ProfileUsecase) UnfollowUser(ctx context.Context, targetID string) (*UserFollowFanReply, error) {
+	userID := auth.FromContext(ctx)
+
+	// 1. 删除关系
+	pc.data.DB().Where("follower_id = ? AND followee_id = ?", userID, targetID).
+		Delete(&FollowTB{})
+
+	// 2. 更新双方 profile
+	pc.data.DB().Model(&ProfileTB{}).Where("user_id = ?", userID).
+		Update("follow_count", gorm.Expr("follow_count - 1"))
+	pc.data.DB().Model(&ProfileTB{}).Where("user_id = ?", targetID).
+		Update("fan_count", gorm.Expr("fan_count - 1"))
+
+	// 3. 检查是否还存在互关
+	var cnt int64
+	pc.data.DB().Model(&FollowTB{}).
+		Where("follower_id = ? AND followee_id = ?", targetID, userID).
+		Count(&cnt)
+
+	return &UserFollowFanReply{
+		MutualFollow: cnt > 0,
+	}, nil
+
 	return &UserFollowFanReply{}, nil
 }
