@@ -50,10 +50,9 @@ service Conduit {
   }
 
 
-
 }
 
-
+// NID_REGIDTER_REQ
 message RegisterRequest {
   string username = 1;
   string phone = 2;
@@ -66,6 +65,7 @@ message RegisterReply {
   string token = 3;
 }
 
+//NID_LOGIN_REQ
 message LoginRequest {
   string phone = 1;
   string password = 2;
@@ -77,6 +77,7 @@ message LoginReply {
   string token = 3;
 }
 
+//NID_UPDATE_REQ
 message UpdateRequest {
   string phone = 1;
   string old_password = 2;
@@ -88,47 +89,55 @@ message UpdateReply {
   Res res = 2;  // 业务信息
 }
 
+
+// SOCAL 相关协议
+// NID_GET_PROFILE_REQ
+message ProfileData {
+  uint32 user_id = 2;
+  string tags = 3;
+
+  uint32 follow_count = 4;
+  uint32 fan_count = 5;
+
+  uint32 view_count = 6;
+  uint32 note_count = 7;
+  uint32 received_like_count = 8;
+  uint32 collected_count = 9;
+  uint32 comment_count = 10;
+
+//  string last_login_ip = 11;
+  google.protobuf.Timestamp last_active = 12;
+//  string status = 13;
+}
+
+// NID_GET_PROFILE_REQ
 message GetProfileRequest { string user_id = 1; }
 
 message GetProfileReply {
   int32 code = 1;
   Res res = 2;
-  message ProfileData {
-    uint32 user_id = 2;
-    string tags = 3;
-
-    uint32 follow_count = 4;
-    uint32 fan_count = 5;
-
-    uint32 view_count = 6;
-    uint32 note_count = 7;
-    uint32 received_like_count = 8;
-    uint32 collected_count = 9;
-    uint32 comment_count = 10;
-
-    string last_login_ip = 11;
-    google.protobuf.Timestamp last_active = 12;
-    string status = 13;
-  }
   ProfileData data = 3;
 }
 
+// NID_FOLLOW_USER_REQ
 message FollowUserRequest { string target_id = 1; }
 
 message UnfollowUserRequest { string target_id = 1; }
 
+
+// NID_FOLLOW_FAN_REQ
+message RelationData {
+  // 当前用户信息
+  uint32 self_id = 1;
+  uint32 follow_count = 2; // 我的关注数
+  // 对方用户信息
+  uint32 target_id = 3;
+  uint32 fan_count = 4;    // 对方的粉丝数
+}
+
 message FollowFanReply {
   int32 code = 1;
   Res res = 2;
-  message RelationData {
-    // 当前用户信息
-    uint32 self_id = 1;
-    uint32 follow_count = 2; // 我的关注数
-
-    // 对方用户信息
-    uint32 target_id = 3;
-    uint32 fan_count = 4;    // 对方的粉丝数
-  }
   RelationData data = 3;
 }
 

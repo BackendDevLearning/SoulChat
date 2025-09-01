@@ -47,13 +47,11 @@ func HGetStruct(ctx context.Context, data *model.Data, log *log.Helper, key stri
 		log.Debugf("hash key %s is empty", key)
 		return errors.New("cache miss")
 	}
-
 	res, err := data.Cache().HGetAll(ctx, key)
 	if err != nil {
 		log.Warnf("failed to get from cache, fallback to DB: %v", err)
 		return err
 	}
-
 	err = MapToStruct(res, obj)
 	if err != nil {
 		log.Warnf("failed to map redis result to struct: %v", err)
