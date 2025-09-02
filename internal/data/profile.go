@@ -15,6 +15,42 @@ type ProfileRepo struct {
 	log  *log.Helper
 }
 
+func (r *ProfileRepo) CheckFollowTogether(ctx context.Context, followerID uint32, followeeID uint32) (bool, error) {
+	var cnt1 int64
+	var cnt2 int64
+	r.data.DB().Model(&FollowTB{}).
+		Where("follower_id = ? AND followee_id = ?", followeeID, followerID).
+		Count(&cnt1)
+
+	r.data.DB().Model(&FollowTB{}).
+		Where("follower_id = ? AND followee_id = ?", followeeID, followerID).
+		Count(&cnt2)
+
+	if cnt1 > 0 && cnt2 > 0 {
+		return true, nil
+	}
+	return false, nil
+}
+
+func (r *ProfileRepo) FollowUser(ctx context.Context, followerID uint32, followeeID uint32) error {
+	// 1. 插入关注关系
+	follow := bizProfile.FollowTB{FollowerID: followerID, FolloweeID: followeeID}
+	if err := r.data.DB().Create(&follow).Error; err != nil {
+		if errors.Is(err, gorm.ErrDuplicatedKey) {
+			return errors.New("already followed")
+		}
+		return err
+	}
+
+	// 2. 更新双方 profile
+	r.data.DB().Model(&bizProfile.ProfileTB{}).Where("user_id = ?", userID).
+		Update("follow_count", gorm.Expr("follow_count + 1"))
+	r.data.DB().Model(&bizProfile.ProfileTB{}).Where("user_id = ?", targetID).
+		Update("fan_count", gorm.Expr("fan_count + 1"))
+
+	return nil
+}
+
 func NewProfileRepo(data *model.Data, logger log.Logger) bizProfile.ProfileRepo {
 	return &ProfileRepo{
 		data: data,
