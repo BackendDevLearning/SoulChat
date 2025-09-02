@@ -58,6 +58,9 @@ type ProfileRepo interface {
 	GetProfileByUserID(ctx context.Context, userID uint32) (*ProfileTB, error)
 	UpdateProfile(ctx context.Context, profile *ProfileTB) error
 
+	FollowUser(ctx context.Context, followerID uint32, followeeID uint32) error
+	CheckFollowTogether(ctx context.Context, followerID uint32, followeeID uint32) (bool, error)
+
 	// 增量更新统计字段
 	IncrementFollowCount(ctx context.Context, userID uint, delta int) error
 	IncrementFanCount(ctx context.Context, userID uint, delta int) error

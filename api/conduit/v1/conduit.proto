@@ -90,7 +90,7 @@ message UpdateReply {
 }
 
 
-// SOCAL 相关协议
+// SO  CAL 相关协议
 // NID_GET_PROFILE_REQ
 message ProfileData {
   uint32 user_id = 2;

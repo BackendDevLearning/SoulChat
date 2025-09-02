@@ -1,5 +1,5 @@
 # Generated with protoc-gen-openapi
-# https://github.com/google/gnostic/tree/master/apps/protoc-gen-openapi
+# https://github.com/google/gnostic/tree/master/cmd/protoc-gen-openapi
 
 openapi: 3.0.3
 info:
@@ -31,6 +31,12 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/FollowFanReply'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
     /api/profiles/{targetId}/unfollow:
         delete:
             tags:
@@ -49,6 +55,12 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/FollowFanReply'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
     /api/profiles/{userId}:
         get:
             tags:
@@ -67,6 +79,12 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/GetProfileReply'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
     /api/users:
         post:
             tags:
@@ -85,6 +103,12 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/RegisterReply'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
     /api/users/login:
         post:
             tags:
@@ -103,6 +127,12 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/LoginReply'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
     /api/users/updatePassword:
         post:
             tags:
@@ -121,6 +151,12 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/UpdateReply'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
 components:
     schemas:
         FollowFanReply:
@@ -132,29 +168,13 @@ components:
                 res:
                     $ref: '#/components/schemas/Res'
                 data:
-                    $ref: '#/components/schemas/FollowFanReply_RelationData'
-        FollowFanReply_RelationData:
-            type: object
-            properties:
-                selfId:
-                    type: integer
-                    description: 当前用户信息
-                    format: uint32
-                followCount:
-                    type: integer
-                    format: uint32
-                targetId:
-                    type: integer
-                    description: 对方用户信息
-                    format: uint32
-                fanCount:
-                    type: integer
-                    format: uint32
+                    $ref: '#/components/schemas/RelationData'
         FollowUserRequest:
             type: object
             properties:
                 targetId:
                     type: string
+            description: NID_FOLLOW_USER_REQ
         GetProfileReply:
             type: object
             properties:
@@ -164,8 +184,34 @@ components:
                 res:
                     $ref: '#/components/schemas/Res'
                 data:
-                    $ref: '#/components/schemas/GetProfileReply_ProfileData'
-        GetProfileReply_ProfileData:
+                    $ref: '#/components/schemas/ProfileData'
+        GoogleProtobufAny:
+            type: object
+            properties:
+                '@type':
+                    type: string
+                    description: The type of the serialized message.
+            additionalProperties: true
+            description: Contains an arbitrary serialized message along with a @type that describes the type of the serialized message.
+        LoginReply:
+            type: object
+            properties:
+                code:
+                    type: integer
+                    format: int32
+                res:
+                    $ref: '#/components/schemas/Res'
+                token:
+                    type: string
+        LoginRequest:
+            type: object
+            properties:
+                phone:
+                    type: string
+                password:
+                    type: string
+            description: NID_LOGIN_REQ
+        ProfileData:
             type: object
             properties:
                 userId:
@@ -194,30 +240,11 @@ components:
                 commentCount:
                     type: integer
                     format: uint32
-                lastLoginIp:
-                    type: string
                 lastActive:
                     type: string
-                    format: RFC3339
-                status:
-                    type: string
-        LoginReply:
-            type: object
-            properties:
-                code:
-                    type: integer
-                    format: int32
-                res:
-                    $ref: '#/components/schemas/Res'
-                token:
-                    type: string
-        LoginRequest:
-            type: object
-            properties:
-                phone:
-                    type: string
-                password:
-                    type: string
+                    description: string last_login_ip = 11;
+                    format: date-time
+            description: "SO  CAL 相关协议\r\n NID_GET_PROFILE_REQ"
         RegisterReply:
             type: object
             properties:
@@ -237,6 +264,25 @@ components:
                     type: string
                 password:
                     type: string
+            description: NID_REGIDTER_REQ
+        RelationData:
+            type: object
+            properties:
+                selfId:
+                    type: integer
+                    description: 当前用户信息
+                    format: uint32
+                followCount:
+                    type: integer
+                    format: uint32
+                targetId:
+                    type: integer
+                    description: 对方用户信息
+                    format: uint32
+                fanCount:
+                    type: integer
+                    format: uint32
+            description: NID_FOLLOW_FAN_REQ
         Res:
             type: object
             properties:
@@ -247,6 +293,22 @@ components:
                     type: string
                 msg:
                     type: string
+        Status:
+            type: object
+            properties:
+                code:
+                    type: integer
+                    description: The status code, which should be an enum value of [google.rpc.Code][google.rpc.Code].
+                    format: int32
+                message:
+                    type: string
+                    description: A developer-facing error message, which should be in English. Any user-facing error message should be localized and sent in the [google.rpc.Status.details][google.rpc.Status.details] field, or localized by the client.
+                details:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/GoogleProtobufAny'
+                    description: A list of messages that carry the error details.  There is a common set of message types for APIs to use.
+            description: 'The `Status` type defines a logical error model that is suitable for different programming environments, including REST APIs and RPC APIs. It is used by [gRPC](https://github.com/grpc). Each `Status` message contains three pieces of data: error code, error message, and error details. You can find out more about this error model and how to work with it in the [API Design Guide](https://cloud.google.com/apis/design/errors).'
         UpdateReply:
             type: object
             properties:
@@ -264,5 +326,6 @@ components:
                     type: string
                 newPassword:
                     type: string
+            description: NID_UPDATE_REQ
 tags:
     - name: Conduit

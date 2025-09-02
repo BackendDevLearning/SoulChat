@@ -64,7 +64,7 @@ func (cs *ConduitService) FollowUser(ctx context.Context, req *v1.FollowUserRequ
 	return &v1.FollowFanReply{
 		Code: 0,
 		Res:  ErrorToRes(err),
-		Data: &v1.FollowFanReply_RelationData{
+		Data: &v1.RelationData{
 			SelfId:      res.SelfID,
 			FollowCount: res.FollowCount,
 			TargetId:    res.TargetID,
