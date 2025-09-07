@@ -33,7 +33,14 @@ func (r *ProfileRepo) CheckFollowTogether(ctx context.Context, followerID uint32
 }
 
 func (r *ProfileRepo) FollowUser(ctx context.Context, followerID uint32, followeeID uint32) error {
-	// 1. 插入关注关系
+	// 防止关注的用户不存在
+	user, err := r.GetProfileByUserID(ctx, followerID)
+	if err != nil {
+		return err
+	}
+	if user == nil {
+		return errors.New("user not found")
+	}
 	follow := bizProfile.FollowTB{FollowerID: followerID, FolloweeID: followeeID}
 	if err := r.data.DB().Create(&follow).Error; err != nil {
 		if errors.Is(err, gorm.ErrDuplicatedKey) {
@@ -48,7 +55,66 @@ func (r *ProfileRepo) FollowUser(ctx context.Context, followerID uint32, followe
 	r.data.DB().Model(&bizProfile.ProfileTB{}).Where("user_id = ?", targetID).
 		Update("fan_count", gorm.Expr("fan_count + 1"))
 
+	// 更新数据库
+	r.updateFollowCache(ctx, followerID, followeeID)
+
 	return nil
+}
+
+func (r *ProfileRepo) updateFollowCache(ctx context.Context, followerID, followeeID uint32) {
+	redisKey_foller := UserRedisKey(UserCachePrefix, "following", followerID)
+	redisKey_follee := UserRedisKey(UserCachePrefix, "followee", followeeID)
+
+	err := r.data.Cache().Pipeline(ctx, func(pipe redis.Pipeliner) error {
+		pipe.SAdd(ctx, redisKey_foller, followeeID)
+		pipe.SAdd(ctx, redisKey_follee, followerID)
+		return nil
+	}) // 获取管道对象
+
+	if err != nil {
+		r.logger.Errorf("redis pipeline failed, follower=%d, followee=%d, err=%v",
+			followerID, followeeID, err)
+	}
+}
+
+func (r *ProfileRepo) UnFollowUser(ctx context.Context, followerID uint32, followeeID uint32) error {
+	// 防止取关的用户不存在
+	user, err := r.GetProfileByUserID(ctx, followeeID)
+	if err != nil {
+		return err
+	}
+	if user == nil {
+		return errors.New("user not found")
+	}
+
+	// 取关
+	if err := r.data.DB().Where("follower_id = ? AND followee_id = ?", followerID, followeeID).Delete(&bizProfile.FollowTB{}).Error; err != nil {
+		return err
+	}
+
+	// 2. 更新计数（MySQL）
+	r.data.DB().Model(&bizProfile.ProfileTB{}).Where("user_id = ?", followerID).
+		Update("follow_count", gorm.Expr("follow_count - 1"))
+	r.data.DB().Model(&bizProfile.ProfileTB{}).Where("user_id = ?", followeeID).
+		Update("fan_count", gorm.Expr("fan_count - 1"))
+	r.updateUnfollowCache(ctx, followerID, followeeID)
+	return nil
+}
+
+func (r *ProfileRepo) updateUnfollowCache(ctx context.Context, followerID uint32, followeeID uint32) {
+	redisKey_foller := UserRedisKey(UserCachePrefix, "following", followerID)
+	redisKey_follee := UserRedisKey(UserCachePrefix, "followee", followeeID)
+
+	err := r.data.Cache().Pipeline(ctx, func(pipe redis.Pipeliner) error {
+		pipe.SRem(ctx, redisKey_foller, followeeID)
+		pipe.SRem(ctx, redisKey_follee, followerID)
+		return nil
+	}) // 获取管道对象
+
+	if err != nil {
+		r.logger.Errorf("redis pipeline failed, follower=%d, followee=%d, err=%v",
+			followerID, followeeID, err)
+	}
 }
 
 func NewProfileRepo(data *model.Data, logger log.Logger) bizProfile.ProfileRepo {

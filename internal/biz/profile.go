@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"gorm.io/gorm"
 	bizProfile "kratos-realworld/internal/biz/profile"
 	"kratos-realworld/internal/conf"
 	"kratos-realworld/internal/pkg/middleware/auth"
@@ -86,27 +85,35 @@ func (pc *ProfileUsecase) FollowUser(ctx context.Context, targetID string) (*Use
 }
 
 func (pc *ProfileUsecase) UnfollowUser(ctx context.Context, targetID string) (*UserFollowFanReply, error) {
-	userID := auth.FromContext(ctx)
+	userID := auth.FromContext(ctx).UserID
+	// 参数：字符串, 进制(10), 位数(32)
+	tID, err := strconv.ParseUint(targetID, 10, 32)
+	if err != nil {
+		fmt.Printf("转换失败: %v\n", err)
+		return nil, errors.New("string convert error")
+	}
 
-	// 1. 删除关系
-	pc.data.DB().Where("follower_id = ? AND followee_id = ?", userID, targetID).
-		Delete(&FollowTB{})
+	er := pc.pr.UnFollowUser(ctx, uint32(tID), uint32(userID))
+	if er != nil {
+		return nil, er
+	}
 
-	// 2. 更新双方 profile
-	pc.data.DB().Model(&ProfileTB{}).Where("user_id = ?", userID).
-		Update("follow_count", gorm.Expr("follow_count - 1"))
-	pc.data.DB().Model(&ProfileTB{}).Where("user_id = ?", targetID).
-		Update("fan_count", gorm.Expr("fan_count - 1"))
+	profile, err := pc.pr.GetProfileByUserID(ctx, uint32(userID))
+	if err != nil {
+		return nil, err
+	}
 
 	// 3. 检查是否还存在互关
-	var cnt int64
-	pc.data.DB().Model(&FollowTB{}).
-		Where("follower_id = ? AND followee_id = ?", targetID, userID).
-		Count(&cnt)
+	//var cnt int64
+	//pc.data.DB().Model(&FollowTB{}).
+	//	Where("follower_id = ? AND followee_id = ?", targetID, userID).
+	//	Count(&cnt)
 
 	return &UserFollowFanReply{
-		MutualFollow: cnt > 0,
+		SelfID:      uint32(userID),
+		FollowCount: profile.FollowCount,
+		TargetID:    uint32(tID),
+		FanCount:    profile.FanCount,
 	}, nil
-
-	return &UserFollowFanReply{}, nil
+	
 }
