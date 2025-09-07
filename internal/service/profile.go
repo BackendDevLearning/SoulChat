@@ -74,7 +74,7 @@ func (cs *ConduitService) FollowUser(ctx context.Context, req *v1.FollowUserRequ
 }
 
 func (cs *ConduitService) UnfollowUser(ctx context.Context, req *v1.UnfollowUserRequest) (*v1.FollowFanReply, error) {
-	res, err := cs.pc.UnfollowUser(ctx, req.TargetId)
+	res, err := cs.pc.UnFollowUser(ctx, req.TargetId)
 	if err != nil {
 		log.Printf("UnfollowUser err: %v", err)
 
