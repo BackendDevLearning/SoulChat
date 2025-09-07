@@ -59,13 +59,13 @@ type ProfileRepo interface {
 	UpdateProfile(ctx context.Context, profile *ProfileTB) error
 
 	FollowUser(ctx context.Context, followerID uint32, followeeID uint32) error
-	updateFollowCache(ctx context.Context, followerID uint32, followeeID uint32)
+	UpdateFollowCache(ctx context.Context, followerID uint32, followeeID uint32)
+
+	UnFollowUser(ctx context.Context, followerID uint32, followeeID uint32) error
+	UpdateUnfollowCache(ctx context.Context, unfollowerID uint32, unfolloweeID uint32)
 
 	CanAddFriendCache(ctx context.Context, userID uint32, followerID uint32) (bool, error)
 	CanAddFriendSql(ctx context.Context, userID uint32, followerID uint32) (bool, error)
-
-	UnFollowUser(ctx context.Context, followerID uint32, followeeID uint32) error
-	updateUnfollowCache(ctx context.Context, unfollowerID uint32, unfolloweeID uint32)
 
 	CheckFollowTogether(ctx context.Context, followerID uint32, followeeID uint32) (bool, error)
 
