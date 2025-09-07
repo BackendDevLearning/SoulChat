@@ -96,3 +96,23 @@ func (cs *ConduitService) UnfollowUser(ctx context.Context, req *v1.UnfollowUser
 		},
 	}, nil
 }
+
+func (cs *ConduitService) CanAddFriend(ctx context.Context, req *v1.CanAddFriendReq) (*v1.CanAddFriendRes, error) {
+	res, err := cs.pc.CanAddFriend(ctx, req.user_1, req.user_2)
+	if err != nil {
+		log.Printf("CanAddFriend err: %v", err)
+
+		return &v1.CanAddFriendRes{
+			Code:   0,
+			result: "",
+			Res:    ErrorToRes(err),
+			Data:   nil,
+		}, nil
+	}
+	return &v1.CanAddFriendRes{
+		Code:   0,
+		result: res,
+		Res:    ErrorToRes(err),
+		Data:   nil,
+	}, nil
+}
