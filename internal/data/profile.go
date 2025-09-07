@@ -5,6 +5,7 @@ import (
 	"errors"
 	bizProfile "kratos-realworld/internal/biz/profile"
 	"kratos-realworld/internal/model"
+	"strconv"
 
 	"github.com/go-kratos/kratos/v2/log"
 	"gorm.io/gorm"
@@ -13,6 +14,13 @@ import (
 type ProfileRepo struct {
 	data *model.Data
 	log  *log.Helper
+}
+
+func NewProfileRepo(data *model.Data, logger log.Logger) bizProfile.ProfileRepo {
+	return &ProfileRepo{
+		data: data,
+		log:  log.NewHelper(logger),
+	}
 }
 
 func (r *ProfileRepo) CheckFollowTogether(ctx context.Context, followerID uint32, followeeID uint32) (bool, error) {
@@ -66,8 +74,8 @@ func (r *ProfileRepo) updateFollowCache(ctx context.Context, followerID, followe
 	redisKey_follee := UserRedisKey(UserCachePrefix, "followee", followeeID)
 
 	err := r.data.Cache().Pipeline(ctx, func(pipe redis.Pipeliner) error {
-		pipe.SAdd(ctx, redisKey_foller, followeeID)
-		pipe.SAdd(ctx, redisKey_follee, followerID)
+		pipe.SAdd(ctx, redisKey_foller, strconv.Itoa(int(followeeID)))
+		pipe.SAdd(ctx, redisKey_follee, strconv.Itoa(int(followerID)))
 		return nil
 	}) // 获取管道对象
 
@@ -106,8 +114,8 @@ func (r *ProfileRepo) updateUnfollowCache(ctx context.Context, followerID uint32
 	redisKey_follee := UserRedisKey(UserCachePrefix, "followee", followeeID)
 
 	err := r.data.Cache().Pipeline(ctx, func(pipe redis.Pipeliner) error {
-		pipe.SRem(ctx, redisKey_foller, followeeID)
-		pipe.SRem(ctx, redisKey_follee, followerID)
+		pipe.SRem(ctx, redisKey_foller, strconv.Itoa(int(followeeID)))
+		pipe.SRem(ctx, redisKey_follee, strconv.Itoa(int(followerID)))
 		return nil
 	}) // 获取管道对象
 
@@ -117,11 +125,33 @@ func (r *ProfileRepo) updateUnfollowCache(ctx context.Context, followerID uint32
 	}
 }
 
-func NewProfileRepo(data *model.Data, logger log.Logger) bizProfile.ProfileRepo {
-	return &ProfileRepo{
-		data: data,
-		log:  log.NewHelper(logger),
+func (r *ProfileRepo) CanAddFriendCache(ctx context.Context, userID uint32, followerID uint32) (bool, error) {
+	redis := r.data.Cache()
+	keyA := UserRedisKey(UserCachePrefix, "following", userID)
+	keyB := UserRedisKey(UserCachePrefix, "following", followerID)
+
+	isAFollowsB, err := redis.SIsMember(ctx, keyA, strconv.Itoa(int(userID))).Result()
+	if err != nil {
+		return false, err
 	}
+
+	isBFollowsA, err := redis.SIsMember(ctx, keyB, userAID).Result()
+	if err != nil {
+		return false, err
+	}
+
+	return isAFollowsB && isBFollowsA, nil
+}
+
+func (r *ProfileRepo) CanAddFriendSql(ctx context.Context, userID uint32, followerID uint32) (bool, error) {
+	var cnt int64
+	r.data.DB().Model(&bizProfile.FollowTB{}).
+		Where("follower_id = ? AND followee_id = ?", followerID, userID).
+		Count(&cnt)
+	if cnt == 0 {
+		return false, nil
+	}
+	return true, nil
 }
 
 func (r *ProfileRepo) CreateProfile(ctx context.Context, profile *bizProfile.ProfileTB) error {

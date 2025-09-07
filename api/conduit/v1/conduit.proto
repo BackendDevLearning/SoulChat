@@ -45,11 +45,17 @@ service Conduit {
 
   rpc UnfollowUser(UnfollowUserRequest) returns (FollowFanReply) {
     option (google.api.http) = {
-      delete : "/api/profiles/{target_id}/unfollow",
+      post : "/api/profiles/{target_id}/unfollow",
+      body : "*",
     };
   }
 
-
+  rpc CanAddFriend(CanAddFriendReq) returns(CanAddFriendRes) {
+    option (google.api.http) = {
+      post : "/api/profiles/{target_id}/CanAddFriend",
+      body : "*",
+    };
+  }
 }
 
 // NID_REGIDTER_REQ
@@ -124,6 +130,16 @@ message FollowUserRequest { string target_id = 1; }
 
 message UnfollowUserRequest { string target_id = 1; }
 
+message CanAddFriendReq {
+  int32 user_1 = 1;
+  int32 user_2 = 2;
+}
+
+message CanAddFriendRes {
+  int32 code = 1;
+  string result = 2;
+  Res res = 3;
+}
 
 // NID_FOLLOW_FAN_REQ
 message RelationData {

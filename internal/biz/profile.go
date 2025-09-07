@@ -103,17 +103,20 @@ func (pc *ProfileUsecase) UnfollowUser(ctx context.Context, targetID string) (*U
 		return nil, err
 	}
 
-	// 3. 检查是否还存在互关
-	//var cnt int64
-	//pc.data.DB().Model(&FollowTB{}).
-	//	Where("follower_id = ? AND followee_id = ?", targetID, userID).
-	//	Count(&cnt)
-
 	return &UserFollowFanReply{
 		SelfID:      uint32(userID),
 		FollowCount: profile.FollowCount,
 		TargetID:    uint32(tID),
 		FanCount:    profile.FanCount,
 	}, nil
-	
+
+}
+
+func (pc *ProfileUsecase) CanAddFriend(ctx context.Context, user_1 int32, user_2 int32) (bool, error) {
+	res, err := pc.pr.CanAddFriend(ctx, uint32(user_1), uint32(user_2))
+	if err != nil {
+		return false, err
+	}
+
+	return res, nil
 }
