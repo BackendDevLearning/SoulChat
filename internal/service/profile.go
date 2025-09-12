@@ -74,7 +74,7 @@ func (cs *ConduitService) FollowUser(ctx context.Context, req *v1.FollowUserRequ
 }
 
 func (cs *ConduitService) UnfollowUser(ctx context.Context, req *v1.UnfollowUserRequest) (*v1.FollowFanReply, error) {
-	res, err := cs.pc.UnFollowUser(ctx, req.TargetId)
+	res, err := cs.pc.UnfollowUser(ctx, req.TargetId)
 	if err != nil {
 		log.Printf("UnfollowUser err: %v", err)
 
@@ -88,7 +88,7 @@ func (cs *ConduitService) UnfollowUser(ctx context.Context, req *v1.UnfollowUser
 	return &v1.FollowFanReply{
 		Code: 0,
 		Res:  ErrorToRes(err),
-		Data: &v1.FollowFanReply_RelationData{
+		Data: &v1.RelationData{
 			SelfId:      res.SelfID,
 			FollowCount: res.FollowCount,
 			TargetId:    res.TargetID,
@@ -98,21 +98,20 @@ func (cs *ConduitService) UnfollowUser(ctx context.Context, req *v1.UnfollowUser
 }
 
 func (cs *ConduitService) CanAddFriend(ctx context.Context, req *v1.CanAddFriendReq) (*v1.CanAddFriendRes, error) {
-	res, err := cs.pc.CanAddFriend(ctx, req.user_1, req.user_2)
+	res, err := cs.pc.CanAddFriend(ctx, req.TargetId)
 	if err != nil {
 		log.Printf("CanAddFriend err: %v", err)
 
 		return &v1.CanAddFriendRes{
-			Code:   0,
-			result: "",
-			Res:    ErrorToRes(err),
-			Data:   nil,
+			Code: 1,
+			Res:  ErrorToRes(err),
+			Data: nil,
 		}, nil
 	}
+
 	return &v1.CanAddFriendRes{
-		Code:   0,
-		result: res,
-		Res:    ErrorToRes(err),
-		Data:   nil,
+		Code: 0,
+		Res:  ErrorToRes(err),
+		Data: res,
 	}, nil
 }

@@ -3,9 +3,9 @@ package biz
 import (
 	"context"
 	"errors"
-	"fmt"
 	bizProfile "kratos-realworld/internal/biz/profile"
 	"kratos-realworld/internal/conf"
+	"kratos-realworld/internal/model"
 	"kratos-realworld/internal/pkg/middleware/auth"
 	"strconv"
 
@@ -14,14 +14,16 @@ import (
 
 type ProfileUsecase struct {
 	pr bizProfile.ProfileRepo
+	tx model.Transaction
 
 	jwtc *conf.JWT
 	log  *log.Helper
 }
 
-func NewProfileUsecase(pr bizProfile.ProfileRepo, jwtc *conf.JWT, logger log.Logger) *ProfileUsecase {
+func NewProfileUsecase(pr bizProfile.ProfileRepo, tx model.Transaction, jwtc *conf.JWT, logger log.Logger) *ProfileUsecase {
 	return &ProfileUsecase{
 		pr:   pr,
+		tx:   tx,
 		jwtc: jwtc,
 		log:  log.NewHelper(logger),
 	}
@@ -55,19 +57,35 @@ func (pc *ProfileUsecase) FollowUser(ctx context.Context, targetID string) (*Use
 	// 参数：字符串, 进制(10), 位数(32)
 	tID, err := strconv.ParseUint(targetID, 10, 32)
 	if err != nil {
-		fmt.Printf("转换失败: %v\n", err)
 		return nil, errors.New("string convert error")
 	}
 
-	er := pc.pr.FollowUser(ctx, uint32(tID), uint32(userID))
-	if er != nil {
-		return nil, er
-	}
+	var followCount, fanCount uint32
 
-	profile, err := pc.pr.GetProfileByUserID(ctx, uint32(userID))
+	err = pc.tx.InTx(ctx, func(ctx context.Context) error {
+		if err := pc.pr.FollowUser(ctx, uint32(userID), uint32(tID)); err != nil {
+			return NewErr(ErrCodeFollowFailed, FOLLOW_USER_FAILED, "failed to insert follow relationship")
+		}
+
+		var err error
+		if followCount, err = pc.pr.IncrementFollowCount(ctx, uint32(userID), 1); err != nil {
+			return NewErr(ErrCodeFollowFailed, FOLLOW_USER_FAILED, "failed to increase follower follow counts")
+		}
+
+		if fanCount, err = pc.pr.IncrementFanCount(ctx, uint32(tID), 1); err != nil {
+			return NewErr(ErrCodeFollowFailed, FOLLOW_USER_FAILED, "failed to increase followee fan counts")
+		}
+
+		return nil
+	})
 	if err != nil {
 		return nil, err
 	}
+
+	//profile, err := pc.pr.GetProfileByUserID(ctx, uint32(userID))
+	//if err != nil {
+	//	return nil, err
+	//}
 
 	// 3. 检查是否形成双向关注
 	//together, err := pc.pr.CheckFollowTogether(ctx, uint32(tID), uint32(userID))
@@ -77,9 +95,9 @@ func (pc *ProfileUsecase) FollowUser(ctx context.Context, targetID string) (*Use
 
 	return &UserFollowFanReply{
 		SelfID:      uint32(userID),
-		FollowCount: profile.FollowCount,
+		FollowCount: followCount,
 		TargetID:    uint32(tID),
-		FanCount:    profile.FanCount,
+		FanCount:    fanCount,
 	}, nil
 
 }
@@ -89,31 +107,54 @@ func (pc *ProfileUsecase) UnfollowUser(ctx context.Context, targetID string) (*U
 	// 参数：字符串, 进制(10), 位数(32)
 	tID, err := strconv.ParseUint(targetID, 10, 32)
 	if err != nil {
-		fmt.Printf("转换失败: %v\n", err)
 		return nil, errors.New("string convert error")
 	}
 
-	er := pc.pr.UnFollowUser(ctx, uint32(tID), uint32(userID))
-	if er != nil {
-		return nil, er
-	}
+	var followCount, fanCount uint32
 
-	profile, err := pc.pr.GetProfileByUserID(ctx, uint32(userID))
+	err = pc.tx.InTx(ctx, func(ctx context.Context) error {
+		if err := pc.pr.UnfollowUser(ctx, uint32(userID), uint32(tID)); err != nil {
+			return NewErr(ErrCodeUnfollowFailed, UNFOLLOW_USER_FAILED, "failed to delete follow relationship")
+		}
+
+		var err error
+		if followCount, err = pc.pr.IncrementFollowCount(ctx, uint32(userID), -1); err != nil {
+			return NewErr(ErrCodeUnfollowFailed, UNFOLLOW_USER_FAILED, "failed to decrease follower follow counts")
+		}
+
+		if fanCount, err = pc.pr.IncrementFanCount(ctx, uint32(tID), -1); err != nil {
+			return NewErr(ErrCodeUnfollowFailed, UNFOLLOW_USER_FAILED, "failed to decrease followee fan counts")
+		}
+
+		return nil
+	})
 	if err != nil {
 		return nil, err
 	}
 
+	//profile, err := pc.pr.GetProfileByUserID(ctx, uint32(userID))
+	//if err != nil {
+	//	return nil, err
+	//}
+
 	return &UserFollowFanReply{
 		SelfID:      uint32(userID),
-		FollowCount: profile.FollowCount,
+		FollowCount: followCount,
 		TargetID:    uint32(tID),
-		FanCount:    profile.FanCount,
+		FanCount:    fanCount,
 	}, nil
 
 }
 
-func (pc *ProfileUsecase) CanAddFriend(ctx context.Context, user_1 int32, user_2 int32) (bool, error) {
-	res, err := pc.pr.CanAddFriend(ctx, uint32(user_1), uint32(user_2))
+func (pc *ProfileUsecase) CanAddFriend(ctx context.Context, targetID string) (bool, error) {
+	userID := auth.FromContext(ctx).UserID
+	// 参数：字符串, 进制(10), 位数(32)
+	tID, err := strconv.ParseUint(targetID, 10, 32)
+	if err != nil {
+		return nil, errors.New("string convert error")
+	}
+
+	res, err := pc.pr.CanAddFriend(ctx, userID, tID)
 	if err != nil {
 		return false, err
 	}

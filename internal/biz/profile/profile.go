@@ -61,7 +61,7 @@ type ProfileRepo interface {
 	FollowUser(ctx context.Context, followerID uint32, followeeID uint32) error
 	UpdateFollowCache(ctx context.Context, followerID uint32, followeeID uint32) error
 
-	UnFollowUser(ctx context.Context, followerID uint32, followeeID uint32) error
+	UnfollowUser(ctx context.Context, followerID uint32, followeeID uint32) error
 	UpdateUnfollowCache(ctx context.Context, unfollowerID uint32, unfolloweeID uint32) error
 
 	CanAddFriendCache(ctx context.Context, userID uint32, followerID uint32) (bool, error)
@@ -73,12 +73,12 @@ type ProfileRepo interface {
 	CheckFollowTogether(ctx context.Context, followerID uint32, followeeID uint32) (bool, error)
 
 	// 增量更新统计字段
-	IncrementFollowCount(ctx context.Context, userID uint, delta int) error
-	IncrementFanCount(ctx context.Context, userID uint, delta int) error
+	IncrementFollowCount(ctx context.Context, userID uint32, delta int) (uint32, error)
+	IncrementFanCount(ctx context.Context, userID uint32, delta int) (uint32, error)
 
-	//IncrementViewCount(ctx context.Context, userID uint, delta int) error
-	//IncrementNoteCount(ctx context.Context, userID uint, delta int) error
-	//IncrementReceivedLikeCount(ctx context.Context, userID uint, delta int) error
-	//IncrementCollectedCount(ctx context.Context, userID uint, delta int) error
-	//IncrementCommentCount(ctx context.Context, userID uint, delta int) error
+	//IncrementViewCount(ctx context.Context, userID uint32, delta int) error
+	//IncrementNoteCount(ctx context.Context, userID uint32, delta int) error
+	//IncrementReceivedLikeCount(ctx context.Context, userID uint32, delta int) error
+	//IncrementCollectedCount(ctx context.Context, userID uint32, delta int) error
+	//IncrementCommentCount(ctx context.Context, userID uint32, delta int) error
 }
