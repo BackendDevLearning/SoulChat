@@ -101,7 +101,6 @@ message UpdateReply {
 message ProfileData {
   uint32 user_id = 2;
   string tags = 3;
-
   uint32 follow_count = 4;
   uint32 fan_count = 5;
 
@@ -130,15 +129,12 @@ message FollowUserRequest { string target_id = 1; }
 
 message UnfollowUserRequest { string target_id = 1; }
 
-message CanAddFriendReq {
-  int32 user_1 = 1;
-  int32 user_2 = 2;
-}
+message CanAddFriendReq { string target_id = 1; }
 
 message CanAddFriendRes {
   int32 code = 1;
-  string result = 2;
-  Res res = 3;
+  Res res = 2;
+  Data data = 3;
 }
 
 // NID_FOLLOW_FAN_REQ

@@ -33,6 +33,8 @@ type Transaction interface {
 
 type contextTxKey struct{}
 
+var TxKey = contextTxKey{}
+
 func (d *Data) InTx(ctx context.Context, fn func(ctx context.Context) error) error {
 	//这个调用是为了把 ctx（上下文）注入到 GORM 的操作流程中
 	//.Transaction(func(tx *gorm.DB) error)，这个调用是 开启一个事务块，类似于：begin, commit

@@ -26,6 +26,10 @@ const (
 	// 数据库、redis缓存相关
 	ErrCodeDBQueryFailed    = 50010
 	ErrCodeCreateUserFailed = 50011
+
+	// 关注、取关、好友相关
+	ErrCodeFollowFailed   = 60000
+	ErrCodeUnfollowFailed = 60001
 )
 
 // error reason
@@ -45,4 +49,8 @@ const (
 	// 数据库相关
 	DB_QUERY_FAILED    = "DB_QUERY_FAILED"
 	CREATE_USER_FAILED = "CREATE_USER_FAILED"
+
+	// 关注、取关、好友相关
+	FOLLOW_USER_FAILED   = "FOLLOW_USER_FAILED"
+	UNFOLLOW_USER_FAILED = "UNFOLLOW_USER_FAILED"
 )

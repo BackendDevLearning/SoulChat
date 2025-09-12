@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"github.com/redis/go-redis/v9"
 	bizProfile "kratos-realworld/internal/biz/profile"
 	"kratos-realworld/internal/model"
 	"strconv"
@@ -23,6 +25,15 @@ func NewProfileRepo(data *model.Data, logger log.Logger) bizProfile.ProfileRepo 
 		data: data,
 		log:  log.NewHelper(logger),
 	}
+}
+
+func (r *ProfileRepo) getDB(ctx context.Context) *gorm.DB {
+	if tx, ok := ctx.Value(model.TxKey).(*gorm.DB); ok {
+		fmt.Println("使用事务")
+		return tx
+	}
+	fmt.Println("使用全局DB")
+	return r.data.DB()
 }
 
 func (r *ProfileRepo) CreateProfile(ctx context.Context, profile *bizProfile.ProfileTB) error {
@@ -68,42 +79,25 @@ func (r *ProfileRepo) UpdateProfile(ctx context.Context, profile *bizProfile.Pro
 }
 
 func (r *ProfileRepo) FollowUser(ctx context.Context, followerID uint32, followeeID uint32) error {
-	// 防止关注的用户不存在
+	// 检查目标用户是否存在
 	user, err := r.GetProfileByUserID(ctx, followerID)
 	if err != nil {
 		return err
 	}
 	if user == nil {
-		return errors.New("user not found")
+		return errors.New("followee user not found")
 	}
 
-	// Step 2: MySQL 事务
-	err = r.data.DB().Transaction(func(tx *gorm.DB) error {
-		// 插入关注关系
-		follow := bizProfile.FollowTB{FollowerID: followerID, FolloweeID: followeeID}
-		if err := tx.Create(&follow).Error; err != nil {
-			if errors.Is(err, gorm.ErrDuplicatedKey) {
-				return errors.New("already followed")
-			}
-			return err
+	// 插入关注关系记录
+	follow := bizProfile.FollowTB{FollowerID: followerID, FolloweeID: followeeID}
+	if err := r.getDB(ctx).Create(&follow).Error; err != nil {
+		if errors.Is(err, gorm.ErrDuplicatedKey) {
+			return errors.New("follow relationship already followed")
 		}
-
-		// 更新双方的统计数据
-		if err := tx.Model(&bizProfile.ProfileTB{}).Where("user_id = ?", followerID).
-			Update("follow_count", gorm.Expr("follow_count + 1")).Error; err != nil {
-			return err
-		}
-		if err := tx.Model(&bizProfile.ProfileTB{}).Where("user_id = ?", followeeID).
-			Update("fan_count", gorm.Expr("fan_count + 1")).Error; err != nil {
-			return err
-		}
-		return nil
-	})
-	if err != nil {
 		return err
 	}
 
-	// Step 3: Redis 写入
+	// Redis 写入
 	if err := r.UpdateFollowCache(ctx, followerID, followeeID); err != nil {
 		r.log.Errorf("Redis update failed, will repair later. follower=%d followee=%d err=%v",
 			followerID, followeeID, err)
@@ -127,8 +121,8 @@ func (r *ProfileRepo) UpdateFollowCache(ctx context.Context, followerID uint32, 
 	})
 }
 
-func (r *ProfileRepo) UnFollowUser(ctx context.Context, followerID uint32, followeeID uint32) error {
-	// Step 1: 检查目标用户是否存在
+func (r *ProfileRepo) UnfollowUser(ctx context.Context, followerID uint32, followeeID uint32) error {
+	// 检查目标用户是否存在
 	user, err := r.GetProfileByUserID(ctx, followeeID)
 	if err != nil {
 		return err
@@ -137,30 +131,13 @@ func (r *ProfileRepo) UnFollowUser(ctx context.Context, followerID uint32, follo
 		return errors.New("followee user not found")
 	}
 
-	// Step 2: MySQL 事务
-	err = r.data.DB().Transaction(func(tx *gorm.DB) error {
-		// 删除关注关系
-		if err := tx.Where("follower_id = ? AND followee_id = ?", followerID, followeeID).
-			Delete(&bizProfile.FollowTB{}).Error; err != nil {
-			return err
-		}
-
-		// 更新计数
-		if err := tx.Model(&bizProfile.ProfileTB{}).Where("user_id = ?", followerID).
-			Update("follow_count", gorm.Expr("follow_count - 1")).Error; err != nil {
-			return err
-		}
-		if err := tx.Model(&bizProfile.ProfileTB{}).Where("user_id = ?", followeeID).
-			Update("fan_count", gorm.Expr("fan_count - 1")).Error; err != nil {
-			return err
-		}
-		return nil
-	})
-	if err != nil {
+	// 删除关注关系记录
+	if err := r.getDB(ctx).Where("follower_id = ? AND followee_id = ?", followerID, followeeID).
+		Delete(&bizProfile.FollowTB{}).Error; err != nil {
 		return err
 	}
 
-	// Step 3: Redis 更新
+	// Redis 更新
 	if err := r.updateUnfollowCache(ctx, followerID, followeeID); err != nil {
 		r.log.Errorf("Redis update failed, will repair later. follower=%d followee=%d err=%v",
 			followerID, followeeID, err)
@@ -227,12 +204,45 @@ func (r *ProfileRepo) CheckFollowTogether(ctx context.Context, followerID uint32
 	return false, nil
 }
 
-func (r *ProfileRepo) IncrementFollowCount(ctx context.Context, userID uint, delta int) error {
-	return nil
+func (r *ProfileRepo) IncrementFollowCount(ctx context.Context, userID uint32, delta int) (uint32, error) {
+	var newFollowCount uint32
+	err := r.getDB(ctx).Model(&bizProfile.ProfileTB{}).
+		Where("user_id = ?", userID).
+		UpdateColumn("follow_count", gorm.Expr("follow_count + ?", delta)).
+		Error
+	if err != nil {
+		return 0, err
+	}
+
+	err = r.getDB(ctx).Model(&bizProfile.ProfileTB{}).
+		Where("user_id = ?", userID).
+		Select("follow_count").
+		Take(&newFollowCount).Error
+	if err != nil {
+		return 0, err
+	}
+
+	return newFollowCount, nil
 }
 
-func (r *ProfileRepo) IncrementFanCount(ctx context.Context, userID uint, delta int) error {
-	return nil
+func (r *ProfileRepo) IncrementFanCount(ctx context.Context, userID uint32, delta int) (uint32, error) {
+	var newFollowCount uint32
+	err := r.getDB(ctx).Model(&bizProfile.ProfileTB{}).
+		Where("user_id = ?", userID).
+		UpdateColumn("fan_count", gorm.Expr("fan_count + ?", delta)).Error
+	if err != nil {
+		return 0, err
+	}
+
+	err = r.getDB(ctx).Model(&bizProfile.ProfileTB{}).
+		Where("user_id = ?", userID).
+		Select("fan_count").
+		Take(&newFollowCount).Error
+	if err != nil {
+		return 0, err
+	}
+
+	return newFollowCount, nil
 }
 
 // 定时修复
