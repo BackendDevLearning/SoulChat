@@ -104,7 +104,7 @@ func (gc *GateWayUsecase) Login(ctx context.Context, phone string, password stri
 		return nil, NewErr(ErrCodeInvalidPassword, INVALID_PASSWORD, "password is incorrect")
 	}
 
-	token, err := gc.generateToken(user.ID)
+	token, err := gc.generateToken(res.ID)
 	if err != nil {
 		return nil, NewErr(ErrCodeCreateTokenFailed, CREATE_TOKEN_FAILED, "failed to create token")
 	}

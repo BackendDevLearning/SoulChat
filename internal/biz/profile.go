@@ -3,6 +3,7 @@ package biz
 import (
 	"context"
 	"errors"
+	"fmt"
 	bizProfile "kratos-realworld/internal/biz/profile"
 	"kratos-realworld/internal/conf"
 	"kratos-realworld/internal/model"
@@ -56,6 +57,7 @@ func (pc *ProfileUsecase) FollowUser(ctx context.Context, targetID string) (*Use
 	userID := auth.FromContext(ctx).UserID
 	// 参数：字符串, 进制(10), 位数(32)
 	tID, err := strconv.ParseUint(targetID, 10, 32)
+	fmt.Println(userID, tID, err)
 	if err != nil {
 		return nil, errors.New("string convert error")
 	}
@@ -81,17 +83,6 @@ func (pc *ProfileUsecase) FollowUser(ctx context.Context, targetID string) (*Use
 	if err != nil {
 		return nil, err
 	}
-
-	//profile, err := pc.pr.GetProfileByUserID(ctx, uint32(userID))
-	//if err != nil {
-	//	return nil, err
-	//}
-
-	// 3. 检查是否形成双向关注
-	//together, err := pc.pr.CheckFollowTogether(ctx, uint32(tID), uint32(userID))
-	//if err != nil {
-	//	return nil, err
-	//}
 
 	return &UserFollowFanReply{
 		SelfID:      uint32(userID),
@@ -132,11 +123,6 @@ func (pc *ProfileUsecase) UnfollowUser(ctx context.Context, targetID string) (*U
 		return nil, err
 	}
 
-	//profile, err := pc.pr.GetProfileByUserID(ctx, uint32(userID))
-	//if err != nil {
-	//	return nil, err
-	//}
-
 	return &UserFollowFanReply{
 		SelfID:      uint32(userID),
 		FollowCount: followCount,
@@ -146,7 +132,7 @@ func (pc *ProfileUsecase) UnfollowUser(ctx context.Context, targetID string) (*U
 
 }
 
-func (pc *ProfileUsecase) CanAddFriend(ctx context.Context, targetID string) (bool, error) {
+func (pc *ProfileUsecase) GetRelationship(ctx context.Context, targetID string) (*UserRelationshipReply, error) {
 	userID := auth.FromContext(ctx).UserID
 	// 参数：字符串, 进制(10), 位数(32)
 	tID, err := strconv.ParseUint(targetID, 10, 32)
@@ -154,10 +140,50 @@ func (pc *ProfileUsecase) CanAddFriend(ctx context.Context, targetID string) (bo
 		return nil, errors.New("string convert error")
 	}
 
-	res, err := pc.pr.CanAddFriend(ctx, userID, tID)
-	if err != nil {
-		return false, err
-	}
+	var isFollowing, isFollowedBy, isMutual, isBlocked, isBlockedBy, isFriend bool
 
-	return res, nil
+	// 判断是否关注 userID -> targetID
+	isFollowing, err = pc.pr.CheckFollow(ctx, uint32(userID), uint32(tID))
+
+	// 判断是否被关注 targetID -> userID
+	isFollowedBy, err = pc.pr.CheckFollow(ctx, uint32(tID), uint32(userID))
+
+	// 是否相互关注 userID <-> targetID
+	isMutual = isFollowing && isFollowedBy
+
+	// 是否拉黑 userID -> targetID
+	isBlocked, err = pc.pr.CheckBlock(ctx, uint32(userID), uint32(tID))
+
+	// 是否被拉黑 targetID -> userID
+	isBlockedBy, err = pc.pr.CheckBlock(ctx, uint32(tID), uint32(userID))
+
+	// 是否是好友 userID <-> targetID
+	isFriend, err = pc.pr.CheckFriend(ctx, uint32(userID), uint32(tID))
+
+	return &UserRelationshipReply{
+		IsFollowing:  isFollowing,
+		IsFollowedBy: isFollowedBy,
+		IsMutual:     isMutual,
+		IsBlocked:    isBlocked,
+		IsBlockedBy:  isBlockedBy,
+		IsFriend:     isFriend,
+	}, nil
+}
+
+func (pc *ProfileUsecase) CanAddFriend(ctx context.Context, targetID string) (bool, error) {
+	//userID := auth.FromContext(ctx).UserID
+	//// 参数：字符串, 进制(10), 位数(32)
+	//tID, err := strconv.ParseUint(targetID, 10, 32)
+	//if err != nil {
+	//	return nil, errors.New("string convert error")
+	//}
+	//
+	//res, err := pc.pr.CanAddFriend(ctx, userID, tID)
+	//if err != nil {
+	//	return false, err
+	//}
+	//
+	//return res, nil
+
+	return true, nil
 }

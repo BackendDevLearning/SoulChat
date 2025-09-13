@@ -50,9 +50,15 @@ service Conduit {
     };
   }
 
+  rpc GetRelationship(RelationshipRequest) returns (RelationshipReply) {
+    option (google.api.http) = {
+      get : "/api/profiles/{target_id}/relationship",
+    };
+  }
+
   rpc CanAddFriend(CanAddFriendReq) returns(CanAddFriendRes) {
     option (google.api.http) = {
-      post : "/api/profiles/{target_id}/CanAddFriend",
+      post : "/api/profiles/{target_id}/canAddFriend",
       body : "*",
     };
   }
@@ -96,7 +102,7 @@ message UpdateReply {
 }
 
 
-// SO  CAL 相关协议
+// Social 相关协议
 // NID_GET_PROFILE_REQ
 message ProfileData {
   uint32 user_id = 2;
@@ -110,9 +116,9 @@ message ProfileData {
   uint32 collected_count = 9;
   uint32 comment_count = 10;
 
-//  string last_login_ip = 11;
+  string last_login_ip = 11;
   google.protobuf.Timestamp last_active = 12;
-//  string status = 13;
+  string status = 13;
 }
 
 // NID_GET_PROFILE_REQ
@@ -124,21 +130,18 @@ message GetProfileReply {
   ProfileData data = 3;
 }
 
-// NID_FOLLOW_USER_REQ
+// NID_FOLLOW_FAN_REQ
 message FollowUserRequest { string target_id = 1; }
 
 message UnfollowUserRequest { string target_id = 1; }
 
-message CanAddFriendReq { string target_id = 1; }
-
-message CanAddFriendRes {
+message FollowFanReply {
   int32 code = 1;
   Res res = 2;
-  Data data = 3;
+  FollowFanData data = 3;
 }
 
-// NID_FOLLOW_FAN_REQ
-message RelationData {
+message FollowFanData {
   // 当前用户信息
   uint32 self_id = 1;
   uint32 follow_count = 2; // 我的关注数
@@ -147,12 +150,37 @@ message RelationData {
   uint32 fan_count = 4;    // 对方的粉丝数
 }
 
-message FollowFanReply {
+message RelationshipRequest { string target_id = 1; }
+
+message RelationshipReply {
   int32 code = 1;
   Res res = 2;
-  RelationData data = 3;
+  RelationshipData data = 3;
 }
 
+message RelationshipData {
+  bool is_following = 1;    // 当前用户是否已关注对方
+  bool is_followed_by = 2;  // 当前用户是否被对方关注
+  bool is_mutual = 3;       // 是否互相关注
+  bool is_blocked = 4;      // 当前用户是否已拉黑对方
+  bool is_blocked_by = 5;   // 当前用户是否被对方拉黑
+  bool is_friend = 6;       // 是否是好友（如果互关=好友，可以合并，目前互关和好友不是等价的）
+}
+
+// NID_FRIENDS_REQ
+message CanAddFriendReq { string target_id = 1; }
+
+message CanAddFriendRes {
+  int32 code = 1;
+  Res res = 2;
+  AddFriendRes data = 3;
+}
+
+message AddFriendRes {}
+
+
+// 前端错误信息查看
+// NID_Describe_Message
 message Res {
   int32 code = 1;  // 业务状态码，例如 200、422
   string reason = 2;  // 原因

@@ -370,7 +370,7 @@ func (x *UpdateReply) GetRes() *Res {
 	return nil
 }
 
-// SO  CAL 相关协议
+// Social 相关协议
 // NID_GET_PROFILE_REQ
 type ProfileData struct {
 	state             protoimpl.MessageState `protogen:"open.v1"`
@@ -383,10 +383,11 @@ type ProfileData struct {
 	ReceivedLikeCount uint32                 `protobuf:"varint,8,opt,name=received_like_count,json=receivedLikeCount,proto3" json:"received_like_count,omitempty"`
 	CollectedCount    uint32                 `protobuf:"varint,9,opt,name=collected_count,json=collectedCount,proto3" json:"collected_count,omitempty"`
 	CommentCount      uint32                 `protobuf:"varint,10,opt,name=comment_count,json=commentCount,proto3" json:"comment_count,omitempty"`
-	// string last_login_ip = 11;
-	LastActive    *timestamp.Timestamp `protobuf:"bytes,12,opt,name=last_active,json=lastActive,proto3" json:"last_active,omitempty"` //  string status = 13;
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	LastLoginIp       string                 `protobuf:"bytes,11,opt,name=last_login_ip,json=lastLoginIp,proto3" json:"last_login_ip,omitempty"`
+	LastActive        *timestamp.Timestamp   `protobuf:"bytes,12,opt,name=last_active,json=lastActive,proto3" json:"last_active,omitempty"`
+	Status            string                 `protobuf:"bytes,13,opt,name=status,proto3" json:"status,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *ProfileData) Reset() {
@@ -482,11 +483,25 @@ func (x *ProfileData) GetCommentCount() uint32 {
 	return 0
 }
 
+func (x *ProfileData) GetLastLoginIp() string {
+	if x != nil {
+		return x.LastLoginIp
+	}
+	return ""
+}
+
 func (x *ProfileData) GetLastActive() *timestamp.Timestamp {
 	if x != nil {
 		return x.LastActive
 	}
 	return nil
+}
+
+func (x *ProfileData) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
 }
 
 // NID_GET_PROFILE_REQ
@@ -594,7 +609,7 @@ func (x *GetProfileReply) GetData() *ProfileData {
 	return nil
 }
 
-// NID_FOLLOW_USER_REQ
+// NID_FOLLOW_FAN_REQ
 type FollowUserRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	TargetId      string                 `protobuf:"bytes,1,opt,name=target_id,json=targetId,proto3" json:"target_id,omitempty"`
@@ -683,193 +698,18 @@ func (x *UnfollowUserRequest) GetTargetId() string {
 	return ""
 }
 
-type CanAddFriendReq struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	TargetId      string                 `protobuf:"bytes,1,opt,name=target_id,json=targetId,proto3" json:"target_id,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *CanAddFriendReq) Reset() {
-	*x = CanAddFriendReq{}
-	mi := &file_api_conduit_v1_conduit_proto_msgTypes[11]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *CanAddFriendReq) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*CanAddFriendReq) ProtoMessage() {}
-
-func (x *CanAddFriendReq) ProtoReflect() protoreflect.Message {
-	mi := &file_api_conduit_v1_conduit_proto_msgTypes[11]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use CanAddFriendReq.ProtoReflect.Descriptor instead.
-func (*CanAddFriendReq) Descriptor() ([]byte, []int) {
-	return file_api_conduit_v1_conduit_proto_rawDescGZIP(), []int{11}
-}
-
-func (x *CanAddFriendReq) GetTargetId() string {
-	if x != nil {
-		return x.TargetId
-	}
-	return ""
-}
-
-type CanAddFriendRes struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Code          int32                  `protobuf:"varint,1,opt,name=code,proto3" json:"code,omitempty"`
-	Result        string                 `protobuf:"bytes,2,opt,name=result,proto3" json:"result,omitempty"`
-	Res           *Res                   `protobuf:"bytes,3,opt,name=res,proto3" json:"res,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *CanAddFriendRes) Reset() {
-	*x = CanAddFriendRes{}
-	mi := &file_api_conduit_v1_conduit_proto_msgTypes[12]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *CanAddFriendRes) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*CanAddFriendRes) ProtoMessage() {}
-
-func (x *CanAddFriendRes) ProtoReflect() protoreflect.Message {
-	mi := &file_api_conduit_v1_conduit_proto_msgTypes[12]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use CanAddFriendRes.ProtoReflect.Descriptor instead.
-func (*CanAddFriendRes) Descriptor() ([]byte, []int) {
-	return file_api_conduit_v1_conduit_proto_rawDescGZIP(), []int{12}
-}
-
-func (x *CanAddFriendRes) GetCode() int32 {
-	if x != nil {
-		return x.Code
-	}
-	return 0
-}
-
-func (x *CanAddFriendRes) GetResult() string {
-	if x != nil {
-		return x.Result
-	}
-	return ""
-}
-
-func (x *CanAddFriendRes) GetRes() *Res {
-	if x != nil {
-		return x.Res
-	}
-	return nil
-}
-
-// NID_FOLLOW_FAN_REQ
-type RelationData struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// 当前用户信息
-	SelfId      uint32 `protobuf:"varint,1,opt,name=self_id,json=selfId,proto3" json:"self_id,omitempty"`
-	FollowCount uint32 `protobuf:"varint,2,opt,name=follow_count,json=followCount,proto3" json:"follow_count,omitempty"` // 我的关注数
-	// 对方用户信息
-	TargetId      uint32 `protobuf:"varint,3,opt,name=target_id,json=targetId,proto3" json:"target_id,omitempty"`
-	FanCount      uint32 `protobuf:"varint,4,opt,name=fan_count,json=fanCount,proto3" json:"fan_count,omitempty"` // 对方的粉丝数
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *RelationData) Reset() {
-	*x = RelationData{}
-	mi := &file_api_conduit_v1_conduit_proto_msgTypes[13]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *RelationData) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*RelationData) ProtoMessage() {}
-
-func (x *RelationData) ProtoReflect() protoreflect.Message {
-	mi := &file_api_conduit_v1_conduit_proto_msgTypes[13]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use RelationData.ProtoReflect.Descriptor instead.
-func (*RelationData) Descriptor() ([]byte, []int) {
-	return file_api_conduit_v1_conduit_proto_rawDescGZIP(), []int{13}
-}
-
-func (x *RelationData) GetSelfId() uint32 {
-	if x != nil {
-		return x.SelfId
-	}
-	return 0
-}
-
-func (x *RelationData) GetFollowCount() uint32 {
-	if x != nil {
-		return x.FollowCount
-	}
-	return 0
-}
-
-func (x *RelationData) GetTargetId() uint32 {
-	if x != nil {
-		return x.TargetId
-	}
-	return 0
-}
-
-func (x *RelationData) GetFanCount() uint32 {
-	if x != nil {
-		return x.FanCount
-	}
-	return 0
-}
-
 type FollowFanReply struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Code          int32                  `protobuf:"varint,1,opt,name=code,proto3" json:"code,omitempty"`
 	Res           *Res                   `protobuf:"bytes,2,opt,name=res,proto3" json:"res,omitempty"`
-	Data          *RelationData          `protobuf:"bytes,3,opt,name=data,proto3" json:"data,omitempty"`
+	Data          *FollowFanData         `protobuf:"bytes,3,opt,name=data,proto3" json:"data,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *FollowFanReply) Reset() {
 	*x = FollowFanReply{}
-	mi := &file_api_conduit_v1_conduit_proto_msgTypes[14]
+	mi := &file_api_conduit_v1_conduit_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -881,7 +721,7 @@ func (x *FollowFanReply) String() string {
 func (*FollowFanReply) ProtoMessage() {}
 
 func (x *FollowFanReply) ProtoReflect() protoreflect.Message {
-	mi := &file_api_conduit_v1_conduit_proto_msgTypes[14]
+	mi := &file_api_conduit_v1_conduit_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -894,7 +734,7 @@ func (x *FollowFanReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FollowFanReply.ProtoReflect.Descriptor instead.
 func (*FollowFanReply) Descriptor() ([]byte, []int) {
-	return file_api_conduit_v1_conduit_proto_rawDescGZIP(), []int{14}
+	return file_api_conduit_v1_conduit_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *FollowFanReply) GetCode() int32 {
@@ -911,13 +751,414 @@ func (x *FollowFanReply) GetRes() *Res {
 	return nil
 }
 
-func (x *FollowFanReply) GetData() *RelationData {
+func (x *FollowFanReply) GetData() *FollowFanData {
 	if x != nil {
 		return x.Data
 	}
 	return nil
 }
 
+type FollowFanData struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// 当前用户信息
+	SelfId      uint32 `protobuf:"varint,1,opt,name=self_id,json=selfId,proto3" json:"self_id,omitempty"`
+	FollowCount uint32 `protobuf:"varint,2,opt,name=follow_count,json=followCount,proto3" json:"follow_count,omitempty"` // 我的关注数
+	// 对方用户信息
+	TargetId      uint32 `protobuf:"varint,3,opt,name=target_id,json=targetId,proto3" json:"target_id,omitempty"`
+	FanCount      uint32 `protobuf:"varint,4,opt,name=fan_count,json=fanCount,proto3" json:"fan_count,omitempty"` // 对方的粉丝数
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *FollowFanData) Reset() {
+	*x = FollowFanData{}
+	mi := &file_api_conduit_v1_conduit_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FollowFanData) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FollowFanData) ProtoMessage() {}
+
+func (x *FollowFanData) ProtoReflect() protoreflect.Message {
+	mi := &file_api_conduit_v1_conduit_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FollowFanData.ProtoReflect.Descriptor instead.
+func (*FollowFanData) Descriptor() ([]byte, []int) {
+	return file_api_conduit_v1_conduit_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *FollowFanData) GetSelfId() uint32 {
+	if x != nil {
+		return x.SelfId
+	}
+	return 0
+}
+
+func (x *FollowFanData) GetFollowCount() uint32 {
+	if x != nil {
+		return x.FollowCount
+	}
+	return 0
+}
+
+func (x *FollowFanData) GetTargetId() uint32 {
+	if x != nil {
+		return x.TargetId
+	}
+	return 0
+}
+
+func (x *FollowFanData) GetFanCount() uint32 {
+	if x != nil {
+		return x.FanCount
+	}
+	return 0
+}
+
+type RelationshipRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	TargetId      string                 `protobuf:"bytes,1,opt,name=target_id,json=targetId,proto3" json:"target_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RelationshipRequest) Reset() {
+	*x = RelationshipRequest{}
+	mi := &file_api_conduit_v1_conduit_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RelationshipRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RelationshipRequest) ProtoMessage() {}
+
+func (x *RelationshipRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_api_conduit_v1_conduit_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RelationshipRequest.ProtoReflect.Descriptor instead.
+func (*RelationshipRequest) Descriptor() ([]byte, []int) {
+	return file_api_conduit_v1_conduit_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *RelationshipRequest) GetTargetId() string {
+	if x != nil {
+		return x.TargetId
+	}
+	return ""
+}
+
+type RelationshipReply struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Code          int32                  `protobuf:"varint,1,opt,name=code,proto3" json:"code,omitempty"`
+	Res           *Res                   `protobuf:"bytes,2,opt,name=res,proto3" json:"res,omitempty"`
+	Data          *RelationshipData      `protobuf:"bytes,3,opt,name=data,proto3" json:"data,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RelationshipReply) Reset() {
+	*x = RelationshipReply{}
+	mi := &file_api_conduit_v1_conduit_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RelationshipReply) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RelationshipReply) ProtoMessage() {}
+
+func (x *RelationshipReply) ProtoReflect() protoreflect.Message {
+	mi := &file_api_conduit_v1_conduit_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RelationshipReply.ProtoReflect.Descriptor instead.
+func (*RelationshipReply) Descriptor() ([]byte, []int) {
+	return file_api_conduit_v1_conduit_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *RelationshipReply) GetCode() int32 {
+	if x != nil {
+		return x.Code
+	}
+	return 0
+}
+
+func (x *RelationshipReply) GetRes() *Res {
+	if x != nil {
+		return x.Res
+	}
+	return nil
+}
+
+func (x *RelationshipReply) GetData() *RelationshipData {
+	if x != nil {
+		return x.Data
+	}
+	return nil
+}
+
+type RelationshipData struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	IsFollowing   bool                   `protobuf:"varint,1,opt,name=is_following,json=isFollowing,proto3" json:"is_following,omitempty"`      // 当前用户是否已关注对方
+	IsFollowedBy  bool                   `protobuf:"varint,2,opt,name=is_followed_by,json=isFollowedBy,proto3" json:"is_followed_by,omitempty"` // 当前用户是否被对方关注
+	IsMutual      bool                   `protobuf:"varint,3,opt,name=is_mutual,json=isMutual,proto3" json:"is_mutual,omitempty"`               // 是否互相关注
+	IsBlocked     bool                   `protobuf:"varint,4,opt,name=is_blocked,json=isBlocked,proto3" json:"is_blocked,omitempty"`            // 当前用户是否已拉黑对方
+	IsBlockedBy   bool                   `protobuf:"varint,5,opt,name=is_blocked_by,json=isBlockedBy,proto3" json:"is_blocked_by,omitempty"`    // 当前用户是否被对方拉黑
+	IsFriend      bool                   `protobuf:"varint,6,opt,name=is_friend,json=isFriend,proto3" json:"is_friend,omitempty"`               // 是否是好友（如果互关=好友，可以合并，目前互关和好友不是等价的）
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RelationshipData) Reset() {
+	*x = RelationshipData{}
+	mi := &file_api_conduit_v1_conduit_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RelationshipData) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RelationshipData) ProtoMessage() {}
+
+func (x *RelationshipData) ProtoReflect() protoreflect.Message {
+	mi := &file_api_conduit_v1_conduit_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RelationshipData.ProtoReflect.Descriptor instead.
+func (*RelationshipData) Descriptor() ([]byte, []int) {
+	return file_api_conduit_v1_conduit_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *RelationshipData) GetIsFollowing() bool {
+	if x != nil {
+		return x.IsFollowing
+	}
+	return false
+}
+
+func (x *RelationshipData) GetIsFollowedBy() bool {
+	if x != nil {
+		return x.IsFollowedBy
+	}
+	return false
+}
+
+func (x *RelationshipData) GetIsMutual() bool {
+	if x != nil {
+		return x.IsMutual
+	}
+	return false
+}
+
+func (x *RelationshipData) GetIsBlocked() bool {
+	if x != nil {
+		return x.IsBlocked
+	}
+	return false
+}
+
+func (x *RelationshipData) GetIsBlockedBy() bool {
+	if x != nil {
+		return x.IsBlockedBy
+	}
+	return false
+}
+
+func (x *RelationshipData) GetIsFriend() bool {
+	if x != nil {
+		return x.IsFriend
+	}
+	return false
+}
+
+// NID_FRIENDS_REQ
+type CanAddFriendReq struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	TargetId      string                 `protobuf:"bytes,1,opt,name=target_id,json=targetId,proto3" json:"target_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CanAddFriendReq) Reset() {
+	*x = CanAddFriendReq{}
+	mi := &file_api_conduit_v1_conduit_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CanAddFriendReq) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CanAddFriendReq) ProtoMessage() {}
+
+func (x *CanAddFriendReq) ProtoReflect() protoreflect.Message {
+	mi := &file_api_conduit_v1_conduit_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CanAddFriendReq.ProtoReflect.Descriptor instead.
+func (*CanAddFriendReq) Descriptor() ([]byte, []int) {
+	return file_api_conduit_v1_conduit_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *CanAddFriendReq) GetTargetId() string {
+	if x != nil {
+		return x.TargetId
+	}
+	return ""
+}
+
+type CanAddFriendRes struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Code          int32                  `protobuf:"varint,1,opt,name=code,proto3" json:"code,omitempty"`
+	Res           *Res                   `protobuf:"bytes,2,opt,name=res,proto3" json:"res,omitempty"`
+	Data          *AddFriendRes          `protobuf:"bytes,3,opt,name=data,proto3" json:"data,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CanAddFriendRes) Reset() {
+	*x = CanAddFriendRes{}
+	mi := &file_api_conduit_v1_conduit_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CanAddFriendRes) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CanAddFriendRes) ProtoMessage() {}
+
+func (x *CanAddFriendRes) ProtoReflect() protoreflect.Message {
+	mi := &file_api_conduit_v1_conduit_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CanAddFriendRes.ProtoReflect.Descriptor instead.
+func (*CanAddFriendRes) Descriptor() ([]byte, []int) {
+	return file_api_conduit_v1_conduit_proto_rawDescGZIP(), []int{17}
+}
+
+func (x *CanAddFriendRes) GetCode() int32 {
+	if x != nil {
+		return x.Code
+	}
+	return 0
+}
+
+func (x *CanAddFriendRes) GetRes() *Res {
+	if x != nil {
+		return x.Res
+	}
+	return nil
+}
+
+func (x *CanAddFriendRes) GetData() *AddFriendRes {
+	if x != nil {
+		return x.Data
+	}
+	return nil
+}
+
+type AddFriendRes struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AddFriendRes) Reset() {
+	*x = AddFriendRes{}
+	mi := &file_api_conduit_v1_conduit_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AddFriendRes) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AddFriendRes) ProtoMessage() {}
+
+func (x *AddFriendRes) ProtoReflect() protoreflect.Message {
+	mi := &file_api_conduit_v1_conduit_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AddFriendRes.ProtoReflect.Descriptor instead.
+func (*AddFriendRes) Descriptor() ([]byte, []int) {
+	return file_api_conduit_v1_conduit_proto_rawDescGZIP(), []int{18}
+}
+
+// 前端错误信息查看
+// NID_Describe_Message
 type Res struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Code          int32                  `protobuf:"varint,1,opt,name=code,proto3" json:"code,omitempty"`    // 业务状态码，例如 200、422
@@ -929,7 +1170,7 @@ type Res struct {
 
 func (x *Res) Reset() {
 	*x = Res{}
-	mi := &file_api_conduit_v1_conduit_proto_msgTypes[15]
+	mi := &file_api_conduit_v1_conduit_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -941,7 +1182,7 @@ func (x *Res) String() string {
 func (*Res) ProtoMessage() {}
 
 func (x *Res) ProtoReflect() protoreflect.Message {
-	mi := &file_api_conduit_v1_conduit_proto_msgTypes[15]
+	mi := &file_api_conduit_v1_conduit_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -954,7 +1195,7 @@ func (x *Res) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Res.ProtoReflect.Descriptor instead.
 func (*Res) Descriptor() ([]byte, []int) {
-	return file_api_conduit_v1_conduit_proto_rawDescGZIP(), []int{15}
+	return file_api_conduit_v1_conduit_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *Res) GetCode() int32 {
@@ -1005,7 +1246,7 @@ const file_api_conduit_v1_conduit_proto_rawDesc = "" +
 	"\fnew_password\x18\x03 \x01(\tR\vnewPassword\"F\n" +
 	"\vUpdateReply\x12\x12\n" +
 	"\x04code\x18\x01 \x01(\x05R\x04code\x12#\n" +
-	"\x03res\x18\x02 \x01(\v2\x11.realworld.v1.ResR\x03res\"\xf3\x02\n" +
+	"\x03res\x18\x02 \x01(\v2\x11.realworld.v1.ResR\x03res\"\xaf\x03\n" +
 	"\vProfileData\x12\x17\n" +
 	"\auser_id\x18\x02 \x01(\rR\x06userId\x12\x12\n" +
 	"\x04tags\x18\x03 \x01(\tR\x04tags\x12!\n" +
@@ -1018,9 +1259,11 @@ const file_api_conduit_v1_conduit_proto_rawDesc = "" +
 	"\x13received_like_count\x18\b \x01(\rR\x11receivedLikeCount\x12'\n" +
 	"\x0fcollected_count\x18\t \x01(\rR\x0ecollectedCount\x12#\n" +
 	"\rcomment_count\x18\n" +
-	" \x01(\rR\fcommentCount\x12;\n" +
+	" \x01(\rR\fcommentCount\x12\"\n" +
+	"\rlast_login_ip\x18\v \x01(\tR\vlastLoginIp\x12;\n" +
 	"\vlast_active\x18\f \x01(\v2\x1a.google.protobuf.TimestampR\n" +
-	"lastActive\",\n" +
+	"lastActive\x12\x16\n" +
+	"\x06status\x18\r \x01(\tR\x06status\",\n" +
 	"\x11GetProfileRequest\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\"y\n" +
 	"\x0fGetProfileReply\x12\x12\n" +
@@ -1030,26 +1273,41 @@ const file_api_conduit_v1_conduit_proto_rawDesc = "" +
 	"\x11FollowUserRequest\x12\x1b\n" +
 	"\ttarget_id\x18\x01 \x01(\tR\btargetId\"2\n" +
 	"\x13UnfollowUserRequest\x12\x1b\n" +
-	"\ttarget_id\x18\x01 \x01(\tR\btargetId\".\n" +
-	"\x0fCanAddFriendReq\x12\x1b\n" +
-	"\ttarget_id\x18\x01 \x01(\tR\btargetId\"b\n" +
-	"\x0fCanAddFriendRes\x12\x12\n" +
-	"\x04code\x18\x01 \x01(\x05R\x04code\x12\x16\n" +
-	"\x06result\x18\x02 \x01(\tR\x06result\x12#\n" +
-	"\x03res\x18\x03 \x01(\v2\x11.realworld.v1.ResR\x03res\"\x84\x01\n" +
-	"\fRelationData\x12\x17\n" +
+	"\ttarget_id\x18\x01 \x01(\tR\btargetId\"z\n" +
+	"\x0eFollowFanReply\x12\x12\n" +
+	"\x04code\x18\x01 \x01(\x05R\x04code\x12#\n" +
+	"\x03res\x18\x02 \x01(\v2\x11.realworld.v1.ResR\x03res\x12/\n" +
+	"\x04data\x18\x03 \x01(\v2\x1b.realworld.v1.FollowFanDataR\x04data\"\x85\x01\n" +
+	"\rFollowFanData\x12\x17\n" +
 	"\aself_id\x18\x01 \x01(\rR\x06selfId\x12!\n" +
 	"\ffollow_count\x18\x02 \x01(\rR\vfollowCount\x12\x1b\n" +
 	"\ttarget_id\x18\x03 \x01(\rR\btargetId\x12\x1b\n" +
-	"\tfan_count\x18\x04 \x01(\rR\bfanCount\"y\n" +
-	"\x0eFollowFanReply\x12\x12\n" +
+	"\tfan_count\x18\x04 \x01(\rR\bfanCount\"2\n" +
+	"\x13RelationshipRequest\x12\x1b\n" +
+	"\ttarget_id\x18\x01 \x01(\tR\btargetId\"\x80\x01\n" +
+	"\x11RelationshipReply\x12\x12\n" +
+	"\x04code\x18\x01 \x01(\x05R\x04code\x12#\n" +
+	"\x03res\x18\x02 \x01(\v2\x11.realworld.v1.ResR\x03res\x122\n" +
+	"\x04data\x18\x03 \x01(\v2\x1e.realworld.v1.RelationshipDataR\x04data\"\xd8\x01\n" +
+	"\x10RelationshipData\x12!\n" +
+	"\fis_following\x18\x01 \x01(\bR\visFollowing\x12$\n" +
+	"\x0eis_followed_by\x18\x02 \x01(\bR\fisFollowedBy\x12\x1b\n" +
+	"\tis_mutual\x18\x03 \x01(\bR\bisMutual\x12\x1d\n" +
+	"\n" +
+	"is_blocked\x18\x04 \x01(\bR\tisBlocked\x12\"\n" +
+	"\ris_blocked_by\x18\x05 \x01(\bR\visBlockedBy\x12\x1b\n" +
+	"\tis_friend\x18\x06 \x01(\bR\bisFriend\".\n" +
+	"\x0fCanAddFriendReq\x12\x1b\n" +
+	"\ttarget_id\x18\x01 \x01(\tR\btargetId\"z\n" +
+	"\x0fCanAddFriendRes\x12\x12\n" +
 	"\x04code\x18\x01 \x01(\x05R\x04code\x12#\n" +
 	"\x03res\x18\x02 \x01(\v2\x11.realworld.v1.ResR\x03res\x12.\n" +
-	"\x04data\x18\x03 \x01(\v2\x1a.realworld.v1.RelationDataR\x04data\"C\n" +
+	"\x04data\x18\x03 \x01(\v2\x1a.realworld.v1.AddFriendResR\x04data\"\x0e\n" +
+	"\fAddFriendRes\"C\n" +
 	"\x03Res\x12\x12\n" +
 	"\x04code\x18\x01 \x01(\x05R\x04code\x12\x16\n" +
 	"\x06reason\x18\x02 \x01(\tR\x06reason\x12\x10\n" +
-	"\x03msg\x18\x03 \x01(\tR\x03msg2\x9e\x06\n" +
+	"\x03msg\x18\x03 \x01(\tR\x03msg2\xa6\a\n" +
 	"\aConduit\x12]\n" +
 	"\bRegister\x12\x1d.realworld.v1.RegisterRequest\x1a\x1b.realworld.v1.RegisterReply\"\x15\x82\xd3\xe4\x93\x02\x0f:\x01*\"\n" +
 	"/api/users\x12Z\n" +
@@ -1059,8 +1317,9 @@ const file_api_conduit_v1_conduit_proto_rawDesc = "" +
 	"GetProfile\x12\x1f.realworld.v1.GetProfileRequest\x1a\x1d.realworld.v1.GetProfileReply\"\x1f\x82\xd3\xe4\x93\x02\x19\x12\x17/api/profiles/{user_id}\x12x\n" +
 	"\n" +
 	"FollowUser\x12\x1f.realworld.v1.FollowUserRequest\x1a\x1c.realworld.v1.FollowFanReply\"+\x82\xd3\xe4\x93\x02%:\x01*\" /api/profiles/{target_id}/follow\x12~\n" +
-	"\fUnfollowUser\x12!.realworld.v1.UnfollowUserRequest\x1a\x1c.realworld.v1.FollowFanReply\"-\x82\xd3\xe4\x93\x02':\x01*\"\"/api/profiles/{target_id}/unfollow\x12\x7f\n" +
-	"\fCanAddFriend\x12\x1d.realworld.v1.CanAddFriendReq\x1a\x1d.realworld.v1.CanAddFriendRes\"1\x82\xd3\xe4\x93\x02+:\x01*\"&/api/profiles/{target_id}/CanAddFriendB$Z\"kratos-realworld/api/conduit/v1;v1b\x06proto3"
+	"\fUnfollowUser\x12!.realworld.v1.UnfollowUserRequest\x1a\x1c.realworld.v1.FollowFanReply\"-\x82\xd3\xe4\x93\x02':\x01*\"\"/api/profiles/{target_id}/unfollow\x12\x85\x01\n" +
+	"\x0fGetRelationship\x12!.realworld.v1.RelationshipRequest\x1a\x1f.realworld.v1.RelationshipReply\".\x82\xd3\xe4\x93\x02(\x12&/api/profiles/{target_id}/relationship\x12\x7f\n" +
+	"\fCanAddFriend\x12\x1d.realworld.v1.CanAddFriendReq\x1a\x1d.realworld.v1.CanAddFriendRes\"1\x82\xd3\xe4\x93\x02+:\x01*\"&/api/profiles/{target_id}/canAddFriendB$Z\"kratos-realworld/api/conduit/v1;v1b\x06proto3"
 
 var (
 	file_api_conduit_v1_conduit_proto_rawDescOnce sync.Once
@@ -1074,7 +1333,7 @@ func file_api_conduit_v1_conduit_proto_rawDescGZIP() []byte {
 	return file_api_conduit_v1_conduit_proto_rawDescData
 }
 
-var file_api_conduit_v1_conduit_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
+var file_api_conduit_v1_conduit_proto_msgTypes = make([]protoimpl.MessageInfo, 20)
 var file_api_conduit_v1_conduit_proto_goTypes = []any{
 	(*RegisterRequest)(nil),     // 0: realworld.v1.RegisterRequest
 	(*RegisterReply)(nil),       // 1: realworld.v1.RegisterReply
@@ -1087,42 +1346,51 @@ var file_api_conduit_v1_conduit_proto_goTypes = []any{
 	(*GetProfileReply)(nil),     // 8: realworld.v1.GetProfileReply
 	(*FollowUserRequest)(nil),   // 9: realworld.v1.FollowUserRequest
 	(*UnfollowUserRequest)(nil), // 10: realworld.v1.UnfollowUserRequest
-	(*CanAddFriendReq)(nil),     // 11: realworld.v1.CanAddFriendReq
-	(*CanAddFriendRes)(nil),     // 12: realworld.v1.CanAddFriendRes
-	(*RelationData)(nil),        // 13: realworld.v1.RelationData
-	(*FollowFanReply)(nil),      // 14: realworld.v1.FollowFanReply
-	(*Res)(nil),                 // 15: realworld.v1.Res
-	(*timestamp.Timestamp)(nil), // 16: google.protobuf.Timestamp
+	(*FollowFanReply)(nil),      // 11: realworld.v1.FollowFanReply
+	(*FollowFanData)(nil),       // 12: realworld.v1.FollowFanData
+	(*RelationshipRequest)(nil), // 13: realworld.v1.RelationshipRequest
+	(*RelationshipReply)(nil),   // 14: realworld.v1.RelationshipReply
+	(*RelationshipData)(nil),    // 15: realworld.v1.RelationshipData
+	(*CanAddFriendReq)(nil),     // 16: realworld.v1.CanAddFriendReq
+	(*CanAddFriendRes)(nil),     // 17: realworld.v1.CanAddFriendRes
+	(*AddFriendRes)(nil),        // 18: realworld.v1.AddFriendRes
+	(*Res)(nil),                 // 19: realworld.v1.Res
+	(*timestamp.Timestamp)(nil), // 20: google.protobuf.Timestamp
 }
 var file_api_conduit_v1_conduit_proto_depIdxs = []int32{
-	15, // 0: realworld.v1.RegisterReply.res:type_name -> realworld.v1.Res
-	15, // 1: realworld.v1.LoginReply.res:type_name -> realworld.v1.Res
-	15, // 2: realworld.v1.UpdateReply.res:type_name -> realworld.v1.Res
-	16, // 3: realworld.v1.ProfileData.last_active:type_name -> google.protobuf.Timestamp
-	15, // 4: realworld.v1.GetProfileReply.res:type_name -> realworld.v1.Res
+	19, // 0: realworld.v1.RegisterReply.res:type_name -> realworld.v1.Res
+	19, // 1: realworld.v1.LoginReply.res:type_name -> realworld.v1.Res
+	19, // 2: realworld.v1.UpdateReply.res:type_name -> realworld.v1.Res
+	20, // 3: realworld.v1.ProfileData.last_active:type_name -> google.protobuf.Timestamp
+	19, // 4: realworld.v1.GetProfileReply.res:type_name -> realworld.v1.Res
 	6,  // 5: realworld.v1.GetProfileReply.data:type_name -> realworld.v1.ProfileData
-	15, // 6: realworld.v1.CanAddFriendRes.res:type_name -> realworld.v1.Res
-	15, // 7: realworld.v1.FollowFanReply.res:type_name -> realworld.v1.Res
-	13, // 8: realworld.v1.FollowFanReply.data:type_name -> realworld.v1.RelationData
-	0,  // 9: realworld.v1.Conduit.Register:input_type -> realworld.v1.RegisterRequest
-	2,  // 10: realworld.v1.Conduit.Login:input_type -> realworld.v1.LoginRequest
-	4,  // 11: realworld.v1.Conduit.UpdatePassword:input_type -> realworld.v1.UpdateRequest
-	7,  // 12: realworld.v1.Conduit.GetProfile:input_type -> realworld.v1.GetProfileRequest
-	9,  // 13: realworld.v1.Conduit.FollowUser:input_type -> realworld.v1.FollowUserRequest
-	10, // 14: realworld.v1.Conduit.UnfollowUser:input_type -> realworld.v1.UnfollowUserRequest
-	11, // 15: realworld.v1.Conduit.CanAddFriend:input_type -> realworld.v1.CanAddFriendReq
-	1,  // 16: realworld.v1.Conduit.Register:output_type -> realworld.v1.RegisterReply
-	3,  // 17: realworld.v1.Conduit.Login:output_type -> realworld.v1.LoginReply
-	5,  // 18: realworld.v1.Conduit.UpdatePassword:output_type -> realworld.v1.UpdateReply
-	8,  // 19: realworld.v1.Conduit.GetProfile:output_type -> realworld.v1.GetProfileReply
-	14, // 20: realworld.v1.Conduit.FollowUser:output_type -> realworld.v1.FollowFanReply
-	14, // 21: realworld.v1.Conduit.UnfollowUser:output_type -> realworld.v1.FollowFanReply
-	12, // 22: realworld.v1.Conduit.CanAddFriend:output_type -> realworld.v1.CanAddFriendRes
-	16, // [16:23] is the sub-list for method output_type
-	9,  // [9:16] is the sub-list for method input_type
-	9,  // [9:9] is the sub-list for extension type_name
-	9,  // [9:9] is the sub-list for extension extendee
-	0,  // [0:9] is the sub-list for field type_name
+	19, // 6: realworld.v1.FollowFanReply.res:type_name -> realworld.v1.Res
+	12, // 7: realworld.v1.FollowFanReply.data:type_name -> realworld.v1.FollowFanData
+	19, // 8: realworld.v1.RelationshipReply.res:type_name -> realworld.v1.Res
+	15, // 9: realworld.v1.RelationshipReply.data:type_name -> realworld.v1.RelationshipData
+	19, // 10: realworld.v1.CanAddFriendRes.res:type_name -> realworld.v1.Res
+	18, // 11: realworld.v1.CanAddFriendRes.data:type_name -> realworld.v1.AddFriendRes
+	0,  // 12: realworld.v1.Conduit.Register:input_type -> realworld.v1.RegisterRequest
+	2,  // 13: realworld.v1.Conduit.Login:input_type -> realworld.v1.LoginRequest
+	4,  // 14: realworld.v1.Conduit.UpdatePassword:input_type -> realworld.v1.UpdateRequest
+	7,  // 15: realworld.v1.Conduit.GetProfile:input_type -> realworld.v1.GetProfileRequest
+	9,  // 16: realworld.v1.Conduit.FollowUser:input_type -> realworld.v1.FollowUserRequest
+	10, // 17: realworld.v1.Conduit.UnfollowUser:input_type -> realworld.v1.UnfollowUserRequest
+	13, // 18: realworld.v1.Conduit.GetRelationship:input_type -> realworld.v1.RelationshipRequest
+	16, // 19: realworld.v1.Conduit.CanAddFriend:input_type -> realworld.v1.CanAddFriendReq
+	1,  // 20: realworld.v1.Conduit.Register:output_type -> realworld.v1.RegisterReply
+	3,  // 21: realworld.v1.Conduit.Login:output_type -> realworld.v1.LoginReply
+	5,  // 22: realworld.v1.Conduit.UpdatePassword:output_type -> realworld.v1.UpdateReply
+	8,  // 23: realworld.v1.Conduit.GetProfile:output_type -> realworld.v1.GetProfileReply
+	11, // 24: realworld.v1.Conduit.FollowUser:output_type -> realworld.v1.FollowFanReply
+	11, // 25: realworld.v1.Conduit.UnfollowUser:output_type -> realworld.v1.FollowFanReply
+	14, // 26: realworld.v1.Conduit.GetRelationship:output_type -> realworld.v1.RelationshipReply
+	17, // 27: realworld.v1.Conduit.CanAddFriend:output_type -> realworld.v1.CanAddFriendRes
+	20, // [20:28] is the sub-list for method output_type
+	12, // [12:20] is the sub-list for method input_type
+	12, // [12:12] is the sub-list for extension type_name
+	12, // [12:12] is the sub-list for extension extendee
+	0,  // [0:12] is the sub-list for field type_name
 }
 
 func init() { file_api_conduit_v1_conduit_proto_init() }
@@ -1136,7 +1404,7 @@ func file_api_conduit_v1_conduit_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_api_conduit_v1_conduit_proto_rawDesc), len(file_api_conduit_v1_conduit_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   16,
+			NumMessages:   20,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

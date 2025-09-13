@@ -7,6 +7,30 @@ info:
     description: The greeting service definition.
     version: 0.0.1
 paths:
+    /api/profiles/{targetId}/canAddFriend:
+        post:
+            tags:
+                - Conduit
+            operationId: Conduit_CanAddFriend
+            parameters:
+                - name: targetId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CanAddFriendReq'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CanAddFriendRes'
     /api/profiles/{targetId}/follow:
         post:
             tags:
@@ -31,8 +55,26 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/FollowFanReply'
+    /api/profiles/{targetId}/relationship:
+        get:
+            tags:
+                - Conduit
+            operationId: Conduit_GetRelationship
+            parameters:
+                - name: targetId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/RelationshipReply'
     /api/profiles/{targetId}/unfollow:
-        delete:
+        post:
             tags:
                 - Conduit
             operationId: Conduit_UnfollowUser
@@ -42,6 +84,12 @@ paths:
                   required: true
                   schema:
                     type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/UnfollowUserRequest'
+                required: true
             responses:
                 "200":
                     description: OK
@@ -123,7 +171,16 @@ paths:
                                 $ref: '#/components/schemas/UpdateReply'
 components:
     schemas:
-        FollowFanReply:
+        AddFriendRes:
+            type: object
+            properties: {}
+        CanAddFriendReq:
+            type: object
+            properties:
+                targetId:
+                    type: string
+            description: NID_FRIENDS_REQ
+        CanAddFriendRes:
             type: object
             properties:
                 code:
@@ -132,8 +189,8 @@ components:
                 res:
                     $ref: '#/components/schemas/Res'
                 data:
-                    $ref: '#/components/schemas/FollowFanReply_RelationData'
-        FollowFanReply_RelationData:
+                    $ref: '#/components/schemas/AddFriendRes'
+        FollowFanData:
             type: object
             properties:
                 selfId:
@@ -150,11 +207,22 @@ components:
                 fanCount:
                     type: integer
                     format: uint32
+        FollowFanReply:
+            type: object
+            properties:
+                code:
+                    type: integer
+                    format: int32
+                res:
+                    $ref: '#/components/schemas/Res'
+                data:
+                    $ref: '#/components/schemas/FollowFanData'
         FollowUserRequest:
             type: object
             properties:
                 targetId:
                     type: string
+            description: NID_FOLLOW_FAN_REQ
         GetProfileReply:
             type: object
             properties:
@@ -164,8 +232,26 @@ components:
                 res:
                     $ref: '#/components/schemas/Res'
                 data:
-                    $ref: '#/components/schemas/GetProfileReply_ProfileData'
-        GetProfileReply_ProfileData:
+                    $ref: '#/components/schemas/ProfileData'
+        LoginReply:
+            type: object
+            properties:
+                code:
+                    type: integer
+                    format: int32
+                res:
+                    $ref: '#/components/schemas/Res'
+                token:
+                    type: string
+        LoginRequest:
+            type: object
+            properties:
+                phone:
+                    type: string
+                password:
+                    type: string
+            description: NID_LOGIN_REQ
+        ProfileData:
             type: object
             properties:
                 userId:
@@ -201,23 +287,7 @@ components:
                     format: RFC3339
                 status:
                     type: string
-        LoginReply:
-            type: object
-            properties:
-                code:
-                    type: integer
-                    format: int32
-                res:
-                    $ref: '#/components/schemas/Res'
-                token:
-                    type: string
-        LoginRequest:
-            type: object
-            properties:
-                phone:
-                    type: string
-                password:
-                    type: string
+            description: Social 相关协议 NID_GET_PROFILE_REQ
         RegisterReply:
             type: object
             properties:
@@ -237,6 +307,32 @@ components:
                     type: string
                 password:
                     type: string
+            description: NID_REGIDTER_REQ
+        RelationshipData:
+            type: object
+            properties:
+                isFollowing:
+                    type: boolean
+                isFollowedBy:
+                    type: boolean
+                isMutual:
+                    type: boolean
+                isBlocked:
+                    type: boolean
+                isBlockedBy:
+                    type: boolean
+                isFriend:
+                    type: boolean
+        RelationshipReply:
+            type: object
+            properties:
+                code:
+                    type: integer
+                    format: int32
+                res:
+                    $ref: '#/components/schemas/Res'
+                data:
+                    $ref: '#/components/schemas/RelationshipData'
         Res:
             type: object
             properties:
@@ -246,6 +342,12 @@ components:
                 reason:
                     type: string
                 msg:
+                    type: string
+            description: 前端错误信息查看 NID_Describe_Message
+        UnfollowUserRequest:
+            type: object
+            properties:
+                targetId:
                     type: string
         UpdateReply:
             type: object
@@ -264,5 +366,6 @@ components:
                     type: string
                 newPassword:
                     type: string
+            description: NID_UPDATE_REQ
 tags:
     - name: Conduit
