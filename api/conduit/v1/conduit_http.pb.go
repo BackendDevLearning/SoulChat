@@ -22,6 +22,7 @@ const _ = http.SupportPackageIsVersion1
 const OperationConduitCanAddFriend = "/realworld.v1.Conduit/CanAddFriend"
 const OperationConduitFollowUser = "/realworld.v1.Conduit/FollowUser"
 const OperationConduitGetProfile = "/realworld.v1.Conduit/GetProfile"
+const OperationConduitGetRelationship = "/realworld.v1.Conduit/GetRelationship"
 const OperationConduitLogin = "/realworld.v1.Conduit/Login"
 const OperationConduitRegister = "/realworld.v1.Conduit/Register"
 const OperationConduitUnfollowUser = "/realworld.v1.Conduit/UnfollowUser"
@@ -31,6 +32,7 @@ type ConduitHTTPServer interface {
 	CanAddFriend(context.Context, *CanAddFriendReq) (*CanAddFriendRes, error)
 	FollowUser(context.Context, *FollowUserRequest) (*FollowFanReply, error)
 	GetProfile(context.Context, *GetProfileRequest) (*GetProfileReply, error)
+	GetRelationship(context.Context, *RelationshipRequest) (*RelationshipReply, error)
 	Login(context.Context, *LoginRequest) (*LoginReply, error)
 	Register(context.Context, *RegisterRequest) (*RegisterReply, error)
 	UnfollowUser(context.Context, *UnfollowUserRequest) (*FollowFanReply, error)
@@ -45,7 +47,8 @@ func RegisterConduitHTTPServer(s *http.Server, srv ConduitHTTPServer) {
 	r.GET("/api/profiles/{user_id}", _Conduit_GetProfile0_HTTP_Handler(srv))
 	r.POST("/api/profiles/{target_id}/follow", _Conduit_FollowUser0_HTTP_Handler(srv))
 	r.POST("/api/profiles/{target_id}/unfollow", _Conduit_UnfollowUser0_HTTP_Handler(srv))
-	r.POST("/api/profiles/{target_id}/CanAddFriend", _Conduit_CanAddFriend0_HTTP_Handler(srv))
+	r.GET("/api/profiles/{target_id}/relationship", _Conduit_GetRelationship0_HTTP_Handler(srv))
+	r.POST("/api/profiles/{target_id}/canAddFriend", _Conduit_CanAddFriend0_HTTP_Handler(srv))
 }
 
 func _Conduit_Register0_HTTP_Handler(srv ConduitHTTPServer) func(ctx http.Context) error {
@@ -186,6 +189,28 @@ func _Conduit_UnfollowUser0_HTTP_Handler(srv ConduitHTTPServer) func(ctx http.Co
 	}
 }
 
+func _Conduit_GetRelationship0_HTTP_Handler(srv ConduitHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in RelationshipRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationConduitGetRelationship)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.GetRelationship(ctx, req.(*RelationshipRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*RelationshipReply)
+		return ctx.Result(200, reply)
+	}
+}
+
 func _Conduit_CanAddFriend0_HTTP_Handler(srv ConduitHTTPServer) func(ctx http.Context) error {
 	return func(ctx http.Context) error {
 		var in CanAddFriendReq
@@ -215,6 +240,7 @@ type ConduitHTTPClient interface {
 	CanAddFriend(ctx context.Context, req *CanAddFriendReq, opts ...http.CallOption) (rsp *CanAddFriendRes, err error)
 	FollowUser(ctx context.Context, req *FollowUserRequest, opts ...http.CallOption) (rsp *FollowFanReply, err error)
 	GetProfile(ctx context.Context, req *GetProfileRequest, opts ...http.CallOption) (rsp *GetProfileReply, err error)
+	GetRelationship(ctx context.Context, req *RelationshipRequest, opts ...http.CallOption) (rsp *RelationshipReply, err error)
 	Login(ctx context.Context, req *LoginRequest, opts ...http.CallOption) (rsp *LoginReply, err error)
 	Register(ctx context.Context, req *RegisterRequest, opts ...http.CallOption) (rsp *RegisterReply, err error)
 	UnfollowUser(ctx context.Context, req *UnfollowUserRequest, opts ...http.CallOption) (rsp *FollowFanReply, err error)
@@ -231,7 +257,7 @@ func NewConduitHTTPClient(client *http.Client) ConduitHTTPClient {
 
 func (c *ConduitHTTPClientImpl) CanAddFriend(ctx context.Context, in *CanAddFriendReq, opts ...http.CallOption) (*CanAddFriendRes, error) {
 	var out CanAddFriendRes
-	pattern := "/api/profiles/{target_id}/CanAddFriend"
+	pattern := "/api/profiles/{target_id}/canAddFriend"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationConduitCanAddFriend))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -260,6 +286,19 @@ func (c *ConduitHTTPClientImpl) GetProfile(ctx context.Context, in *GetProfileRe
 	pattern := "/api/profiles/{user_id}"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationConduitGetProfile))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *ConduitHTTPClientImpl) GetRelationship(ctx context.Context, in *RelationshipRequest, opts ...http.CallOption) (*RelationshipReply, error) {
+	var out RelationshipReply
+	pattern := "/api/profiles/{target_id}/relationship"
+	path := binding.EncodeURL(pattern, in, true)
+	opts = append(opts, http.Operation(OperationConduitGetRelationship))
 	opts = append(opts, http.PathTemplate(pattern))
 	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
 	if err != nil {

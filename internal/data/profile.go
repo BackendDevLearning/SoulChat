@@ -2,7 +2,6 @@ package data
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/redis/go-redis/v9"
@@ -98,12 +97,12 @@ func (r *ProfileRepo) FollowUser(ctx context.Context, followerID uint32, followe
 	}
 
 	// Redis 写入
-	if err := r.UpdateFollowCache(ctx, followerID, followeeID); err != nil {
-		r.log.Errorf("Redis update failed, will repair later. follower=%d followee=%d err=%v",
-			followerID, followeeID, err)
-		// 将失败记录保存到修复队列
-		_ = r.recordRepairTask(ctx, "follow", followerID, followeeID)
-	}
+	//if err := r.UpdateFollowCache(ctx, followerID, followeeID); err != nil {
+	//	r.log.Errorf("Redis update failed, will repair later. follower=%d followee=%d err=%v",
+	//		followerID, followeeID, err)
+	//	// 将失败记录保存到修复队列
+	//	_ = r.recordRepairTask(ctx, "follow", followerID, followeeID)
+	//}
 
 	return nil
 }
@@ -138,11 +137,11 @@ func (r *ProfileRepo) UnfollowUser(ctx context.Context, followerID uint32, follo
 	}
 
 	// Redis 更新
-	if err := r.updateUnfollowCache(ctx, followerID, followeeID); err != nil {
-		r.log.Errorf("Redis update failed, will repair later. follower=%d followee=%d err=%v",
-			followerID, followeeID, err)
-		_ = r.recordRepairTask(ctx, "unfollow", followerID, followeeID)
-	}
+	//if err := r.updateUnfollowCache(ctx, followerID, followeeID); err != nil {
+	//	r.log.Errorf("Redis update failed, will repair later. follower=%d followee=%d err=%v",
+	//		followerID, followeeID, err)
+	//	_ = r.recordRepairTask(ctx, "unfollow", followerID, followeeID)
+	//}
 
 	return nil
 }
@@ -159,21 +158,23 @@ func (r *ProfileRepo) UpdateUnfollowCache(ctx context.Context, followerID uint32
 }
 
 func (r *ProfileRepo) CanAddFriendCache(ctx context.Context, userID uint32, followerID uint32) (bool, error) {
-	redis := r.data.Cache()
-	keyA := UserRedisKey(UserCachePrefix, "following", userID)
-	keyB := UserRedisKey(UserCachePrefix, "following", followerID)
+	//redis := r.data.Cache()
+	//keyA := UserRedisKey(UserCachePrefix, "following", userID)
+	//keyB := UserRedisKey(UserCachePrefix, "following", followerID)
+	//
+	//isAFollowsB, err := redis.SIsMember(ctx, keyA, strconv.Itoa(int(userID))).Result()
+	//if err != nil {
+	//	return false, err
+	//}
+	//
+	//isBFollowsA, err := redis.SIsMember(ctx, keyB, strconv.Itoa(int(followerID))).Result()
+	//if err != nil {
+	//	return false, err
+	//}
+	//
+	//return isAFollowsB && isBFollowsA, nil
 
-	isAFollowsB, err := redis.SIsMember(ctx, keyA, strconv.Itoa(int(userID))).Result()
-	if err != nil {
-		return false, err
-	}
-
-	isBFollowsA, err := redis.SIsMember(ctx, keyB, strconv.Itoa(int(followerID))).Result()
-	if err != nil {
-		return false, err
-	}
-
-	return isAFollowsB && isBFollowsA, nil
+	return true, nil
 }
 
 func (r *ProfileRepo) CanAddFriendSql(ctx context.Context, userID uint32, followerID uint32) (bool, error) {
@@ -187,20 +188,23 @@ func (r *ProfileRepo) CanAddFriendSql(ctx context.Context, userID uint32, follow
 	return true, nil
 }
 
-func (r *ProfileRepo) CheckFollowTogether(ctx context.Context, followerID uint32, followeeID uint32) (bool, error) {
-	var cnt1 int64
-	var cnt2 int64
-	r.data.DB().Model(&FollowTB{}).
-		Where("follower_id = ? AND followee_id = ?", followeeID, followerID).
-		Count(&cnt1)
-
-	r.data.DB().Model(&FollowTB{}).
-		Where("follower_id = ? AND followee_id = ?", followeeID, followerID).
-		Count(&cnt2)
-
-	if cnt1 > 0 && cnt2 > 0 {
-		return true, nil
+func (r *ProfileRepo) CheckFollow(ctx context.Context, userID uint32, targetID uint32) (bool, error) {
+	var cnt int64
+	err := r.data.DB().Model(&bizProfile.FollowTB{}).
+		Where("follower_id = ? AND followee_id = ?", userID, targetID).
+		Count(&cnt).Error
+	if err != nil {
+		return false, err
 	}
+
+	return cnt > 0, nil
+}
+
+func (r *ProfileRepo) CheckBlock(ctx context.Context, userID uint32, targetID uint32) (bool, error) {
+	return false, nil
+}
+
+func (r *ProfileRepo) CheckFriend(ctx context.Context, userID uint32, targetID uint32) (bool, error) {
 	return false, nil
 }
 
@@ -254,37 +258,40 @@ type RepairTask struct {
 
 // cache 相关的需要修正
 func (r *ProfileRepo) RecordRepairTask(ctx context.Context, action string, followerID, followeeID uint32) error {
-	task := RepairTask{
-		Action:     action,
-		FollowerID: followerID,
-		FolloweeID: followeeID,
-	}
-	data, _ := json.Marshal(task)
-	return r.data.RDB().LPush(ctx, "follow:repair:queue", data).Err()
+	//task := RepairTask{
+	//	Action:     action,
+	//	FollowerID: followerID,
+	//	FolloweeID: followeeID,
+	//}
+	//data, _ := json.Marshal(task)
+	//return r.data.RDB().LPush(ctx, "follow:repair:queue", data).Err()
+
+	return nil
 }
 
 func (r *ProfileRepo) RepairFollowCache(ctx context.Context) {
-	for {
-		result, err := r.data.RDB().RPop(ctx, "follow:repair:queue").Result()
-		if err == redis.Nil {
-			// 没有任务
-			return
-		} else if err != nil {
-			r.log.Errorf("Repair queue pop error: %v", err)
-			return
-		}
+	//for {
+	//	result, err := r.data.RDB().RPop(ctx, "follow:repair:queue").Result()
+	//	if err == redis.Nil {
+	//		// 没有任务
+	//		return
+	//	} else if err != nil {
+	//		r.log.Errorf("Repair queue pop error: %v", err)
+	//		return
+	//	}
+	//
+	//	var task RepairTask
+	//	if err := json.Unmarshal([]byte(result), &task); err != nil {
+	//		r.log.Errorf("Invalid repair task: %v", err)
+	//		continue
+	//	}
+	//
+	//	// 修复 Redis
+	//	if task.Action == "follow" {
+	//		_ = r.updateFollowCache(ctx, task.FollowerID, task.FolloweeID)
+	//	} else if task.Action == "unfollow" {
+	//		_ = r.updateUnfollowCache(ctx, task.FollowerID, task.FolloweeID)
+	//	}
+	//}
 
-		var task RepairTask
-		if err := json.Unmarshal([]byte(result), &task); err != nil {
-			r.log.Errorf("Invalid repair task: %v", err)
-			continue
-		}
-
-		// 修复 Redis
-		if task.Action == "follow" {
-			_ = r.updateFollowCache(ctx, task.FollowerID, task.FolloweeID)
-		} else if task.Action == "unfollow" {
-			_ = r.updateUnfollowCache(ctx, task.FollowerID, task.FolloweeID)
-		}
-	}
 }

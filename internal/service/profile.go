@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	v1 "kratos-realworld/api/conduit/v1"
 	"kratos-realworld/internal/biz"
@@ -28,12 +29,12 @@ func (cs *ConduitService) GetProfile(ctx context.Context, req *v1.GetProfileRequ
 	}, nil
 }
 
-func ConvertToProfileData(res *biz.UserProfileReply) *v1.GetProfileReply_ProfileData {
+func ConvertToProfileData(res *biz.UserProfileReply) *v1.ProfileData {
 	var lastActiveProto *timestamppb.Timestamp
 	if res.LastActive != nil {
 		lastActiveProto = timestamppb.New(*res.LastActive)
 	}
-	return &v1.GetProfileReply_ProfileData{
+	return &v1.ProfileData{
 		UserId:            res.UserID,
 		Tags:              res.Tags,
 		FollowCount:       res.FollowCount,
@@ -64,7 +65,7 @@ func (cs *ConduitService) FollowUser(ctx context.Context, req *v1.FollowUserRequ
 	return &v1.FollowFanReply{
 		Code: 0,
 		Res:  ErrorToRes(err),
-		Data: &v1.RelationData{
+		Data: &v1.FollowFanData{
 			SelfId:      res.SelfID,
 			FollowCount: res.FollowCount,
 			TargetId:    res.TargetID,
@@ -88,7 +89,7 @@ func (cs *ConduitService) UnfollowUser(ctx context.Context, req *v1.UnfollowUser
 	return &v1.FollowFanReply{
 		Code: 0,
 		Res:  ErrorToRes(err),
-		Data: &v1.RelationData{
+		Data: &v1.FollowFanData{
 			SelfId:      res.SelfID,
 			FollowCount: res.FollowCount,
 			TargetId:    res.TargetID,
@@ -97,21 +98,49 @@ func (cs *ConduitService) UnfollowUser(ctx context.Context, req *v1.UnfollowUser
 	}, nil
 }
 
-func (cs *ConduitService) CanAddFriend(ctx context.Context, req *v1.CanAddFriendReq) (*v1.CanAddFriendRes, error) {
-	res, err := cs.pc.CanAddFriend(ctx, req.TargetId)
-	if err != nil {
-		log.Printf("CanAddFriend err: %v", err)
+func (cs *ConduitService) GetRelationship(ctx context.Context, req *v1.RelationshipRequest) (*v1.RelationshipReply, error) {
+	res, err := cs.pc.GetRelationship(ctx, req.TargetId)
 
-		return &v1.CanAddFriendRes{
+	if err != nil {
+		log.Printf("GetRelationship err: %v", err)
+
+		return &v1.RelationshipReply{
 			Code: 1,
 			Res:  ErrorToRes(err),
 			Data: nil,
 		}, nil
 	}
 
+	return &v1.RelationshipReply{
+		Code: 0,
+		Res:  ErrorToRes(err),
+		Data: &v1.RelationshipData{
+			IsFollowing:  res.IsFollowing,
+			IsFollowedBy: res.IsFollowedBy,
+			IsMutual:     res.IsMutual,
+			IsBlocked:    res.IsBlocked,
+			IsBlockedBy:  res.IsBlockedBy,
+			IsFriend:     res.IsFriend,
+		},
+	}, nil
+}
+
+func (cs *ConduitService) CanAddFriend(ctx context.Context, req *v1.CanAddFriendReq) (*v1.CanAddFriendRes, error) {
+	res, err := cs.pc.CanAddFriend(ctx, req.TargetId)
+	fmt.Println(res)
+	if err != nil {
+		log.Printf("CanAddFriend err: %v", err)
+
+		return &v1.CanAddFriendRes{
+			Code: 1,
+			Res:  ErrorToRes(err),
+			//Data: nil,
+		}, nil
+	}
+
 	return &v1.CanAddFriendRes{
 		Code: 0,
 		Res:  ErrorToRes(err),
-		Data: res,
+		//Data: res,
 	}, nil
 }

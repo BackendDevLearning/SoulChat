@@ -19,13 +19,14 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Conduit_Register_FullMethodName       = "/realworld.v1.Conduit/Register"
-	Conduit_Login_FullMethodName          = "/realworld.v1.Conduit/Login"
-	Conduit_UpdatePassword_FullMethodName = "/realworld.v1.Conduit/UpdatePassword"
-	Conduit_GetProfile_FullMethodName     = "/realworld.v1.Conduit/GetProfile"
-	Conduit_FollowUser_FullMethodName     = "/realworld.v1.Conduit/FollowUser"
-	Conduit_UnfollowUser_FullMethodName   = "/realworld.v1.Conduit/UnfollowUser"
-	Conduit_CanAddFriend_FullMethodName   = "/realworld.v1.Conduit/CanAddFriend"
+	Conduit_Register_FullMethodName        = "/realworld.v1.Conduit/Register"
+	Conduit_Login_FullMethodName           = "/realworld.v1.Conduit/Login"
+	Conduit_UpdatePassword_FullMethodName  = "/realworld.v1.Conduit/UpdatePassword"
+	Conduit_GetProfile_FullMethodName      = "/realworld.v1.Conduit/GetProfile"
+	Conduit_FollowUser_FullMethodName      = "/realworld.v1.Conduit/FollowUser"
+	Conduit_UnfollowUser_FullMethodName    = "/realworld.v1.Conduit/UnfollowUser"
+	Conduit_GetRelationship_FullMethodName = "/realworld.v1.Conduit/GetRelationship"
+	Conduit_CanAddFriend_FullMethodName    = "/realworld.v1.Conduit/CanAddFriend"
 )
 
 // ConduitClient is the client API for Conduit service.
@@ -40,6 +41,7 @@ type ConduitClient interface {
 	GetProfile(ctx context.Context, in *GetProfileRequest, opts ...grpc.CallOption) (*GetProfileReply, error)
 	FollowUser(ctx context.Context, in *FollowUserRequest, opts ...grpc.CallOption) (*FollowFanReply, error)
 	UnfollowUser(ctx context.Context, in *UnfollowUserRequest, opts ...grpc.CallOption) (*FollowFanReply, error)
+	GetRelationship(ctx context.Context, in *RelationshipRequest, opts ...grpc.CallOption) (*RelationshipReply, error)
 	CanAddFriend(ctx context.Context, in *CanAddFriendReq, opts ...grpc.CallOption) (*CanAddFriendRes, error)
 }
 
@@ -111,6 +113,16 @@ func (c *conduitClient) UnfollowUser(ctx context.Context, in *UnfollowUserReques
 	return out, nil
 }
 
+func (c *conduitClient) GetRelationship(ctx context.Context, in *RelationshipRequest, opts ...grpc.CallOption) (*RelationshipReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RelationshipReply)
+	err := c.cc.Invoke(ctx, Conduit_GetRelationship_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *conduitClient) CanAddFriend(ctx context.Context, in *CanAddFriendReq, opts ...grpc.CallOption) (*CanAddFriendRes, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(CanAddFriendRes)
@@ -133,6 +145,7 @@ type ConduitServer interface {
 	GetProfile(context.Context, *GetProfileRequest) (*GetProfileReply, error)
 	FollowUser(context.Context, *FollowUserRequest) (*FollowFanReply, error)
 	UnfollowUser(context.Context, *UnfollowUserRequest) (*FollowFanReply, error)
+	GetRelationship(context.Context, *RelationshipRequest) (*RelationshipReply, error)
 	CanAddFriend(context.Context, *CanAddFriendReq) (*CanAddFriendRes, error)
 	mustEmbedUnimplementedConduitServer()
 }
@@ -161,6 +174,9 @@ func (UnimplementedConduitServer) FollowUser(context.Context, *FollowUserRequest
 }
 func (UnimplementedConduitServer) UnfollowUser(context.Context, *UnfollowUserRequest) (*FollowFanReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UnfollowUser not implemented")
+}
+func (UnimplementedConduitServer) GetRelationship(context.Context, *RelationshipRequest) (*RelationshipReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetRelationship not implemented")
 }
 func (UnimplementedConduitServer) CanAddFriend(context.Context, *CanAddFriendReq) (*CanAddFriendRes, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CanAddFriend not implemented")
@@ -294,6 +310,24 @@ func _Conduit_UnfollowUser_Handler(srv interface{}, ctx context.Context, dec fun
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Conduit_GetRelationship_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RelationshipRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ConduitServer).GetRelationship(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Conduit_GetRelationship_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ConduitServer).GetRelationship(ctx, req.(*RelationshipRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Conduit_CanAddFriend_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(CanAddFriendReq)
 	if err := dec(in); err != nil {
@@ -342,6 +376,10 @@ var Conduit_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UnfollowUser",
 			Handler:    _Conduit_UnfollowUser_Handler,
+		},
+		{
+			MethodName: "GetRelationship",
+			Handler:    _Conduit_GetRelationship_Handler,
 		},
 		{
 			MethodName: "CanAddFriend",

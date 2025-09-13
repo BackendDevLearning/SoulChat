@@ -70,7 +70,10 @@ type ProfileRepo interface {
 	RecordRepairTask(ctx context.Context, action string, followerID, followeeID uint32) error
 	RepairFollowCache(ctx context.Context)
 
-	CheckFollowTogether(ctx context.Context, followerID uint32, followeeID uint32) (bool, error)
+	// 获取两个用户之间的全部关系，包括是否关注、是否是好友、是否拉黑等
+	CheckFollow(ctx context.Context, userID uint32, targetID uint32) (bool, error)
+	CheckBlock(ctx context.Context, userID uint32, targetID uint32) (bool, error)
+	CheckFriend(ctx context.Context, userID uint32, targetID uint32) (bool, error)
 
 	// 增量更新统计字段
 	IncrementFollowCount(ctx context.Context, userID uint32, delta int) (uint32, error)
