@@ -126,9 +126,13 @@ func (r *ProfileRepo) UnfollowUser(ctx context.Context, followerID uint32, follo
 	}
 
 	// 删除关注关系记录
-	if err := r.getDB(ctx).Where("follower_id = ? AND followee_id = ?", followerID, followeeID).
-		Delete(&bizProfile.FollowFanTB{}).Error; err != nil {
-		return err
+	res := r.getDB(ctx).Where("follower_id = ? AND followee_id = ?", followerID, followeeID).
+		Delete(&bizProfile.FollowFanTB{})
+	if res.Error != nil {
+		return res.Error
+	}
+	if res.RowsAffected == 0 {
+		return errors.New("follow relationship not found, not followed before")
 	}
 
 	// Redis 更新
