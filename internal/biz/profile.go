@@ -3,7 +3,6 @@ package biz
 import (
 	"context"
 	"errors"
-	"fmt"
 	bizProfile "kratos-realworld/internal/biz/profile"
 	"kratos-realworld/internal/conf"
 	"kratos-realworld/internal/model"
@@ -57,9 +56,12 @@ func (pc *ProfileUsecase) FollowUser(ctx context.Context, targetID string) (*Use
 	userID := auth.FromContext(ctx).UserID
 	// 参数：字符串, 进制(10), 位数(32)
 	tID, err := strconv.ParseUint(targetID, 10, 32)
-	fmt.Println(userID, tID, err)
 	if err != nil {
 		return nil, errors.New("string convert error")
+	}
+
+	if uint32(userID) == uint32(tID) {
+		return nil, NewErr(ErrCodeFollowFailed, FOLLOW_USER_FAILED, "user cannot follow themselves")
 	}
 
 	var followCount, fanCount uint32
@@ -99,6 +101,10 @@ func (pc *ProfileUsecase) UnfollowUser(ctx context.Context, targetID string) (*U
 	tID, err := strconv.ParseUint(targetID, 10, 32)
 	if err != nil {
 		return nil, errors.New("string convert error")
+	}
+
+	if uint32(userID) == uint32(tID) {
+		return nil, NewErr(ErrCodeUnfollowFailed, UNFOLLOW_USER_FAILED, "user cannot unfollow themselves")
 	}
 
 	var followCount, fanCount uint32
