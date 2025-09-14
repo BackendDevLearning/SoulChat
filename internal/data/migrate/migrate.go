@@ -10,7 +10,7 @@ func InitDBTable(db *gorm.DB) error {
 	if err := db.AutoMigrate(
 		&user.UserTB{},
 		&profile.ProfileTB{},
-		&profile.FollowTB{},
+		&profile.FollowFanTB{},
 	); err != nil {
 		return err
 	}

@@ -415,6 +415,7 @@ func (client *Client) SScan(ctx context.Context, key string, cursor uint64, matc
 /*
 以下是关于对Hash数据类型的操作
 */
+
 // HGet 获取hash key对应的value，返回获取成功的value
 func (client *Client) HGet(ctx context.Context, key, field string) (string, error) {
 	conn := redisConn.Conn()
@@ -675,6 +676,7 @@ func (client *Client) LIndex(ctx context.Context, key string, index int64) (stri
 /*
 以下是关于对ZSet数据类型的操作
 */
+
 // ZAdd 添加元素到ZSet中，返回添加成功的个数
 func (client *Client) ZAdd(ctx context.Context, key string, score float64, member string) (int64, error) {
 	conn := redisConn.Conn()
