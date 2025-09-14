@@ -103,14 +103,14 @@ func (r *ProfileRepo) FollowUser(ctx context.Context, followerID uint32, followe
 }
 
 func (r *ProfileRepo) addFollowFanCache(ctx context.Context, followerID uint32, followeeID uint32) error {
-	keyFollowings := UserRedisKey(UserCachePrefix, "Followings", followerID) // 某人的关注列表
-	keyFollowers := UserRedisKey(UserCachePrefix, "Followers", followeeID)   // 某人的粉丝列表
+	keyFollowList := UserRedisKey(UserCachePrefix, "FollowList", followerID) // 某人的关注列表
+	keyFanList := UserRedisKey(UserCachePrefix, "FanList", followeeID)       // 某人的粉丝列表
 
 	return r.data.Cache().Pipeline(ctx, func(pipe redis.Pipeliner) error {
-		pipe.SAdd(ctx, keyFollowings, fmt.Sprintf("%d", followeeID))
-		pipe.SAdd(ctx, keyFollowers, fmt.Sprintf("%d", followerID))
-		pipe.Expire(ctx, keyFollowings, UserCacheTTL)
-		pipe.Expire(ctx, keyFollowers, UserCacheTTL)
+		pipe.SAdd(ctx, keyFollowList, fmt.Sprintf("%d", followeeID))
+		pipe.SAdd(ctx, keyFanList, fmt.Sprintf("%d", followerID))
+		pipe.Expire(ctx, keyFollowList, UserCacheTTL)
+		pipe.Expire(ctx, keyFanList, UserCacheTTL)
 		return nil
 	})
 }
@@ -140,12 +140,12 @@ func (r *ProfileRepo) UnfollowUser(ctx context.Context, followerID uint32, follo
 }
 
 func (r *ProfileRepo) deleteFollowFanCache(ctx context.Context, followerID uint32, followeeID uint32) error {
-	keyFollowings := UserRedisKey(UserCachePrefix, "Followings", followerID) // 某人的关注列表
-	keyFollowers := UserRedisKey(UserCachePrefix, "Followers", followeeID)   // 某人的粉丝列表
+	keyFollowList := UserRedisKey(UserCachePrefix, "FollowList", followerID) // 某人的关注列表
+	keyFanList := UserRedisKey(UserCachePrefix, "FanList", followeeID)       // 某人的粉丝列表
 
 	return r.data.Cache().Pipeline(ctx, func(pipe redis.Pipeliner) error {
-		pipe.SRem(ctx, keyFollowings, fmt.Sprintf("%d", followeeID))
-		pipe.SRem(ctx, keyFollowers, fmt.Sprintf("%d", followerID))
+		pipe.SRem(ctx, keyFollowList, fmt.Sprintf("%d", followeeID))
+		pipe.SRem(ctx, keyFanList, fmt.Sprintf("%d", followerID))
 		return nil
 	})
 }
