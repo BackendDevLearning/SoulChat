@@ -15,13 +15,14 @@ const (
 	ErrCodeInvalidParams  = 400
 	ErrCodeInternalServer = 500
 
-	// 注册登录相关
+	// 注册登录、更新用户信息相关
 	ErrCodeInvalidPhone           = 42201
-	ErrCodePhoneNotFound          = 42202
+	ErrCodeUserNotFound           = 42202
 	ErrCodePhoneAlreadyRegistered = 42203
 	ErrCodeInvalidPassword        = 40101
 	ErrCodeCreateTokenFailed      = 50001
 	ErrCodeUpdatePasswordFailed   = 50002
+	ErrCodeUpdateUserInfoFailed   = 50003
 
 	// 数据库、redis缓存相关
 	ErrCodeDBQueryFailed    = 50010
@@ -38,13 +39,14 @@ const (
 	INVALID_PARAMS  = "INVALID_PARAMS"
 	INTERNAL_SERVER = "INTERNAL_SERVER"
 
-	// 注册登录相关
+	// 注册登录、更新用户信息相关
 	INVALID_PHONE            = "INVALID_PHONE"
-	PHONE_NOT_FOUND          = "PHONE_NOT_FOUND"
+	USER_NOT_FOUND           = "USER_NOT_FOUND"
 	PHONE_ALREADY_REGISTERED = "PHONE_ALREADY_REGISTERED"
 	INVALID_PASSWORD         = "INVALID_PASSWORD"
 	CREATE_TOKEN_FAILED      = "CREATE_TOKEN_FAILED"
 	UPDATE_PASSWORD_FAILED   = "UPDATE_PASSWORD_FAILED"
+	UPDATE_USER_INFO_FAILED  = "UPDATE_USER_INFO_FAILED"
 
 	// 数据库相关
 	DB_QUERY_FAILED    = "DB_QUERY_FAILED"

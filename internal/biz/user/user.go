@@ -12,9 +12,11 @@ type UserTB struct {
 	Phone        string `gorm:"column:Phone;type:varchar(20);comment:手机号码;NOT NULL" json:"Phone"`
 	PasswordHash string `gorm:"column:PassWord;type:text;comment:密码;NOT NULL" json:"PassWord"`
 
-	Bio        string `gorm:"column:Bio;type:text;comment:个人简介" json:"Bio"`
-	Image      string `gorm:"column:Image;type:varchar(255);comment:头像链接" json:"Image"`
-	CoverImage string `gorm:"column:CoverImage;type:varchar(255);comment:主页背景图链接" json:"CoverImage"`
+	Gender     uint32     `gorm:"column:Gender;type:tinyint(1);comment:性别(0:未知 1:男 2:女);NOT NULL;default:0" json:"Gender"`
+	Birthday   *time.Time `gorm:"column:Birthday;type:datetime;comment:出生日期" json:"Birthday"`
+	Bio        string     `gorm:"column:Bio;type:text;comment:个人简介" json:"Bio"`
+	HeadImage  string     `gorm:"column:Image;type:varchar(255);comment:头像链接" json:"HeadImage"`
+	CoverImage string     `gorm:"column:CoverImage;type:varchar(255);comment:主页背景图链接" json:"CoverImage"`
 
 	SysCreated *time.Time `gorm:"autoCreateTime;column:sys_created;type:datetime;default null;comment:创建时间;NOT NULL" json:"sys_created"`
 	SysUpdated *time.Time `gorm:"autoUpdateTime;column:sys_updated;type:datetime;default null;comment:修改时间;NOT NULL" json:"sys_updated"`
@@ -30,5 +32,16 @@ type UserRepo interface {
 	CreateUser(ctx context.Context, userRegister *UserTB) error
 	GetUserByPhone(ctx context.Context, phone string) (*UserTB, error)
 	GetPasswordByPhone(ctx context.Context, phone string) (string, error)
-	UpdatePassword(ctx context.Context, phone string, newPasswordHash string) error
+
+	UpdateUserPassword(ctx context.Context, phone string, newPasswordHash string) error
+	UpdateUserInfo(ctx context.Context, userID uint32, userInfo *UpdateUserInfoFields) error
+}
+
+type UpdateUserInfoFields struct {
+	Username   *string
+	Gender     *uint32
+	Birthday   *time.Time
+	Bio        *string
+	HeadImage  *string
+	CoverImage *string
 }

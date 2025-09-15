@@ -26,7 +26,8 @@ const OperationConduitGetRelationship = "/realworld.v1.Conduit/GetRelationship"
 const OperationConduitLogin = "/realworld.v1.Conduit/Login"
 const OperationConduitRegister = "/realworld.v1.Conduit/Register"
 const OperationConduitUnfollowUser = "/realworld.v1.Conduit/UnfollowUser"
-const OperationConduitUpdatePassword = "/realworld.v1.Conduit/UpdatePassword"
+const OperationConduitUpdateUserInfo = "/realworld.v1.Conduit/UpdateUserInfo"
+const OperationConduitUpdateUserPassword = "/realworld.v1.Conduit/UpdateUserPassword"
 
 type ConduitHTTPServer interface {
 	CanAddFriend(context.Context, *CanAddFriendReq) (*CanAddFriendRes, error)
@@ -36,14 +37,16 @@ type ConduitHTTPServer interface {
 	Login(context.Context, *LoginRequest) (*LoginReply, error)
 	Register(context.Context, *RegisterRequest) (*RegisterReply, error)
 	UnfollowUser(context.Context, *UnfollowUserRequest) (*FollowFanReply, error)
-	UpdatePassword(context.Context, *UpdateRequest) (*UpdateReply, error)
+	UpdateUserInfo(context.Context, *UpdateUserInfoRequest) (*UpdateUserInfoReply, error)
+	UpdateUserPassword(context.Context, *UpdateUserPwdRequest) (*UpdateUserPwdReply, error)
 }
 
 func RegisterConduitHTTPServer(s *http.Server, srv ConduitHTTPServer) {
 	r := s.Route("/")
 	r.POST("/api/users", _Conduit_Register0_HTTP_Handler(srv))
 	r.POST("/api/users/login", _Conduit_Login0_HTTP_Handler(srv))
-	r.POST("/api/users/updatePassword", _Conduit_UpdatePassword0_HTTP_Handler(srv))
+	r.POST("/api/users/updatePassword", _Conduit_UpdateUserPassword0_HTTP_Handler(srv))
+	r.PUT("/api/users/updateUserInfo", _Conduit_UpdateUserInfo0_HTTP_Handler(srv))
 	r.GET("/api/profiles/{user_id}", _Conduit_GetProfile0_HTTP_Handler(srv))
 	r.POST("/api/profiles/{target_id}/follow", _Conduit_FollowUser0_HTTP_Handler(srv))
 	r.POST("/api/profiles/{target_id}/unfollow", _Conduit_UnfollowUser0_HTTP_Handler(srv))
@@ -95,24 +98,46 @@ func _Conduit_Login0_HTTP_Handler(srv ConduitHTTPServer) func(ctx http.Context) 
 	}
 }
 
-func _Conduit_UpdatePassword0_HTTP_Handler(srv ConduitHTTPServer) func(ctx http.Context) error {
+func _Conduit_UpdateUserPassword0_HTTP_Handler(srv ConduitHTTPServer) func(ctx http.Context) error {
 	return func(ctx http.Context) error {
-		var in UpdateRequest
+		var in UpdateUserPwdRequest
 		if err := ctx.Bind(&in); err != nil {
 			return err
 		}
 		if err := ctx.BindQuery(&in); err != nil {
 			return err
 		}
-		http.SetOperation(ctx, OperationConduitUpdatePassword)
+		http.SetOperation(ctx, OperationConduitUpdateUserPassword)
 		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
-			return srv.UpdatePassword(ctx, req.(*UpdateRequest))
+			return srv.UpdateUserPassword(ctx, req.(*UpdateUserPwdRequest))
 		})
 		out, err := h(ctx, &in)
 		if err != nil {
 			return err
 		}
-		reply := out.(*UpdateReply)
+		reply := out.(*UpdateUserPwdReply)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _Conduit_UpdateUserInfo0_HTTP_Handler(srv ConduitHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in UpdateUserInfoRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationConduitUpdateUserInfo)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.UpdateUserInfo(ctx, req.(*UpdateUserInfoRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*UpdateUserInfoReply)
 		return ctx.Result(200, reply)
 	}
 }
@@ -244,7 +269,8 @@ type ConduitHTTPClient interface {
 	Login(ctx context.Context, req *LoginRequest, opts ...http.CallOption) (rsp *LoginReply, err error)
 	Register(ctx context.Context, req *RegisterRequest, opts ...http.CallOption) (rsp *RegisterReply, err error)
 	UnfollowUser(ctx context.Context, req *UnfollowUserRequest, opts ...http.CallOption) (rsp *FollowFanReply, err error)
-	UpdatePassword(ctx context.Context, req *UpdateRequest, opts ...http.CallOption) (rsp *UpdateReply, err error)
+	UpdateUserInfo(ctx context.Context, req *UpdateUserInfoRequest, opts ...http.CallOption) (rsp *UpdateUserInfoReply, err error)
+	UpdateUserPassword(ctx context.Context, req *UpdateUserPwdRequest, opts ...http.CallOption) (rsp *UpdateUserPwdReply, err error)
 }
 
 type ConduitHTTPClientImpl struct {
@@ -346,11 +372,24 @@ func (c *ConduitHTTPClientImpl) UnfollowUser(ctx context.Context, in *UnfollowUs
 	return &out, nil
 }
 
-func (c *ConduitHTTPClientImpl) UpdatePassword(ctx context.Context, in *UpdateRequest, opts ...http.CallOption) (*UpdateReply, error) {
-	var out UpdateReply
+func (c *ConduitHTTPClientImpl) UpdateUserInfo(ctx context.Context, in *UpdateUserInfoRequest, opts ...http.CallOption) (*UpdateUserInfoReply, error) {
+	var out UpdateUserInfoReply
+	pattern := "/api/users/updateUserInfo"
+	path := binding.EncodeURL(pattern, in, false)
+	opts = append(opts, http.Operation(OperationConduitUpdateUserInfo))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "PUT", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *ConduitHTTPClientImpl) UpdateUserPassword(ctx context.Context, in *UpdateUserPwdRequest, opts ...http.CallOption) (*UpdateUserPwdReply, error) {
+	var out UpdateUserPwdReply
 	pattern := "/api/users/updatePassword"
 	path := binding.EncodeURL(pattern, in, false)
-	opts = append(opts, http.Operation(OperationConduitUpdatePassword))
+	opts = append(opts, http.Operation(OperationConduitUpdateUserPassword))
 	opts = append(opts, http.PathTemplate(pattern))
 	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
 	if err != nil {

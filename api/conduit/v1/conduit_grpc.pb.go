@@ -19,14 +19,15 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Conduit_Register_FullMethodName        = "/realworld.v1.Conduit/Register"
-	Conduit_Login_FullMethodName           = "/realworld.v1.Conduit/Login"
-	Conduit_UpdatePassword_FullMethodName  = "/realworld.v1.Conduit/UpdatePassword"
-	Conduit_GetProfile_FullMethodName      = "/realworld.v1.Conduit/GetProfile"
-	Conduit_FollowUser_FullMethodName      = "/realworld.v1.Conduit/FollowUser"
-	Conduit_UnfollowUser_FullMethodName    = "/realworld.v1.Conduit/UnfollowUser"
-	Conduit_GetRelationship_FullMethodName = "/realworld.v1.Conduit/GetRelationship"
-	Conduit_CanAddFriend_FullMethodName    = "/realworld.v1.Conduit/CanAddFriend"
+	Conduit_Register_FullMethodName           = "/realworld.v1.Conduit/Register"
+	Conduit_Login_FullMethodName              = "/realworld.v1.Conduit/Login"
+	Conduit_UpdateUserPassword_FullMethodName = "/realworld.v1.Conduit/UpdateUserPassword"
+	Conduit_UpdateUserInfo_FullMethodName     = "/realworld.v1.Conduit/UpdateUserInfo"
+	Conduit_GetProfile_FullMethodName         = "/realworld.v1.Conduit/GetProfile"
+	Conduit_FollowUser_FullMethodName         = "/realworld.v1.Conduit/FollowUser"
+	Conduit_UnfollowUser_FullMethodName       = "/realworld.v1.Conduit/UnfollowUser"
+	Conduit_GetRelationship_FullMethodName    = "/realworld.v1.Conduit/GetRelationship"
+	Conduit_CanAddFriend_FullMethodName       = "/realworld.v1.Conduit/CanAddFriend"
 )
 
 // ConduitClient is the client API for Conduit service.
@@ -37,7 +38,8 @@ const (
 type ConduitClient interface {
 	Register(ctx context.Context, in *RegisterRequest, opts ...grpc.CallOption) (*RegisterReply, error)
 	Login(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*LoginReply, error)
-	UpdatePassword(ctx context.Context, in *UpdateRequest, opts ...grpc.CallOption) (*UpdateReply, error)
+	UpdateUserPassword(ctx context.Context, in *UpdateUserPwdRequest, opts ...grpc.CallOption) (*UpdateUserPwdReply, error)
+	UpdateUserInfo(ctx context.Context, in *UpdateUserInfoRequest, opts ...grpc.CallOption) (*UpdateUserInfoReply, error)
 	GetProfile(ctx context.Context, in *GetProfileRequest, opts ...grpc.CallOption) (*GetProfileReply, error)
 	FollowUser(ctx context.Context, in *FollowUserRequest, opts ...grpc.CallOption) (*FollowFanReply, error)
 	UnfollowUser(ctx context.Context, in *UnfollowUserRequest, opts ...grpc.CallOption) (*FollowFanReply, error)
@@ -73,10 +75,20 @@ func (c *conduitClient) Login(ctx context.Context, in *LoginRequest, opts ...grp
 	return out, nil
 }
 
-func (c *conduitClient) UpdatePassword(ctx context.Context, in *UpdateRequest, opts ...grpc.CallOption) (*UpdateReply, error) {
+func (c *conduitClient) UpdateUserPassword(ctx context.Context, in *UpdateUserPwdRequest, opts ...grpc.CallOption) (*UpdateUserPwdReply, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(UpdateReply)
-	err := c.cc.Invoke(ctx, Conduit_UpdatePassword_FullMethodName, in, out, cOpts...)
+	out := new(UpdateUserPwdReply)
+	err := c.cc.Invoke(ctx, Conduit_UpdateUserPassword_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *conduitClient) UpdateUserInfo(ctx context.Context, in *UpdateUserInfoRequest, opts ...grpc.CallOption) (*UpdateUserInfoReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UpdateUserInfoReply)
+	err := c.cc.Invoke(ctx, Conduit_UpdateUserInfo_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -141,7 +153,8 @@ func (c *conduitClient) CanAddFriend(ctx context.Context, in *CanAddFriendReq, o
 type ConduitServer interface {
 	Register(context.Context, *RegisterRequest) (*RegisterReply, error)
 	Login(context.Context, *LoginRequest) (*LoginReply, error)
-	UpdatePassword(context.Context, *UpdateRequest) (*UpdateReply, error)
+	UpdateUserPassword(context.Context, *UpdateUserPwdRequest) (*UpdateUserPwdReply, error)
+	UpdateUserInfo(context.Context, *UpdateUserInfoRequest) (*UpdateUserInfoReply, error)
 	GetProfile(context.Context, *GetProfileRequest) (*GetProfileReply, error)
 	FollowUser(context.Context, *FollowUserRequest) (*FollowFanReply, error)
 	UnfollowUser(context.Context, *UnfollowUserRequest) (*FollowFanReply, error)
@@ -163,8 +176,11 @@ func (UnimplementedConduitServer) Register(context.Context, *RegisterRequest) (*
 func (UnimplementedConduitServer) Login(context.Context, *LoginRequest) (*LoginReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Login not implemented")
 }
-func (UnimplementedConduitServer) UpdatePassword(context.Context, *UpdateRequest) (*UpdateReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method UpdatePassword not implemented")
+func (UnimplementedConduitServer) UpdateUserPassword(context.Context, *UpdateUserPwdRequest) (*UpdateUserPwdReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateUserPassword not implemented")
+}
+func (UnimplementedConduitServer) UpdateUserInfo(context.Context, *UpdateUserInfoRequest) (*UpdateUserInfoReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateUserInfo not implemented")
 }
 func (UnimplementedConduitServer) GetProfile(context.Context, *GetProfileRequest) (*GetProfileReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetProfile not implemented")
@@ -238,20 +254,38 @@ func _Conduit_Login_Handler(srv interface{}, ctx context.Context, dec func(inter
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Conduit_UpdatePassword_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UpdateRequest)
+func _Conduit_UpdateUserPassword_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateUserPwdRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ConduitServer).UpdatePassword(ctx, in)
+		return srv.(ConduitServer).UpdateUserPassword(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Conduit_UpdatePassword_FullMethodName,
+		FullMethod: Conduit_UpdateUserPassword_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ConduitServer).UpdatePassword(ctx, req.(*UpdateRequest))
+		return srv.(ConduitServer).UpdateUserPassword(ctx, req.(*UpdateUserPwdRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Conduit_UpdateUserInfo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateUserInfoRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ConduitServer).UpdateUserInfo(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Conduit_UpdateUserInfo_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ConduitServer).UpdateUserInfo(ctx, req.(*UpdateUserInfoRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -362,8 +396,12 @@ var Conduit_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Conduit_Login_Handler,
 		},
 		{
-			MethodName: "UpdatePassword",
-			Handler:    _Conduit_UpdatePassword_Handler,
+			MethodName: "UpdateUserPassword",
+			Handler:    _Conduit_UpdateUserPassword_Handler,
+		},
+		{
+			MethodName: "UpdateUserInfo",
+			Handler:    _Conduit_UpdateUserInfo_Handler,
 		},
 		{
 			MethodName: "GetProfile",
