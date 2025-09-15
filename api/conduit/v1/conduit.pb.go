@@ -23,6 +23,58 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+type Gender int32
+
+const (
+	Gender_UNKNOWN Gender = 0
+	Gender_MALE    Gender = 1
+	Gender_FEMALE  Gender = 2
+	Gender_OTHER   Gender = 3 // 可选
+)
+
+// Enum value maps for Gender.
+var (
+	Gender_name = map[int32]string{
+		0: "UNKNOWN",
+		1: "MALE",
+		2: "FEMALE",
+		3: "OTHER",
+	}
+	Gender_value = map[string]int32{
+		"UNKNOWN": 0,
+		"MALE":    1,
+		"FEMALE":  2,
+		"OTHER":   3,
+	}
+)
+
+func (x Gender) Enum() *Gender {
+	p := new(Gender)
+	*p = x
+	return p
+}
+
+func (x Gender) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (Gender) Descriptor() protoreflect.EnumDescriptor {
+	return file_api_conduit_v1_conduit_proto_enumTypes[0].Descriptor()
+}
+
+func (Gender) Type() protoreflect.EnumType {
+	return &file_api_conduit_v1_conduit_proto_enumTypes[0]
+}
+
+func (x Gender) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use Gender.Descriptor instead.
+func (Gender) EnumDescriptor() ([]byte, []int) {
+	return file_api_conduit_v1_conduit_proto_rawDescGZIP(), []int{0}
+}
+
 // NID_REGIDTER_REQ
 type RegisterRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -258,7 +310,7 @@ func (x *LoginReply) GetToken() string {
 }
 
 // NID_UPDATE_REQ
-type UpdateRequest struct {
+type UpdateUserPwdRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Phone         string                 `protobuf:"bytes,1,opt,name=phone,proto3" json:"phone,omitempty"`
 	OldPassword   string                 `protobuf:"bytes,2,opt,name=old_password,json=oldPassword,proto3" json:"old_password,omitempty"`
@@ -267,20 +319,20 @@ type UpdateRequest struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *UpdateRequest) Reset() {
-	*x = UpdateRequest{}
+func (x *UpdateUserPwdRequest) Reset() {
+	*x = UpdateUserPwdRequest{}
 	mi := &file_api_conduit_v1_conduit_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *UpdateRequest) String() string {
+func (x *UpdateUserPwdRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*UpdateRequest) ProtoMessage() {}
+func (*UpdateUserPwdRequest) ProtoMessage() {}
 
-func (x *UpdateRequest) ProtoReflect() protoreflect.Message {
+func (x *UpdateUserPwdRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_api_conduit_v1_conduit_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -292,33 +344,33 @@ func (x *UpdateRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use UpdateRequest.ProtoReflect.Descriptor instead.
-func (*UpdateRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use UpdateUserPwdRequest.ProtoReflect.Descriptor instead.
+func (*UpdateUserPwdRequest) Descriptor() ([]byte, []int) {
 	return file_api_conduit_v1_conduit_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *UpdateRequest) GetPhone() string {
+func (x *UpdateUserPwdRequest) GetPhone() string {
 	if x != nil {
 		return x.Phone
 	}
 	return ""
 }
 
-func (x *UpdateRequest) GetOldPassword() string {
+func (x *UpdateUserPwdRequest) GetOldPassword() string {
 	if x != nil {
 		return x.OldPassword
 	}
 	return ""
 }
 
-func (x *UpdateRequest) GetNewPassword() string {
+func (x *UpdateUserPwdRequest) GetNewPassword() string {
 	if x != nil {
 		return x.NewPassword
 	}
 	return ""
 }
 
-type UpdateReply struct {
+type UpdateUserPwdReply struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Code          int32                  `protobuf:"varint,1,opt,name=code,proto3" json:"code,omitempty"` // 0=成功, 1=失败
 	Res           *Res                   `protobuf:"bytes,2,opt,name=res,proto3" json:"res,omitempty"`    // 业务信息
@@ -326,20 +378,20 @@ type UpdateReply struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *UpdateReply) Reset() {
-	*x = UpdateReply{}
+func (x *UpdateUserPwdReply) Reset() {
+	*x = UpdateUserPwdReply{}
 	mi := &file_api_conduit_v1_conduit_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *UpdateReply) String() string {
+func (x *UpdateUserPwdReply) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*UpdateReply) ProtoMessage() {}
+func (*UpdateUserPwdReply) ProtoMessage() {}
 
-func (x *UpdateReply) ProtoReflect() protoreflect.Message {
+func (x *UpdateUserPwdReply) ProtoReflect() protoreflect.Message {
 	mi := &file_api_conduit_v1_conduit_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -351,19 +403,155 @@ func (x *UpdateReply) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use UpdateReply.ProtoReflect.Descriptor instead.
-func (*UpdateReply) Descriptor() ([]byte, []int) {
+// Deprecated: Use UpdateUserPwdReply.ProtoReflect.Descriptor instead.
+func (*UpdateUserPwdReply) Descriptor() ([]byte, []int) {
 	return file_api_conduit_v1_conduit_proto_rawDescGZIP(), []int{5}
 }
 
-func (x *UpdateReply) GetCode() int32 {
+func (x *UpdateUserPwdReply) GetCode() int32 {
 	if x != nil {
 		return x.Code
 	}
 	return 0
 }
 
-func (x *UpdateReply) GetRes() *Res {
+func (x *UpdateUserPwdReply) GetRes() *Res {
+	if x != nil {
+		return x.Res
+	}
+	return nil
+}
+
+type UpdateUserInfoRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Username      string                 `protobuf:"bytes,1,opt,name=username,proto3" json:"username,omitempty"`
+	Gender        Gender                 `protobuf:"varint,2,opt,name=gender,proto3,enum=realworld.v1.Gender" json:"gender,omitempty"`
+	Birthday      *timestamp.Timestamp   `protobuf:"bytes,3,opt,name=birthday,proto3" json:"birthday,omitempty"`
+	Bio           string                 `protobuf:"bytes,4,opt,name=bio,proto3" json:"bio,omitempty"`
+	HeadImage     string                 `protobuf:"bytes,5,opt,name=head_image,json=headImage,proto3" json:"head_image,omitempty"`
+	CoverImage    string                 `protobuf:"bytes,6,opt,name=cover_image,json=coverImage,proto3" json:"cover_image,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpdateUserInfoRequest) Reset() {
+	*x = UpdateUserInfoRequest{}
+	mi := &file_api_conduit_v1_conduit_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateUserInfoRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateUserInfoRequest) ProtoMessage() {}
+
+func (x *UpdateUserInfoRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_api_conduit_v1_conduit_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateUserInfoRequest.ProtoReflect.Descriptor instead.
+func (*UpdateUserInfoRequest) Descriptor() ([]byte, []int) {
+	return file_api_conduit_v1_conduit_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *UpdateUserInfoRequest) GetUsername() string {
+	if x != nil {
+		return x.Username
+	}
+	return ""
+}
+
+func (x *UpdateUserInfoRequest) GetGender() Gender {
+	if x != nil {
+		return x.Gender
+	}
+	return Gender_UNKNOWN
+}
+
+func (x *UpdateUserInfoRequest) GetBirthday() *timestamp.Timestamp {
+	if x != nil {
+		return x.Birthday
+	}
+	return nil
+}
+
+func (x *UpdateUserInfoRequest) GetBio() string {
+	if x != nil {
+		return x.Bio
+	}
+	return ""
+}
+
+func (x *UpdateUserInfoRequest) GetHeadImage() string {
+	if x != nil {
+		return x.HeadImage
+	}
+	return ""
+}
+
+func (x *UpdateUserInfoRequest) GetCoverImage() string {
+	if x != nil {
+		return x.CoverImage
+	}
+	return ""
+}
+
+type UpdateUserInfoReply struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Code          int32                  `protobuf:"varint,1,opt,name=code,proto3" json:"code,omitempty"`
+	Res           *Res                   `protobuf:"bytes,2,opt,name=res,proto3" json:"res,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpdateUserInfoReply) Reset() {
+	*x = UpdateUserInfoReply{}
+	mi := &file_api_conduit_v1_conduit_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateUserInfoReply) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateUserInfoReply) ProtoMessage() {}
+
+func (x *UpdateUserInfoReply) ProtoReflect() protoreflect.Message {
+	mi := &file_api_conduit_v1_conduit_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateUserInfoReply.ProtoReflect.Descriptor instead.
+func (*UpdateUserInfoReply) Descriptor() ([]byte, []int) {
+	return file_api_conduit_v1_conduit_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *UpdateUserInfoReply) GetCode() int32 {
+	if x != nil {
+		return x.Code
+	}
+	return 0
+}
+
+func (x *UpdateUserInfoReply) GetRes() *Res {
 	if x != nil {
 		return x.Res
 	}
@@ -392,7 +580,7 @@ type ProfileData struct {
 
 func (x *ProfileData) Reset() {
 	*x = ProfileData{}
-	mi := &file_api_conduit_v1_conduit_proto_msgTypes[6]
+	mi := &file_api_conduit_v1_conduit_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -404,7 +592,7 @@ func (x *ProfileData) String() string {
 func (*ProfileData) ProtoMessage() {}
 
 func (x *ProfileData) ProtoReflect() protoreflect.Message {
-	mi := &file_api_conduit_v1_conduit_proto_msgTypes[6]
+	mi := &file_api_conduit_v1_conduit_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -417,7 +605,7 @@ func (x *ProfileData) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProfileData.ProtoReflect.Descriptor instead.
 func (*ProfileData) Descriptor() ([]byte, []int) {
-	return file_api_conduit_v1_conduit_proto_rawDescGZIP(), []int{6}
+	return file_api_conduit_v1_conduit_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *ProfileData) GetUserId() uint32 {
@@ -514,7 +702,7 @@ type GetProfileRequest struct {
 
 func (x *GetProfileRequest) Reset() {
 	*x = GetProfileRequest{}
-	mi := &file_api_conduit_v1_conduit_proto_msgTypes[7]
+	mi := &file_api_conduit_v1_conduit_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -526,7 +714,7 @@ func (x *GetProfileRequest) String() string {
 func (*GetProfileRequest) ProtoMessage() {}
 
 func (x *GetProfileRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_conduit_v1_conduit_proto_msgTypes[7]
+	mi := &file_api_conduit_v1_conduit_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -539,7 +727,7 @@ func (x *GetProfileRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetProfileRequest.ProtoReflect.Descriptor instead.
 func (*GetProfileRequest) Descriptor() ([]byte, []int) {
-	return file_api_conduit_v1_conduit_proto_rawDescGZIP(), []int{7}
+	return file_api_conduit_v1_conduit_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *GetProfileRequest) GetUserId() string {
@@ -560,7 +748,7 @@ type GetProfileReply struct {
 
 func (x *GetProfileReply) Reset() {
 	*x = GetProfileReply{}
-	mi := &file_api_conduit_v1_conduit_proto_msgTypes[8]
+	mi := &file_api_conduit_v1_conduit_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -572,7 +760,7 @@ func (x *GetProfileReply) String() string {
 func (*GetProfileReply) ProtoMessage() {}
 
 func (x *GetProfileReply) ProtoReflect() protoreflect.Message {
-	mi := &file_api_conduit_v1_conduit_proto_msgTypes[8]
+	mi := &file_api_conduit_v1_conduit_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -585,7 +773,7 @@ func (x *GetProfileReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetProfileReply.ProtoReflect.Descriptor instead.
 func (*GetProfileReply) Descriptor() ([]byte, []int) {
-	return file_api_conduit_v1_conduit_proto_rawDescGZIP(), []int{8}
+	return file_api_conduit_v1_conduit_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *GetProfileReply) GetCode() int32 {
@@ -619,7 +807,7 @@ type FollowUserRequest struct {
 
 func (x *FollowUserRequest) Reset() {
 	*x = FollowUserRequest{}
-	mi := &file_api_conduit_v1_conduit_proto_msgTypes[9]
+	mi := &file_api_conduit_v1_conduit_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -631,7 +819,7 @@ func (x *FollowUserRequest) String() string {
 func (*FollowUserRequest) ProtoMessage() {}
 
 func (x *FollowUserRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_conduit_v1_conduit_proto_msgTypes[9]
+	mi := &file_api_conduit_v1_conduit_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -644,7 +832,7 @@ func (x *FollowUserRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FollowUserRequest.ProtoReflect.Descriptor instead.
 func (*FollowUserRequest) Descriptor() ([]byte, []int) {
-	return file_api_conduit_v1_conduit_proto_rawDescGZIP(), []int{9}
+	return file_api_conduit_v1_conduit_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *FollowUserRequest) GetTargetId() string {
@@ -663,7 +851,7 @@ type UnfollowUserRequest struct {
 
 func (x *UnfollowUserRequest) Reset() {
 	*x = UnfollowUserRequest{}
-	mi := &file_api_conduit_v1_conduit_proto_msgTypes[10]
+	mi := &file_api_conduit_v1_conduit_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -675,7 +863,7 @@ func (x *UnfollowUserRequest) String() string {
 func (*UnfollowUserRequest) ProtoMessage() {}
 
 func (x *UnfollowUserRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_conduit_v1_conduit_proto_msgTypes[10]
+	mi := &file_api_conduit_v1_conduit_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -688,7 +876,7 @@ func (x *UnfollowUserRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UnfollowUserRequest.ProtoReflect.Descriptor instead.
 func (*UnfollowUserRequest) Descriptor() ([]byte, []int) {
-	return file_api_conduit_v1_conduit_proto_rawDescGZIP(), []int{10}
+	return file_api_conduit_v1_conduit_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *UnfollowUserRequest) GetTargetId() string {
@@ -709,7 +897,7 @@ type FollowFanReply struct {
 
 func (x *FollowFanReply) Reset() {
 	*x = FollowFanReply{}
-	mi := &file_api_conduit_v1_conduit_proto_msgTypes[11]
+	mi := &file_api_conduit_v1_conduit_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -721,7 +909,7 @@ func (x *FollowFanReply) String() string {
 func (*FollowFanReply) ProtoMessage() {}
 
 func (x *FollowFanReply) ProtoReflect() protoreflect.Message {
-	mi := &file_api_conduit_v1_conduit_proto_msgTypes[11]
+	mi := &file_api_conduit_v1_conduit_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -734,7 +922,7 @@ func (x *FollowFanReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FollowFanReply.ProtoReflect.Descriptor instead.
 func (*FollowFanReply) Descriptor() ([]byte, []int) {
-	return file_api_conduit_v1_conduit_proto_rawDescGZIP(), []int{11}
+	return file_api_conduit_v1_conduit_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *FollowFanReply) GetCode() int32 {
@@ -772,7 +960,7 @@ type FollowFanData struct {
 
 func (x *FollowFanData) Reset() {
 	*x = FollowFanData{}
-	mi := &file_api_conduit_v1_conduit_proto_msgTypes[12]
+	mi := &file_api_conduit_v1_conduit_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -784,7 +972,7 @@ func (x *FollowFanData) String() string {
 func (*FollowFanData) ProtoMessage() {}
 
 func (x *FollowFanData) ProtoReflect() protoreflect.Message {
-	mi := &file_api_conduit_v1_conduit_proto_msgTypes[12]
+	mi := &file_api_conduit_v1_conduit_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -797,7 +985,7 @@ func (x *FollowFanData) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FollowFanData.ProtoReflect.Descriptor instead.
 func (*FollowFanData) Descriptor() ([]byte, []int) {
-	return file_api_conduit_v1_conduit_proto_rawDescGZIP(), []int{12}
+	return file_api_conduit_v1_conduit_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *FollowFanData) GetSelfId() uint32 {
@@ -837,7 +1025,7 @@ type RelationshipRequest struct {
 
 func (x *RelationshipRequest) Reset() {
 	*x = RelationshipRequest{}
-	mi := &file_api_conduit_v1_conduit_proto_msgTypes[13]
+	mi := &file_api_conduit_v1_conduit_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -849,7 +1037,7 @@ func (x *RelationshipRequest) String() string {
 func (*RelationshipRequest) ProtoMessage() {}
 
 func (x *RelationshipRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_conduit_v1_conduit_proto_msgTypes[13]
+	mi := &file_api_conduit_v1_conduit_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -862,7 +1050,7 @@ func (x *RelationshipRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RelationshipRequest.ProtoReflect.Descriptor instead.
 func (*RelationshipRequest) Descriptor() ([]byte, []int) {
-	return file_api_conduit_v1_conduit_proto_rawDescGZIP(), []int{13}
+	return file_api_conduit_v1_conduit_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *RelationshipRequest) GetTargetId() string {
@@ -883,7 +1071,7 @@ type RelationshipReply struct {
 
 func (x *RelationshipReply) Reset() {
 	*x = RelationshipReply{}
-	mi := &file_api_conduit_v1_conduit_proto_msgTypes[14]
+	mi := &file_api_conduit_v1_conduit_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -895,7 +1083,7 @@ func (x *RelationshipReply) String() string {
 func (*RelationshipReply) ProtoMessage() {}
 
 func (x *RelationshipReply) ProtoReflect() protoreflect.Message {
-	mi := &file_api_conduit_v1_conduit_proto_msgTypes[14]
+	mi := &file_api_conduit_v1_conduit_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -908,7 +1096,7 @@ func (x *RelationshipReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RelationshipReply.ProtoReflect.Descriptor instead.
 func (*RelationshipReply) Descriptor() ([]byte, []int) {
-	return file_api_conduit_v1_conduit_proto_rawDescGZIP(), []int{14}
+	return file_api_conduit_v1_conduit_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *RelationshipReply) GetCode() int32 {
@@ -946,7 +1134,7 @@ type RelationshipData struct {
 
 func (x *RelationshipData) Reset() {
 	*x = RelationshipData{}
-	mi := &file_api_conduit_v1_conduit_proto_msgTypes[15]
+	mi := &file_api_conduit_v1_conduit_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -958,7 +1146,7 @@ func (x *RelationshipData) String() string {
 func (*RelationshipData) ProtoMessage() {}
 
 func (x *RelationshipData) ProtoReflect() protoreflect.Message {
-	mi := &file_api_conduit_v1_conduit_proto_msgTypes[15]
+	mi := &file_api_conduit_v1_conduit_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -971,7 +1159,7 @@ func (x *RelationshipData) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RelationshipData.ProtoReflect.Descriptor instead.
 func (*RelationshipData) Descriptor() ([]byte, []int) {
-	return file_api_conduit_v1_conduit_proto_rawDescGZIP(), []int{15}
+	return file_api_conduit_v1_conduit_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *RelationshipData) GetIsFollowing() bool {
@@ -1026,7 +1214,7 @@ type CanAddFriendReq struct {
 
 func (x *CanAddFriendReq) Reset() {
 	*x = CanAddFriendReq{}
-	mi := &file_api_conduit_v1_conduit_proto_msgTypes[16]
+	mi := &file_api_conduit_v1_conduit_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1038,7 +1226,7 @@ func (x *CanAddFriendReq) String() string {
 func (*CanAddFriendReq) ProtoMessage() {}
 
 func (x *CanAddFriendReq) ProtoReflect() protoreflect.Message {
-	mi := &file_api_conduit_v1_conduit_proto_msgTypes[16]
+	mi := &file_api_conduit_v1_conduit_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1051,7 +1239,7 @@ func (x *CanAddFriendReq) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CanAddFriendReq.ProtoReflect.Descriptor instead.
 func (*CanAddFriendReq) Descriptor() ([]byte, []int) {
-	return file_api_conduit_v1_conduit_proto_rawDescGZIP(), []int{16}
+	return file_api_conduit_v1_conduit_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *CanAddFriendReq) GetTargetId() string {
@@ -1072,7 +1260,7 @@ type CanAddFriendRes struct {
 
 func (x *CanAddFriendRes) Reset() {
 	*x = CanAddFriendRes{}
-	mi := &file_api_conduit_v1_conduit_proto_msgTypes[17]
+	mi := &file_api_conduit_v1_conduit_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1084,7 +1272,7 @@ func (x *CanAddFriendRes) String() string {
 func (*CanAddFriendRes) ProtoMessage() {}
 
 func (x *CanAddFriendRes) ProtoReflect() protoreflect.Message {
-	mi := &file_api_conduit_v1_conduit_proto_msgTypes[17]
+	mi := &file_api_conduit_v1_conduit_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1097,7 +1285,7 @@ func (x *CanAddFriendRes) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CanAddFriendRes.ProtoReflect.Descriptor instead.
 func (*CanAddFriendRes) Descriptor() ([]byte, []int) {
-	return file_api_conduit_v1_conduit_proto_rawDescGZIP(), []int{17}
+	return file_api_conduit_v1_conduit_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *CanAddFriendRes) GetCode() int32 {
@@ -1129,7 +1317,7 @@ type AddFriendRes struct {
 
 func (x *AddFriendRes) Reset() {
 	*x = AddFriendRes{}
-	mi := &file_api_conduit_v1_conduit_proto_msgTypes[18]
+	mi := &file_api_conduit_v1_conduit_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1141,7 +1329,7 @@ func (x *AddFriendRes) String() string {
 func (*AddFriendRes) ProtoMessage() {}
 
 func (x *AddFriendRes) ProtoReflect() protoreflect.Message {
-	mi := &file_api_conduit_v1_conduit_proto_msgTypes[18]
+	mi := &file_api_conduit_v1_conduit_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1154,7 +1342,7 @@ func (x *AddFriendRes) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AddFriendRes.ProtoReflect.Descriptor instead.
 func (*AddFriendRes) Descriptor() ([]byte, []int) {
-	return file_api_conduit_v1_conduit_proto_rawDescGZIP(), []int{18}
+	return file_api_conduit_v1_conduit_proto_rawDescGZIP(), []int{20}
 }
 
 // 前端错误信息查看
@@ -1170,7 +1358,7 @@ type Res struct {
 
 func (x *Res) Reset() {
 	*x = Res{}
-	mi := &file_api_conduit_v1_conduit_proto_msgTypes[19]
+	mi := &file_api_conduit_v1_conduit_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1182,7 +1370,7 @@ func (x *Res) String() string {
 func (*Res) ProtoMessage() {}
 
 func (x *Res) ProtoReflect() protoreflect.Message {
-	mi := &file_api_conduit_v1_conduit_proto_msgTypes[19]
+	mi := &file_api_conduit_v1_conduit_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1195,7 +1383,7 @@ func (x *Res) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Res.ProtoReflect.Descriptor instead.
 func (*Res) Descriptor() ([]byte, []int) {
-	return file_api_conduit_v1_conduit_proto_rawDescGZIP(), []int{19}
+	return file_api_conduit_v1_conduit_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *Res) GetCode() int32 {
@@ -1239,12 +1427,24 @@ const file_api_conduit_v1_conduit_proto_rawDesc = "" +
 	"LoginReply\x12\x12\n" +
 	"\x04code\x18\x01 \x01(\x05R\x04code\x12#\n" +
 	"\x03res\x18\x02 \x01(\v2\x11.realworld.v1.ResR\x03res\x12\x14\n" +
-	"\x05token\x18\x03 \x01(\tR\x05token\"k\n" +
-	"\rUpdateRequest\x12\x14\n" +
+	"\x05token\x18\x03 \x01(\tR\x05token\"r\n" +
+	"\x14UpdateUserPwdRequest\x12\x14\n" +
 	"\x05phone\x18\x01 \x01(\tR\x05phone\x12!\n" +
 	"\fold_password\x18\x02 \x01(\tR\voldPassword\x12!\n" +
-	"\fnew_password\x18\x03 \x01(\tR\vnewPassword\"F\n" +
-	"\vUpdateReply\x12\x12\n" +
+	"\fnew_password\x18\x03 \x01(\tR\vnewPassword\"M\n" +
+	"\x12UpdateUserPwdReply\x12\x12\n" +
+	"\x04code\x18\x01 \x01(\x05R\x04code\x12#\n" +
+	"\x03res\x18\x02 \x01(\v2\x11.realworld.v1.ResR\x03res\"\xeb\x01\n" +
+	"\x15UpdateUserInfoRequest\x12\x1a\n" +
+	"\busername\x18\x01 \x01(\tR\busername\x12,\n" +
+	"\x06gender\x18\x02 \x01(\x0e2\x14.realworld.v1.GenderR\x06gender\x126\n" +
+	"\bbirthday\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\bbirthday\x12\x10\n" +
+	"\x03bio\x18\x04 \x01(\tR\x03bio\x12\x1d\n" +
+	"\n" +
+	"head_image\x18\x05 \x01(\tR\theadImage\x12\x1f\n" +
+	"\vcover_image\x18\x06 \x01(\tR\n" +
+	"coverImage\"N\n" +
+	"\x13UpdateUserInfoReply\x12\x12\n" +
 	"\x04code\x18\x01 \x01(\x05R\x04code\x12#\n" +
 	"\x03res\x18\x02 \x01(\v2\x11.realworld.v1.ResR\x03res\"\xaf\x03\n" +
 	"\vProfileData\x12\x17\n" +
@@ -1307,12 +1507,19 @@ const file_api_conduit_v1_conduit_proto_rawDesc = "" +
 	"\x03Res\x12\x12\n" +
 	"\x04code\x18\x01 \x01(\x05R\x04code\x12\x16\n" +
 	"\x06reason\x18\x02 \x01(\tR\x06reason\x12\x10\n" +
-	"\x03msg\x18\x03 \x01(\tR\x03msg2\xa6\a\n" +
+	"\x03msg\x18\x03 \x01(\tR\x03msg*6\n" +
+	"\x06Gender\x12\v\n" +
+	"\aUNKNOWN\x10\x00\x12\b\n" +
+	"\x04MALE\x10\x01\x12\n" +
+	"\n" +
+	"\x06FEMALE\x10\x02\x12\t\n" +
+	"\x05OTHER\x10\x032\xb9\b\n" +
 	"\aConduit\x12]\n" +
 	"\bRegister\x12\x1d.realworld.v1.RegisterRequest\x1a\x1b.realworld.v1.RegisterReply\"\x15\x82\xd3\xe4\x93\x02\x0f:\x01*\"\n" +
 	"/api/users\x12Z\n" +
-	"\x05Login\x12\x1a.realworld.v1.LoginRequest\x1a\x18.realworld.v1.LoginReply\"\x1b\x82\xd3\xe4\x93\x02\x15:\x01*\"\x10/api/users/login\x12n\n" +
-	"\x0eUpdatePassword\x12\x1b.realworld.v1.UpdateRequest\x1a\x19.realworld.v1.UpdateReply\"$\x82\xd3\xe4\x93\x02\x1e:\x01*\"\x19/api/users/updatePassword\x12m\n" +
+	"\x05Login\x12\x1a.realworld.v1.LoginRequest\x1a\x18.realworld.v1.LoginReply\"\x1b\x82\xd3\xe4\x93\x02\x15:\x01*\"\x10/api/users/login\x12\x80\x01\n" +
+	"\x12UpdateUserPassword\x12\".realworld.v1.UpdateUserPwdRequest\x1a .realworld.v1.UpdateUserPwdReply\"$\x82\xd3\xe4\x93\x02\x1e:\x01*\"\x19/api/users/updatePassword\x12~\n" +
+	"\x0eUpdateUserInfo\x12#.realworld.v1.UpdateUserInfoRequest\x1a!.realworld.v1.UpdateUserInfoReply\"$\x82\xd3\xe4\x93\x02\x1e:\x01*\x1a\x19/api/users/updateUserInfo\x12m\n" +
 	"\n" +
 	"GetProfile\x12\x1f.realworld.v1.GetProfileRequest\x1a\x1d.realworld.v1.GetProfileReply\"\x1f\x82\xd3\xe4\x93\x02\x19\x12\x17/api/profiles/{user_id}\x12x\n" +
 	"\n" +
@@ -1333,64 +1540,73 @@ func file_api_conduit_v1_conduit_proto_rawDescGZIP() []byte {
 	return file_api_conduit_v1_conduit_proto_rawDescData
 }
 
-var file_api_conduit_v1_conduit_proto_msgTypes = make([]protoimpl.MessageInfo, 20)
+var file_api_conduit_v1_conduit_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
+var file_api_conduit_v1_conduit_proto_msgTypes = make([]protoimpl.MessageInfo, 22)
 var file_api_conduit_v1_conduit_proto_goTypes = []any{
-	(*RegisterRequest)(nil),     // 0: realworld.v1.RegisterRequest
-	(*RegisterReply)(nil),       // 1: realworld.v1.RegisterReply
-	(*LoginRequest)(nil),        // 2: realworld.v1.LoginRequest
-	(*LoginReply)(nil),          // 3: realworld.v1.LoginReply
-	(*UpdateRequest)(nil),       // 4: realworld.v1.UpdateRequest
-	(*UpdateReply)(nil),         // 5: realworld.v1.UpdateReply
-	(*ProfileData)(nil),         // 6: realworld.v1.ProfileData
-	(*GetProfileRequest)(nil),   // 7: realworld.v1.GetProfileRequest
-	(*GetProfileReply)(nil),     // 8: realworld.v1.GetProfileReply
-	(*FollowUserRequest)(nil),   // 9: realworld.v1.FollowUserRequest
-	(*UnfollowUserRequest)(nil), // 10: realworld.v1.UnfollowUserRequest
-	(*FollowFanReply)(nil),      // 11: realworld.v1.FollowFanReply
-	(*FollowFanData)(nil),       // 12: realworld.v1.FollowFanData
-	(*RelationshipRequest)(nil), // 13: realworld.v1.RelationshipRequest
-	(*RelationshipReply)(nil),   // 14: realworld.v1.RelationshipReply
-	(*RelationshipData)(nil),    // 15: realworld.v1.RelationshipData
-	(*CanAddFriendReq)(nil),     // 16: realworld.v1.CanAddFriendReq
-	(*CanAddFriendRes)(nil),     // 17: realworld.v1.CanAddFriendRes
-	(*AddFriendRes)(nil),        // 18: realworld.v1.AddFriendRes
-	(*Res)(nil),                 // 19: realworld.v1.Res
-	(*timestamp.Timestamp)(nil), // 20: google.protobuf.Timestamp
+	(Gender)(0),                   // 0: realworld.v1.Gender
+	(*RegisterRequest)(nil),       // 1: realworld.v1.RegisterRequest
+	(*RegisterReply)(nil),         // 2: realworld.v1.RegisterReply
+	(*LoginRequest)(nil),          // 3: realworld.v1.LoginRequest
+	(*LoginReply)(nil),            // 4: realworld.v1.LoginReply
+	(*UpdateUserPwdRequest)(nil),  // 5: realworld.v1.UpdateUserPwdRequest
+	(*UpdateUserPwdReply)(nil),    // 6: realworld.v1.UpdateUserPwdReply
+	(*UpdateUserInfoRequest)(nil), // 7: realworld.v1.UpdateUserInfoRequest
+	(*UpdateUserInfoReply)(nil),   // 8: realworld.v1.UpdateUserInfoReply
+	(*ProfileData)(nil),           // 9: realworld.v1.ProfileData
+	(*GetProfileRequest)(nil),     // 10: realworld.v1.GetProfileRequest
+	(*GetProfileReply)(nil),       // 11: realworld.v1.GetProfileReply
+	(*FollowUserRequest)(nil),     // 12: realworld.v1.FollowUserRequest
+	(*UnfollowUserRequest)(nil),   // 13: realworld.v1.UnfollowUserRequest
+	(*FollowFanReply)(nil),        // 14: realworld.v1.FollowFanReply
+	(*FollowFanData)(nil),         // 15: realworld.v1.FollowFanData
+	(*RelationshipRequest)(nil),   // 16: realworld.v1.RelationshipRequest
+	(*RelationshipReply)(nil),     // 17: realworld.v1.RelationshipReply
+	(*RelationshipData)(nil),      // 18: realworld.v1.RelationshipData
+	(*CanAddFriendReq)(nil),       // 19: realworld.v1.CanAddFriendReq
+	(*CanAddFriendRes)(nil),       // 20: realworld.v1.CanAddFriendRes
+	(*AddFriendRes)(nil),          // 21: realworld.v1.AddFriendRes
+	(*Res)(nil),                   // 22: realworld.v1.Res
+	(*timestamp.Timestamp)(nil),   // 23: google.protobuf.Timestamp
 }
 var file_api_conduit_v1_conduit_proto_depIdxs = []int32{
-	19, // 0: realworld.v1.RegisterReply.res:type_name -> realworld.v1.Res
-	19, // 1: realworld.v1.LoginReply.res:type_name -> realworld.v1.Res
-	19, // 2: realworld.v1.UpdateReply.res:type_name -> realworld.v1.Res
-	20, // 3: realworld.v1.ProfileData.last_active:type_name -> google.protobuf.Timestamp
-	19, // 4: realworld.v1.GetProfileReply.res:type_name -> realworld.v1.Res
-	6,  // 5: realworld.v1.GetProfileReply.data:type_name -> realworld.v1.ProfileData
-	19, // 6: realworld.v1.FollowFanReply.res:type_name -> realworld.v1.Res
-	12, // 7: realworld.v1.FollowFanReply.data:type_name -> realworld.v1.FollowFanData
-	19, // 8: realworld.v1.RelationshipReply.res:type_name -> realworld.v1.Res
-	15, // 9: realworld.v1.RelationshipReply.data:type_name -> realworld.v1.RelationshipData
-	19, // 10: realworld.v1.CanAddFriendRes.res:type_name -> realworld.v1.Res
-	18, // 11: realworld.v1.CanAddFriendRes.data:type_name -> realworld.v1.AddFriendRes
-	0,  // 12: realworld.v1.Conduit.Register:input_type -> realworld.v1.RegisterRequest
-	2,  // 13: realworld.v1.Conduit.Login:input_type -> realworld.v1.LoginRequest
-	4,  // 14: realworld.v1.Conduit.UpdatePassword:input_type -> realworld.v1.UpdateRequest
-	7,  // 15: realworld.v1.Conduit.GetProfile:input_type -> realworld.v1.GetProfileRequest
-	9,  // 16: realworld.v1.Conduit.FollowUser:input_type -> realworld.v1.FollowUserRequest
-	10, // 17: realworld.v1.Conduit.UnfollowUser:input_type -> realworld.v1.UnfollowUserRequest
-	13, // 18: realworld.v1.Conduit.GetRelationship:input_type -> realworld.v1.RelationshipRequest
-	16, // 19: realworld.v1.Conduit.CanAddFriend:input_type -> realworld.v1.CanAddFriendReq
-	1,  // 20: realworld.v1.Conduit.Register:output_type -> realworld.v1.RegisterReply
-	3,  // 21: realworld.v1.Conduit.Login:output_type -> realworld.v1.LoginReply
-	5,  // 22: realworld.v1.Conduit.UpdatePassword:output_type -> realworld.v1.UpdateReply
-	8,  // 23: realworld.v1.Conduit.GetProfile:output_type -> realworld.v1.GetProfileReply
-	11, // 24: realworld.v1.Conduit.FollowUser:output_type -> realworld.v1.FollowFanReply
-	11, // 25: realworld.v1.Conduit.UnfollowUser:output_type -> realworld.v1.FollowFanReply
-	14, // 26: realworld.v1.Conduit.GetRelationship:output_type -> realworld.v1.RelationshipReply
-	17, // 27: realworld.v1.Conduit.CanAddFriend:output_type -> realworld.v1.CanAddFriendRes
-	20, // [20:28] is the sub-list for method output_type
-	12, // [12:20] is the sub-list for method input_type
-	12, // [12:12] is the sub-list for extension type_name
-	12, // [12:12] is the sub-list for extension extendee
-	0,  // [0:12] is the sub-list for field type_name
+	22, // 0: realworld.v1.RegisterReply.res:type_name -> realworld.v1.Res
+	22, // 1: realworld.v1.LoginReply.res:type_name -> realworld.v1.Res
+	22, // 2: realworld.v1.UpdateUserPwdReply.res:type_name -> realworld.v1.Res
+	0,  // 3: realworld.v1.UpdateUserInfoRequest.gender:type_name -> realworld.v1.Gender
+	23, // 4: realworld.v1.UpdateUserInfoRequest.birthday:type_name -> google.protobuf.Timestamp
+	22, // 5: realworld.v1.UpdateUserInfoReply.res:type_name -> realworld.v1.Res
+	23, // 6: realworld.v1.ProfileData.last_active:type_name -> google.protobuf.Timestamp
+	22, // 7: realworld.v1.GetProfileReply.res:type_name -> realworld.v1.Res
+	9,  // 8: realworld.v1.GetProfileReply.data:type_name -> realworld.v1.ProfileData
+	22, // 9: realworld.v1.FollowFanReply.res:type_name -> realworld.v1.Res
+	15, // 10: realworld.v1.FollowFanReply.data:type_name -> realworld.v1.FollowFanData
+	22, // 11: realworld.v1.RelationshipReply.res:type_name -> realworld.v1.Res
+	18, // 12: realworld.v1.RelationshipReply.data:type_name -> realworld.v1.RelationshipData
+	22, // 13: realworld.v1.CanAddFriendRes.res:type_name -> realworld.v1.Res
+	21, // 14: realworld.v1.CanAddFriendRes.data:type_name -> realworld.v1.AddFriendRes
+	1,  // 15: realworld.v1.Conduit.Register:input_type -> realworld.v1.RegisterRequest
+	3,  // 16: realworld.v1.Conduit.Login:input_type -> realworld.v1.LoginRequest
+	5,  // 17: realworld.v1.Conduit.UpdateUserPassword:input_type -> realworld.v1.UpdateUserPwdRequest
+	7,  // 18: realworld.v1.Conduit.UpdateUserInfo:input_type -> realworld.v1.UpdateUserInfoRequest
+	10, // 19: realworld.v1.Conduit.GetProfile:input_type -> realworld.v1.GetProfileRequest
+	12, // 20: realworld.v1.Conduit.FollowUser:input_type -> realworld.v1.FollowUserRequest
+	13, // 21: realworld.v1.Conduit.UnfollowUser:input_type -> realworld.v1.UnfollowUserRequest
+	16, // 22: realworld.v1.Conduit.GetRelationship:input_type -> realworld.v1.RelationshipRequest
+	19, // 23: realworld.v1.Conduit.CanAddFriend:input_type -> realworld.v1.CanAddFriendReq
+	2,  // 24: realworld.v1.Conduit.Register:output_type -> realworld.v1.RegisterReply
+	4,  // 25: realworld.v1.Conduit.Login:output_type -> realworld.v1.LoginReply
+	6,  // 26: realworld.v1.Conduit.UpdateUserPassword:output_type -> realworld.v1.UpdateUserPwdReply
+	8,  // 27: realworld.v1.Conduit.UpdateUserInfo:output_type -> realworld.v1.UpdateUserInfoReply
+	11, // 28: realworld.v1.Conduit.GetProfile:output_type -> realworld.v1.GetProfileReply
+	14, // 29: realworld.v1.Conduit.FollowUser:output_type -> realworld.v1.FollowFanReply
+	14, // 30: realworld.v1.Conduit.UnfollowUser:output_type -> realworld.v1.FollowFanReply
+	17, // 31: realworld.v1.Conduit.GetRelationship:output_type -> realworld.v1.RelationshipReply
+	20, // 32: realworld.v1.Conduit.CanAddFriend:output_type -> realworld.v1.CanAddFriendRes
+	24, // [24:33] is the sub-list for method output_type
+	15, // [15:24] is the sub-list for method input_type
+	15, // [15:15] is the sub-list for extension type_name
+	15, // [15:15] is the sub-list for extension extendee
+	0,  // [0:15] is the sub-list for field type_name
 }
 
 func init() { file_api_conduit_v1_conduit_proto_init() }
@@ -1403,13 +1619,14 @@ func file_api_conduit_v1_conduit_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_api_conduit_v1_conduit_proto_rawDesc), len(file_api_conduit_v1_conduit_proto_rawDesc)),
-			NumEnums:      0,
-			NumMessages:   20,
+			NumEnums:      1,
+			NumMessages:   22,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
 		GoTypes:           file_api_conduit_v1_conduit_proto_goTypes,
 		DependencyIndexes: file_api_conduit_v1_conduit_proto_depIdxs,
+		EnumInfos:         file_api_conduit_v1_conduit_proto_enumTypes,
 		MessageInfos:      file_api_conduit_v1_conduit_proto_msgTypes,
 	}.Build()
 	File_api_conduit_v1_conduit_proto = out.File

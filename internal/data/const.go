@@ -19,11 +19,21 @@ func UserRedisKey(cachePrefix, subPrefix, value interface{}) string {
 }
 
 // HSetStruct 将结构体struct转换成map并逐个写入 Redis Hash
-func HSetStruct(ctx context.Context, data *model.Data, log *log.Helper, key string, obj interface{}) error {
-	values := StructToMap(obj)
+func HSetMultiple(ctx context.Context, data *model.Data, log *log.Helper, key string, obj interface{}) error {
+	var values map[string]interface{}
+
+	// 判断 obj 类型
+	switch v := obj.(type) {
+	case map[string]interface{}:
+		values = v
+	default:
+		values = StructToMap(v)
+	}
+	//values := StructToMap(obj)
 
 	// HSet批量写入
-	_, err := data.Cache().HMSet(ctx, key, values)
+	res, err := data.Cache().HMSet(ctx, key, values)
+	log.Debugf("HSet result: %+v, err: %v", res, err)
 	if err != nil {
 		log.Warnf("failed to cache data: %v", err)
 		return err
@@ -36,7 +46,7 @@ func HSetStruct(ctx context.Context, data *model.Data, log *log.Helper, key stri
 }
 
 // HGetStruct 从 Redis Hash 获取值
-func HGetStruct(ctx context.Context, data *model.Data, log *log.Helper, key string, obj interface{}) error {
+func HGetMultiple(ctx context.Context, data *model.Data, log *log.Helper, key string, obj interface{}) error {
 	// HLen判断该数据是否放在redis缓存中
 	length, err := data.Cache().HLen(ctx, key)
 	if err != nil {

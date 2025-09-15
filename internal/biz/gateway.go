@@ -96,7 +96,7 @@ func (gc *GateWayUsecase) Login(ctx context.Context, phone string, password stri
 		return nil, NewErr(ErrCodeDBQueryFailed, DB_QUERY_FAILED, "failed to query user by phone")
 	}
 	if res == nil {
-		return nil, NewErr(ErrCodePhoneNotFound, PHONE_NOT_FOUND, "phone number not registered")
+		return nil, NewErr(ErrCodeUserNotFound, USER_NOT_FOUND, "phone number not registered")
 	}
 
 	// 密码输入错误
@@ -116,7 +116,7 @@ func (gc *GateWayUsecase) Login(ctx context.Context, phone string, password stri
 	}, nil
 }
 
-func (gc *GateWayUsecase) UpdatePassword(ctx context.Context, phone, oldPassword, newPassword string) error {
+func (gc *GateWayUsecase) UpdateUserPassword(ctx context.Context, phone, oldPassword, newPassword string) error {
 	if !IsValidPhone(phone) {
 		return NewErr(ErrCodeInvalidPhone, INVALID_PHONE, "invalid phone number format")
 	}
@@ -131,7 +131,7 @@ func (gc *GateWayUsecase) UpdatePassword(ctx context.Context, phone, oldPassword
 		return NewErr(ErrCodeDBQueryFailed, DB_QUERY_FAILED, "failed to query user by phone")
 	}
 	if dataPassword == "" {
-		return NewErr(ErrCodePhoneNotFound, PHONE_NOT_FOUND, "phone number not registered")
+		return NewErr(ErrCodeUserNotFound, USER_NOT_FOUND, "phone number not registered")
 	}
 
 	// 密码输入错误
@@ -140,9 +140,28 @@ func (gc *GateWayUsecase) UpdatePassword(ctx context.Context, phone, oldPassword
 	}
 
 	newPasswordHash := hashPassword(newPassword)
-	err = gc.ur.UpdatePassword(ctx, phone, newPasswordHash)
+	err = gc.ur.UpdateUserPassword(ctx, phone, newPasswordHash)
 	if err != nil {
-		return NewErr(ErrCodeUpdatePasswordFailed, UPDATE_PASSWORD_FAILED, "failed to update password")
+		return NewErr(ErrCodeUpdatePasswordFailed, UPDATE_PASSWORD_FAILED, "failed to update user password")
+	}
+
+	return nil
+}
+
+func (gc *GateWayUsecase) UpdateUserInfo(ctx context.Context, userInfo *bizUser.UpdateUserInfoFields) error {
+	userID := auth.FromContext(ctx).UserID
+
+	if userInfo.Username == nil && userInfo.Gender == nil && userInfo.Birthday == nil &&
+		userInfo.Bio == nil && userInfo.HeadImage == nil && userInfo.CoverImage == nil {
+		return NewErr(ErrCodeUpdateUserInfoFailed, UPDATE_USER_INFO_FAILED, "provide update user info is empty")
+	}
+
+	err := gc.ur.UpdateUserInfo(ctx, uint32(userID), userInfo)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return NewErr(ErrCodeUserNotFound, USER_NOT_FOUND, "user not found")
+		}
+		return NewErr(ErrCodeUpdateUserInfoFailed, UPDATE_USER_INFO_FAILED, "failed to update user info")
 	}
 
 	return nil

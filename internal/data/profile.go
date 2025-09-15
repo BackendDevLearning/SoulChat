@@ -40,7 +40,7 @@ func (r *ProfileRepo) CreateProfile(ctx context.Context, profile *bizProfile.Pro
 	}
 
 	redisKey := UserRedisKey(UserCachePrefix, "Profile", profile.UserID)
-	_ = HSetStruct(ctx, r.data, r.log, redisKey, profile)
+	_ = HSetMultiple(ctx, r.data, r.log, redisKey, profile)
 
 	return nil
 }
@@ -48,7 +48,7 @@ func (r *ProfileRepo) CreateProfile(ctx context.Context, profile *bizProfile.Pro
 func (r *ProfileRepo) GetProfileByUserID(ctx context.Context, userID uint32) (*bizProfile.ProfileTB, error) {
 	profile := &bizProfile.ProfileTB{}
 	redisKey := UserRedisKey(UserCachePrefix, "Profile", userID)
-	err := HGetStruct(ctx, r.data, r.log, redisKey, profile)
+	err := HGetMultiple(ctx, r.data, r.log, redisKey, profile)
 	if err != nil {
 		r.log.Warnf("failed to get from cache, fallback to DB: %v", err)
 	}
@@ -66,7 +66,7 @@ func (r *ProfileRepo) GetProfileByUserID(ctx context.Context, userID uint32) (*b
 			return nil, result.Error
 		}
 
-		_ = HSetStruct(ctx, r.data, r.log, redisKey, profile)
+		_ = HSetMultiple(ctx, r.data, r.log, redisKey, profile)
 	}
 	return profile, nil
 }

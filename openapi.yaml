@@ -155,12 +155,12 @@ paths:
         post:
             tags:
                 - Conduit
-            operationId: Conduit_UpdatePassword
+            operationId: Conduit_UpdateUserPassword
             requestBody:
                 content:
                     application/json:
                         schema:
-                            $ref: '#/components/schemas/UpdateRequest'
+                            $ref: '#/components/schemas/UpdateUserPwdRequest'
                 required: true
             responses:
                 "200":
@@ -168,7 +168,25 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/UpdateReply'
+                                $ref: '#/components/schemas/UpdateUserPwdReply'
+    /api/users/updateUserInfo:
+        put:
+            tags:
+                - Conduit
+            operationId: Conduit_UpdateUserInfo
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/UpdateUserInfoRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/UpdateUserInfoReply'
 components:
     schemas:
         AddFriendRes:
@@ -349,7 +367,7 @@ components:
             properties:
                 targetId:
                     type: string
-        UpdateReply:
+        UpdateUserInfoReply:
             type: object
             properties:
                 code:
@@ -357,7 +375,32 @@ components:
                     format: int32
                 res:
                     $ref: '#/components/schemas/Res'
-        UpdateRequest:
+        UpdateUserInfoRequest:
+            type: object
+            properties:
+                username:
+                    type: string
+                gender:
+                    type: integer
+                    format: enum
+                birthday:
+                    type: string
+                    format: RFC3339
+                bio:
+                    type: string
+                headImage:
+                    type: string
+                coverImage:
+                    type: string
+        UpdateUserPwdReply:
+            type: object
+            properties:
+                code:
+                    type: integer
+                    format: int32
+                res:
+                    $ref: '#/components/schemas/Res'
+        UpdateUserPwdRequest:
             type: object
             properties:
                 phone:

@@ -3,6 +3,7 @@ package data
 import (
 	"context"
 	"errors"
+	"fmt"
 	bizUser "kratos-realworld/internal/biz/user"
 	"kratos-realworld/internal/model"
 
@@ -29,7 +30,7 @@ func (r *UserRepo) CreateUser(ctx context.Context, userRegister *bizUser.UserTB)
 	}
 
 	redisKey := UserRedisKey(UserCachePrefix, "Phone", userRegister.Phone)
-	_ = HSetStruct(ctx, r.data, r.log, redisKey, userRegister)
+	_ = HSetMultiple(ctx, r.data, r.log, redisKey, userRegister)
 
 	return nil
 }
@@ -38,7 +39,7 @@ func (r *UserRepo) GetUserByPhone(ctx context.Context, phone string) (*bizUser.U
 	user := &bizUser.UserTB{}
 	redisKey := UserRedisKey(UserCachePrefix, "Phone", phone)
 
-	err := HGetStruct(ctx, r.data, r.log, redisKey, user)
+	err := HGetMultiple(ctx, r.data, r.log, redisKey, user)
 	if err != nil {
 		r.log.Warnf("failed to get from cache, fallback to DB: %v", err)
 	} else {
@@ -58,7 +59,7 @@ func (r *UserRepo) GetUserByPhone(ctx context.Context, phone string) (*bizUser.U
 	}
 
 	// 即使缓存写入失败，也不会影响主流程，仅打印日志，不把错误传到service层
-	_ = HSetStruct(ctx, r.data, r.log, redisKey, user)
+	_ = HSetMultiple(ctx, r.data, r.log, redisKey, user)
 
 	return user, nil
 }
@@ -95,7 +96,7 @@ func (r *UserRepo) GetPasswordByPhone(ctx context.Context, phone string) (string
 	return password, nil
 }
 
-func (r *UserRepo) UpdatePassword(ctx context.Context, phone string, newPasswordHash string) error {
+func (r *UserRepo) UpdateUserPassword(ctx context.Context, phone string, newPasswordHash string) error {
 	result := r.data.DB().Model(&bizUser.UserTB{}).Where("Phone = ?", phone).Update("password", newPasswordHash)
 
 	if result.Error != nil {
@@ -115,6 +116,59 @@ func (r *UserRepo) UpdatePassword(ctx context.Context, phone string, newPassword
 	} else {
 		r.log.Debugf("password delete in cache successfully, phone=%s", phone)
 	}
+
+	return nil
+}
+
+func (r *UserRepo) UpdateUserInfo(ctx context.Context, userID uint32, userInfo *bizUser.UpdateUserInfoFields) error {
+	updateData := map[string]interface{}{}
+
+	fmt.Println("userInfo", userInfo)
+
+	if userInfo.Username != nil {
+		updateData["UserName"] = *userInfo.Username
+	}
+	if userInfo.Gender != nil {
+		updateData["Gender"] = *userInfo.Gender
+	}
+	if userInfo.Birthday != nil {
+		updateData["Birthday"] = *userInfo.Birthday
+	}
+	if userInfo.Bio != nil {
+		updateData["Bio"] = *userInfo.Bio
+	}
+	if userInfo.HeadImage != nil {
+		updateData["HeadImage"] = *userInfo.HeadImage
+	}
+	if userInfo.CoverImage != nil {
+		updateData["CoverImage"] = *userInfo.CoverImage
+	}
+
+	res := r.data.DB().Model(&bizUser.UserTB{}).Where("id = ?", userID).Updates(updateData)
+	if res.Error != nil {
+		return res.Error
+	}
+	if res.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+
+	// 更新redis缓存
+	redisKey := UserRedisKey(UserCachePrefix, "UserID", userID)
+	// 先查询这个用户的profile是否已经在redis缓存中
+	user := &bizUser.UserTB{}
+	err := HGetMultiple(ctx, r.data, r.log, redisKey, user)
+	// 用户信息不在redis里面
+	if err != nil {
+		// 查询更新后的完整信息
+		if err := r.data.DB().First(&user, userID).Error; err != nil {
+			return nil
+		}
+		// 将mysql更新后的数据写入redis缓存
+		_ = HSetMultiple(ctx, r.data, r.log, redisKey, user)
+		return nil
+	}
+	// 用户信息已经被缓存到redis里面：直接修改需要更新的字段
+	_ = HSetMultiple(ctx, r.data, r.log, redisKey, updateData)
 
 	return nil
 }
