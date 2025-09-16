@@ -64,6 +64,12 @@ func (pc *ProfileUsecase) FollowUser(ctx context.Context, targetID string) (*Use
 		return nil, NewErr(ErrCodeFollowFailed, FOLLOW_USER_FAILED, "user cannot follow themselves")
 	}
 
+	// 先判断是否已经关注了
+	isFollow, _ := pc.pr.CheckFollow(ctx, uint32(userID), uint32(tID))
+	if isFollow {
+		return nil, NewErr(ErrCodeFollowFailed, FOLLOW_USER_FAILED, "follow relationship already existed")
+	}
+
 	var followCount, fanCount uint32
 
 	err = pc.tx.InTx(ctx, func(ctx context.Context) error {
@@ -105,6 +111,11 @@ func (pc *ProfileUsecase) UnfollowUser(ctx context.Context, targetID string) (*U
 
 	if uint32(userID) == uint32(tID) {
 		return nil, NewErr(ErrCodeUnfollowFailed, UNFOLLOW_USER_FAILED, "user cannot unfollow themselves")
+	}
+
+	isFollow, _ := pc.pr.CheckFollow(ctx, uint32(userID), uint32(tID))
+	if !isFollow {
+		return nil, NewErr(ErrCodeUnfollowFailed, UNFOLLOW_USER_FAILED, "the follow relationship does not exist")
 	}
 
 	var followCount, fanCount uint32

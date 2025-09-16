@@ -186,8 +186,21 @@ func (r *ProfileRepo) CanAddFriendSql(ctx context.Context, userID uint32, follow
 }
 
 func (r *ProfileRepo) CheckFollow(ctx context.Context, userID uint32, targetID uint32) (bool, error) {
+	keyFollowList := UserRedisKey(UserCachePrefix, "FollowList", userID) // 某人的关注列表
+	isFollow, err := r.data.Cache().SIsMember(ctx, keyFollowList, fmt.Sprintf("%d", targetID))
+	if err != nil {
+		r.log.Errorf("Redis SIsMember error: %v, fallback to DB", err)
+	} else if isFollow {
+		r.data.Cache().Expire(ctx, keyFollowList, UserCacheTTL)
+		r.log.Debugf("get data from cache successfully, refreshed TTL to %s for key %s", UserCacheTTL, keyFollowList)
+		return true, nil
+	} else {
+		r.log.Debugf("Key %s not found in Redis, fallback to DB", keyFollowList)
+	}
+
+	// 缓存中没有再去查mysql里面的关注粉丝关系表
 	var cnt int64
-	err := r.data.DB().Model(&bizProfile.FollowFanTB{}).
+	err = r.data.DB().Model(&bizProfile.FollowFanTB{}).
 		Where("follower_id = ? AND followee_id = ?", userID, targetID).
 		Count(&cnt).Error
 	if err != nil {
