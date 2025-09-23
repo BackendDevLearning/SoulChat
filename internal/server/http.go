@@ -14,7 +14,41 @@ import (
 	"github.com/go-kratos/kratos/v2/middleware/selector"
 	"github.com/go-kratos/kratos/v2/transport/http"
 	"github.com/gorilla/handlers"
+	"github.com/gorilla/websocket"
 )
+
+func websocketHandler(w http.ResponseWriter, r *http.Request) {
+	// 处理 WebSocket 连接
+	var upGrader = websocket.Upgrader{
+		CheckOrigin: func(r *http.Request) bool {
+			return true
+		},
+	}
+	conn, err := upGrader.Upgrade(w, r, nil)
+	if err != nil {
+		log.Error(err)
+		return
+	}
+
+	user := r.URL.Query().Get("user")
+    if user == "" {
+        log.Error("Missing 'user' query parameter")
+        conn.Close()
+        return
+    }
+	
+	client := &server.Client{
+		Name: user,
+		Conn: ws,
+		Send: make(chan []byte),
+	}
+
+	server.MyServer.Register <- client
+	go client.Read()
+	go client.Write()
+}
+
+
 
 func NewSkipRoutersMatcher() selector.MatchFunc {
 
