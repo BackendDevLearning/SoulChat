@@ -1,7 +1,8 @@
 package kafka
 
 import (
-	"github.com/IBM/sarama"
+	"github.com/Shopify/sarama"
+	"log"
 	"strings"
 )
 
@@ -43,7 +44,7 @@ func ConsumerMsg(callBack ConsumerCallback) {
 }
 
 func CloseConsumer() {
-	if nil != consumer {
+	if consumer != nil {
 		consumer.Close()
 	}
 }
