@@ -1,8 +1,8 @@
 package kafka
 
 import (
+	"github.com/IBM/sarama"
 	"strings"
-	"github.com/Shopify/sarama"
 )
 
 // Sarama：Go 语言官方常用的 Kafka 客户端库。

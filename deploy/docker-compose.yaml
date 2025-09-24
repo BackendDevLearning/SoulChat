@@ -26,6 +26,30 @@ services:
       - ./redis/data:/data
     networks:
       - redis-SoulChat-net
+
+  kafka:
+    image: bitnami/kafka:3.6.1   # 推荐使用 bitnami 维护的镜像，内置 KRaft
+    container_name: kafka
+    ports:
+      - "9092:9092"   # 外部访问端口
+      - "9094:9094"   # 内部访问端口（容器间）
+    environment:
+      # 基础配置
+      KAFKA_CFG_PROCESS_ROLES: broker,controller
+      KAFKA_CFG_NODE_ID: 1
+      KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_CFG_LISTENERS: PLAINTEXT://:9092,INTERNAL://:9094,CONTROLLER://:9093
+      KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://127.0.0.1:9092,INTERNAL://kafka:9094
+      KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,INTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_CFG_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_CFG_CONTROLLER_LISTENER_NAMES: CONTROLLER
+
+      # 创建测试 topic（2 个分区，1 个副本）
+      KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_CREATE_TOPICS: "soul-chat-message:2:1"
+    volumes:
+      - ./kafka/data:/bitnami/kafka   # 持久化数据
+
 volumes:
   mysql_data:
   redis_data:

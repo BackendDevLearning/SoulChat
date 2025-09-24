@@ -37,6 +37,7 @@ bin/
 
 deploy/mysql/
 deploy/redis/
+deploy/kafka/
 
 internal/swagger-ui/dist
 internal/swagger-ui/openapi.yaml
