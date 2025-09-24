@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/go-kratos/kratos/v2/log"
 	v1 "kratos-realworld/api/conduit/v1"
-	"kratos-realworld/internal/biz/chat"
+	"kratos-realworld/internal/biz/messageGroup"
 	"kratos-realworld/internal/common"
 	"kratos-realworld/internal/model"
 )
@@ -14,11 +14,11 @@ type MessageRepo struct {
 	log  *log.Helper
 }
 
-func NewMessageRepo(data *model.Data, logger log.Logger) chat.MessageRepo {
-    return &MessageRepo{
-        data: data,
-        log:  log.NewHelper(logger),
-    }
+func NewMessageRepo(data *model.Data, logger log.Logger) messageGroup.MessageRepo {
+	return &MessageRepo{
+		data: data,
+		log:  log.NewHelper(logger),
+	}
 }
 
 func (mr *MessageRepo) GetMessages(message common.MessageRequest) ([]common.MessageResponse, error) {
@@ -27,7 +27,7 @@ func (mr *MessageRepo) GetMessages(message common.MessageRequest) ([]common.Mess
 	return nil, nil
 }
 
-func (mr *MessageRepo) fetchGroupMessage(toUuid string) ([]common.MessageResponse, error) {
+func (mr *MessageRepo) FetchGroupMessage(toUuid string) ([]common.MessageResponse, error) {
 	return nil, nil
 }
 
