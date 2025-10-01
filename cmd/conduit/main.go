@@ -86,6 +86,9 @@ func main() {
 		}
 	}
 
+	// 启动websocket服务
+	go websocket.MyServer.Start()
+
 	// start and wait for stop signal
 	if err := app.App.Run(); err != nil {
 		panic(err)

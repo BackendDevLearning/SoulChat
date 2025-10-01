@@ -1,51 +1,51 @@
 package server
 
 import (
-	"context"
-	v1 "kratos-realworld/api/conduit/v1"
-	"kratos-realworld/internal/conf"
-	"kratos-realworld/internal/pkg/middleware/auth"
-	"kratos-realworld/internal/service"
-	swaggerui "kratos-realworld/internal/swagger-ui"
+    "context"
+    "fmt"
+    v1 "kratos-realworld/api/conduit/v1"
+    "kratos-realworld/internal/conf"
+    "kratos-realworld/internal/pkg/middleware/auth"
+    "kratos-realworld/internal/service"
+    "kratos-realworld/internal/websocket"
+    swaggerui "kratos-realworld/internal/swagger-ui"
 
-	"github.com/go-kratos/kratos/v2/log"
-	"github.com/go-kratos/kratos/v2/middleware/logging"
-	"github.com/go-kratos/kratos/v2/middleware/recovery"
-	"github.com/go-kratos/kratos/v2/middleware/selector"
-	"github.com/go-kratos/kratos/v2/transport/http"
-	"github.com/gorilla/handlers"
-	"github.com/gorilla/websocket"
+    "github.com/go-kratos/kratos/v2/log"
+    "github.com/go-kratos/kratos/v2/middleware/logging"
+    "github.com/go-kratos/kratos/v2/middleware/recovery"
+    "github.com/go-kratos/kratos/v2/middleware/selector"
+    "github.com/go-kratos/kratos/v2/transport/http"
+    "github.com/gorilla/handlers"
+    "github.com/gorilla/websocket"
 )
 
 func websocketHandler(w http.ResponseWriter, r *http.Request) {
-	// 处理 WebSocket 连接
+	// 允许跨域升级
 	var upGrader = websocket.Upgrader{
-		CheckOrigin: func(r *http.Request) bool {
-			return true
-		},
+		CheckOrigin: func(r *http.Request) bool { return true },
 	}
 	conn, err := upGrader.Upgrade(w, r, nil)
-	if err != nil {
-		log.Error(err)
-		return
-	}
+    if err != nil {
+        fmt.Println("websocket upgrade error:", err)
+        return
+    }
 
 	user := r.URL.Query().Get("user")
     if user == "" {
-        log.Error("Missing 'user' query parameter")
-        conn.Close()
+        fmt.Println("websocket missing 'user' query parameter")
+        _ = conn.Close()
         return
     }
-	
-	client := &server.Client{
-		Name: user,
-		Conn: ws,
-		Send: make(chan []byte),
-	}
 
-	server.MyServer.Register <- client
-	go client.Read()
-	go client.Write()
+	// 这里的 Client、MyServer 来自 internal/websocket 包
+	c := &websocket.Client{
+		Name: user,
+		Conn: conn,
+		Send: make(chan []byte, 16),
+	}
+	websocket.MyServer.Register <- c
+	go c.Read()
+	go c.Write()
 }
 
 
@@ -103,6 +103,8 @@ func NewHTTPServer(c *conf.Server, jwtc *conf.JWT, s *service.ConduitService, lo
 	// 注册 Swagger UI
 	srv.Handle("/openapi.yaml", swaggerui.HandlerOpenapi())
 	srv.HandlePrefix("/swagger-ui/", swaggerui.Handler())
+
+	srv.Handle("/ws", http.HandlerFunc(websocketHandler))
 
 	return srv
 }
