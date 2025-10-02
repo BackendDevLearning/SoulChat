@@ -1,12 +1,11 @@
 package websocket
 
 import (
-	"github.com/go-kratos/kratos/v2/log"
-	"encoding/base64"
-	"io/ioutil"
-	"strings"
-	"sync"
+	"github.com/gorilla/websocket"
 	"github.com/gogo/protobuf/proto"
+	v1 "kratos-realworld/api/conduit/v1"
+	"kratos-realworld/internal/common"
+	"kratos-realworld/internal/kafka"
 )
 
 type Client struct {
@@ -17,15 +16,14 @@ type Client struct {
 
 func (c *Client) Read() {
 	defer func() {
-		MyServer.Ungister <- c
+        MyServer.Unregister <- c
 		c.Conn.Close()
 	}()
 	for {
 		c.Conn.PongHandler()
 		_, message, err := c.Conn.ReadMessage()
 		if err != nil {
-			log.Errorf("failed to read message: %v", err)
-			MyServer.Ungister <- c
+            MyServer.Unregister <- c
 			c.Conn.Close()
 			break
 		}
@@ -42,12 +40,8 @@ func (c *Client) Read() {
 				c.Conn.WriteMessage(websocket.BinaryMessage, pongByte)
 			}
 		} else {
-			// 这里要修改
-			if conf.GetConf().MsgChannelType.ChannelType == common.KAFKA {
-				kafka.Send(message)
-			} else {
-				MyServer.Broadcast <- message
-			}
+			// 直接放到消息队列里面，回调放到broadcast里面
+			kafka.Send(message)
 		}
 	}
 }

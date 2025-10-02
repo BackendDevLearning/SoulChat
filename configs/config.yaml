@@ -25,6 +25,14 @@ data:
     read_timeout: 2s
     write_timeout: 2s
 
+  kafka:
+    enabled: true
+    hosts: "192.168.218.131:9092"
+    topic: "go-chat-message"
+
 jwt:
   secret: "hello"
   expire: "24h"
+
+storage:
+  static_dir: "./static/"

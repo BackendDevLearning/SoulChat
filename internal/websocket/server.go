@@ -1,16 +1,17 @@
 package websocket
 
 import (
-	"github.com/go-kratos/kratos/v2/log"
-	"encoding/base64"
-	"io/ioutil"
-	"strings"
-	"sync"
-	"github.com/google/uuid"
-	"github.com/gogo/protobuf/proto"
-	"kratos-realworld/api/conduit/v1"
-	"kratos-realworld/internal/common"
-	"kratos-realworld/internal/biz"
+    "encoding/base64"
+    "io/ioutil"
+    "path/filepath"
+    "strings"
+    "sync"
+    "github.com/google/uuid"
+    "github.com/gogo/protobuf/proto"
+    v1 "kratos-realworld/api/conduit/v1"
+    "kratos-realworld/internal/common"
+    "kratos-realworld/internal/biz"
+    "kratos-realworld/internal/pkg/util"
 )
 
 var MyServer = NewServer()
@@ -20,7 +21,7 @@ type Server struct {
 	mutex     *sync.Mutex
 	Broadcast chan []byte
 	Register  chan *Client
-	Ungister  chan *Client
+    Unregister  chan *Client
 }
 
 func NewServer() *Server {
@@ -31,6 +32,16 @@ func NewServer() *Server {
 		Register:  make(chan *Client),
 		Unregister: make(chan *Client),
 	}
+}
+
+// staticBaseDir 指定静态文件保存目录，由 main 在启动时设置
+var staticBaseDir = "./static/"
+
+func SetStaticBaseDir(dir string) {
+    if dir == "" {
+        return
+    }
+    staticBaseDir = dir
 }
 
 func ConsumerKafkaMsg(data []byte) {
@@ -50,7 +61,7 @@ func (s *Server) Start() {
 			protoMsg, _ := proto.Marshal(msg)
 			conn.Send <- protoMsg
 
-		case conn := <- s.Ungister:
+        case conn := <- s.Unregister:
 			if _, ok := s.Clients[conn.Name]; ok {
 				close(conn.Send)
 				delete(s.Clients, conn.Name)
@@ -58,9 +69,9 @@ func (s *Server) Start() {
 
 		case message := <- s.Broadcast:
 			msg := &v1.Message{}
-			err := proto.Unmarshal(message, msg)
+            err := proto.Unmarshal(message, msg)
 			if err != nil {
-				log.Errorf("failed to unmarshal message: %v", err)
+                // ignore invalid payloads
 				continue
 			}
 			
@@ -71,7 +82,7 @@ func (s *Server) Start() {
 						saveMessage(msg)
 					}
 
-					if msg.Message == common.MESSAGE_TYPE_USER {
+                    if msg.Message == common.MESSAGE_TYPE_USER {
 						client, ok := s.Clients[msg.To]
 						if ok {
 							msgByte, err := proto.Marshal(msg)
@@ -79,10 +90,9 @@ func (s *Server) Start() {
 								client.Send <- msgByte
 							}
 						}
-						else if msg.MessageType == common.MESSAGE_TYPE_GROUP {
+                    } else if msg.MessageType == common.MESSAGE_TYPE_GROUP {
 							sendGroupMessage(msg, s)
-						}
-					} else {
+                    } else {
 						clent, ok := s.Clients[msg.To]
 						if ok {
 							clent.Send <- message
@@ -104,8 +114,9 @@ func (s *Server) Start() {
 }
 
 // 发送给群组消息,需要查询该群所有人员依次发送
-func sendGroupMessage(msg *protocol.Message, s *Server) {
+func sendGroupMessage(msg *v1.Message, s *Server) {
 	// 发送给群组的消息，查找该群所有的用户进行发送
+	// todo: 实现接口
 	users := service.GroupService.GetUserIdByGroupUuid(msg.To)
 	for _, user := range users {
 		if user.Uuid == msg.From {
@@ -119,15 +130,15 @@ func sendGroupMessage(msg *protocol.Message, s *Server) {
 
 		fromUserDetails := service.UserService.GetUserDetails(msg.From)
 		// 由于发送群聊时，from是个人，to是群聊uuid。所以在返回消息时，将form修改为群聊uuid，和单聊进行统一
-		msgSend := protocol.Message{
-			Avatar:       fromUserDetails.Avatar,
+		msgSend := v1.Message{
+			Avatar:       fromUserDetails.Avatar,  //todo: 实现接口
 			FromUsername: msg.FromUsername,
 			From:         msg.To,
 			To:           msg.From,
 			Content:      msg.Content,
 			ContentType:  msg.ContentType,
-			Type:         msg.Type,
-			MessageType:  msg.MessageType,
+            Type:         msg.Type,
+            MessageType:  msg.MessageType,
 			Url:          msg.Url,
 		}
 
@@ -150,13 +161,13 @@ func saveMessage(message *v1.Message) {
 		content = content[index:]
 
 		dataBuffer, dataErr := base64.StdEncoding.DecodeString(content)
-		if dataErr != nil {
-			log.Logger.Error("transfer base64 to file error", log.String("transfer base64 to file error", dataErr.Error()))
+        if dataErr != nil {
 			return
 		}
-		err := ioutil.WriteFile(config.GetConfig().StaticPath.FilePath+url, dataBuffer, 0666)
+        // 保存到静态目录
+        path := filepath.Join(staticBaseDir, url)
+        err := ioutil.WriteFile(path, dataBuffer, 0666)
 		if err != nil {
-			log.Logger.Error("write file error", log.String("write file error", err.Error()))
 			return
 		}
 		message.Url = url
@@ -170,9 +181,10 @@ func saveMessage(message *v1.Message) {
 		}
 		contentType := util.GetContentTypeBySuffix(fileSuffix)
 		url := uuid.New().String() + "." + fileSuffix
-		err := ioutil.WriteFile(config.GetConfig().StaticPath.FilePath+url, message.File, 0666)
+        // 保存到静态目录
+        path := filepath.Join(staticBaseDir, url)
+        err := ioutil.WriteFile(path, message.File, 0666)
 		if err != nil {
-			log.Logger.Error("write file error", log.String("write file error", err.Error()))
 			return
 		}
 		message.Url = url
@@ -180,5 +192,5 @@ func saveMessage(message *v1.Message) {
 		message.ContentType = contentType
 	}
 
-	biz.SaveMessage(*message)
+    biz.SaveMessage(*message)
 }

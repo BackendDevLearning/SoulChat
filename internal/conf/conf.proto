@@ -44,9 +44,20 @@ message Data {
     int32 db = 3;
     int32 pool_size = 4;
   }
+  message Kafka {
+    string hosts = 1; // 多个地址用逗号分隔
+    string topic = 2; // 默认 topic 名称
+    bool enabled = 3; // 是否启用 kafka
+  }
+  message Storage {
+    string static_dir = 1;
+  }
+
   Database database = 1;
   Redis redis = 2;
   string dsn = 3;
+  Kafka kafka = 4;
+  Storage storage = 5;
 }
 
 message JWT {

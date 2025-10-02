@@ -3,6 +3,8 @@ package main
 import (
 	"flag"
 	"kratos-realworld/internal/conf"
+    "kratos-realworld/internal/kafka"
+    wsrv "kratos-realworld/internal/websocket"
 	"kratos-realworld/internal/data/migrate"
 	"kratos-realworld/internal/pkg/env"
 	"os"
@@ -86,8 +88,22 @@ func main() {
 		}
 	}
 
-	// 启动websocket服务
-	go websocket.MyServer.Start()
+    // Kafka: 生产者/消费者初始化
+    if bc.Data.Kafka != nil && bc.Data.Kafka.Enabled {
+        kafka.InitProducer(bc.Data.Kafka.Topic, bc.Data.Kafka.Hosts)
+        kafka.InitConsumer(bc.Data.Kafka.Hosts)
+        go kafka.ConsumerMsg(wsrv.ConsumerKafkaMsg)
+        defer kafka.Close()
+        defer kafka.CloseConsumer()
+    }
+
+    // 配置静态目录（可选）
+    if bc.Data != nil && bc.Data.Storage != nil {
+        wsrv.SetStaticBaseDir(bc.Data.Storage.StaticDir)
+    }
+
+    // 启动websocket服务
+    go wsrv.MyServer.Start()
 
 	// start and wait for stop signal
 	if err := app.App.Run(); err != nil {
