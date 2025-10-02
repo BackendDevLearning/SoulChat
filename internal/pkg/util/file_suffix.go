@@ -1,14 +1,14 @@
 package util
 
 import (
-	"bytes"
-	"chat-room/pkg/common/constant"
-	"encoding/hex"
-	"strconv"
-	"strings"
-	"sync"
+    "bytes"
+    "encoding/hex"
+    "strconv"
+    "strings"
+    "sync"
 
-	"github.com/wxnacy/wgo/arrays"
+    "github.com/wxnacy/wgo/arrays"
+    common "kratos-realworld/internal/common"
 )
 
 var fileTypeMap sync.Map
@@ -124,20 +124,20 @@ func GetFileType(fSrc []byte) string {
 func GetContentTypeBySuffix(suffix string) int32 {
 	imgList := []string{"jpeg", "jpg", "png", "gif", "tif", "bmp", "dwg"}
 	exists := arrays.Contains(imgList, suffix)
-	if exists >= 0 {
-		return constant.IMAGE
+    if exists >= 0 {
+        return common.IMAGE
 	}
 
 	audioList := []string{"mp3", "wma", "wav", "mid", "ape", "flac"}
 	existAudio := arrays.Contains(audioList, suffix)
-	if existAudio >= 0 {
-		return constant.AUDIO
+    if existAudio >= 0 {
+        return common.AUDIO
 	}
 
 	videoList := []string{"rmvb", "flv", "mp4", "mpg", "mpeg", "avi", "rm", "mov", "wmv", "webm"}
 	existVideo := arrays.Contains(videoList, suffix)
-	if existVideo >= 0 {
-		return constant.VIDEO
+    if existVideo >= 0 {
+        return common.VIDEO
 	}
-	return constant.FILE
+    return common.FILE
 }

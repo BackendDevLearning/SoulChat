@@ -13,7 +13,7 @@ services:
     volumes:
       - ./mysql/data:/var/lib/mysql
     networks:
-      - mysql-SoulChat-net
+      - soulchat-net
 
   redis:
     image: redis:6.2
@@ -25,7 +25,7 @@ services:
     volumes:
       - ./redis/data:/data
     networks:
-      - redis-SoulChat-net
+      - soulchat-net
 
   zookeeper:
     image: zookeeper
@@ -62,9 +62,5 @@ volumes:
   kafka_data:
 
 networks:
-  mysql-SoulChat-net:
-    driver: bridge
-  redis-SoulChat-net:
-    driver: bridge
   soulchat-net:
     driver: bridge

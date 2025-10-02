@@ -30,9 +30,10 @@ data:
     hosts: "192.168.218.131:9092"
     topic: "go-chat-message"
 
+  storage:
+    static_dir: "./static/"
+
 jwt:
   secret: "hello"
   expire: "24h"
 
-storage:
-  static_dir: "./static/"

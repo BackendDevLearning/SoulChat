@@ -31,6 +31,7 @@ func (mr *MessageRepo) FetchGroupMessage(toUuid string) ([]common.MessageRespons
 	return nil, nil
 }
 
-func (mr *MessageRepo) SaveMessage(message v1.Message) {
-
+func (mr *MessageRepo) SaveMessage(message v1.Message) error {
+	// TODO: implement message saving logic
+	return nil
 }

@@ -3,6 +3,7 @@ package kafka
 import (
 	"github.com/IBM/sarama"
 	"strings"
+	"fmt"
 )
 
 // Sarama：Go 语言官方常用的 Kafka 客户端库。
@@ -11,7 +12,7 @@ var producer sarama.AsyncProducer
 // 消息订阅和分发的时候必须指定 topic
 var topic string = "default_message"
 
-func InitProducer(topicInput, hosts string) {
+func InitProducer(topicInput, hosts string) error {
 	topic = topicInput // 当前服务kafka 的 topic
 	//hosts 当前集群的地址列表，多个用逗号隔开
 	config := sarama.NewConfig()
@@ -26,16 +27,23 @@ func InitProducer(topicInput, hosts string) {
 	//建立必要的元数据缓存
 	client, err := sarama.NewClient(strings.Split(hosts, ","), config)
 	if nil != err {
-		log.Logger.Error("init kafka client error", log.Any("init kafka client error", err.Error()))
+		fmt.Println("init kafka client error", err.Error())
+		return err
 	}
 
 	producer, err = sarama.NewAsyncProducerFromClient(client)
 	if nil != err {
-		log.Logger.Error("init kafka async client error", log.Any("init kafka async client error", err.Error()))
+		fmt.Println("init kafka async client error", err.Error())
+		return err
 	}
+	return nil
 }
 
 func Send(data []byte) {
+	if producer == nil {
+		fmt.Println("Kafka producer not initialized, skipping message")
+		return
+	}
 	be := sarama.ByteEncoder(data)
 	// 把二进制消息发到 kafka
 	producer.Input() <- &sarama.ProducerMessage{Topic: topic, Key: nil, Value: be}

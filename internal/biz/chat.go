@@ -1,8 +1,8 @@
 package biz
 
 import (
-	"github.com/go-kratos/kratos/v2/log"
-	bizChat "kratos-realworld/internal/biz/chat"
+    "github.com/go-kratos/kratos/v2/log"
+    bizChat "kratos-realworld/internal/biz/messageGroup"
 )
 
 type MessageRepoCase struct {
@@ -10,7 +10,7 @@ type MessageRepoCase struct {
 	log *log.Helper
 }
 
-func NewMessageCase(mr bizChat.MessageRepo) *MessageRepoCase {
+func NewMessageCase(mr bizChat.MessageRepo, logger log.Logger) *MessageRepoCase {
 	return &MessageRepoCase{
 		mr:  mr,
 		log: log.NewHelper(logger),
