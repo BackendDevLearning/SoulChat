@@ -1,3 +1,5 @@
+
+
 package test
 
 import (
@@ -10,6 +12,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 )
 
 var (
@@ -27,7 +30,7 @@ func init() {
 	flag.StringVar(&flagconf, "conf", "../../configs", "config path, eg: -conf config.yaml")
 }
 
-func TestKafka(t *testing.T) {
+func TestKafkaProducer(t *testing.T) {
 	flag.Parse()
 
 	c := config.New(
@@ -38,18 +41,31 @@ func TestKafka(t *testing.T) {
 	defer c.Close()
 
 	if err := c.Load(); err != nil {
-		panic(err)
+		t.Fatalf("Failed to load config: %v", err)
 	}
 
 	var bc conf.Bootstrap
 	if err := c.Scan(&bc); err != nil {
-		panic(err)
+		t.Fatalf("Failed to scan config: %v", err)
+	}
+
+	if bc.Data.Kafka == nil {
+		t.Skip("Kafka not configured")
 	}
 
 	cf := sarama.NewConfig()
-	client, _ := sarama.NewClient(strings.Split(bc.Data.Kafka.Hosts, ","), cf)
+	cf.Producer.Return.Successes = true
+	cf.Producer.Timeout = 5 * time.Second
+	
+	client, err := sarama.NewClient(strings.Split(bc.Data.Kafka.Hosts, ","), cf)
+	if err != nil {
+		t.Fatalf("Failed to create Kafka client: %v", err)
+	}
 
-	producer, _ := sarama.NewSyncProducerFromClient(client)
+	producer, err := sarama.NewSyncProducerFromClient(client)
+	if err != nil {
+		t.Fatalf("Failed to create Kafka producer: %v", err)
+	}
 
 	defer func() {
 		if producer != nil {
@@ -60,11 +76,21 @@ func TestKafka(t *testing.T) {
 		}
 	}()
 
-	var str string = "test"
-	var data []byte = []byte(str)
-	be := sarama.ByteEncoder(data)
-	fmt.Println(be)
-	producer.Input() <- &sarama.ProducerMessage{Topic: "test", Key: nil, Value: be}
+	// 发送测试消息
+	testMessage := "Hello Kafka from Go test!"
+	message := &sarama.ProducerMessage{
+		Topic: bc.Data.Kafka.Topic,
+		Key:   sarama.StringEncoder("test-key"),
+		Value: sarama.StringEncoder(testMessage),
+	}
+
+	partition, offset, err := producer.SendMessage(message)
+	if err != nil {
+		t.Fatalf("Failed to send message: %v", err)
+	}
+
+	fmt.Printf("Message sent successfully! Partition: %d, Offset: %d\n", partition, offset)
+	t.Logf("Sent message: %s to topic: %s", testMessage, bc.Data.Kafka.Topic)
 }
 
 var consumer sarama.Consumer
@@ -82,25 +108,57 @@ func TestKafkaConsumer(t *testing.T) {
 	defer c.Close()
 
 	if err := c.Load(); err != nil {
-		panic(err)
+		t.Fatalf("Failed to load config: %v", err)
 	}
 
 	var bc conf.Bootstrap
 	if err := c.Scan(&bc); err != nil {
-		panic(err)
+		t.Fatalf("Failed to scan config: %v", err)
+	}
+
+	if bc.Data.Kafka == nil {
+		t.Skip("Kafka not configured")
 	}
 
 	cf := sarama.NewConfig()
-	client, _ := sarama.NewClient(strings.Split(bc.Data.Kafka.Hosts, ","), cf)
+	cf.Consumer.Return.Errors = true
+	
+	client, err := sarama.NewClient(strings.Split(bc.Data.Kafka.Hosts, ","), cf)
+	if err != nil {
+		t.Fatalf("Failed to create Kafka client: %v", err)
+	}
 
-	consumer, _ = sarama.NewConsumerFromClient(client)
+	consumer, err := sarama.NewConsumerFromClient(client)
+	if err != nil {
+		t.Fatalf("Failed to create Kafka consumer: %v", err)
+	}
 
-	partitionConsumer, _ := consumer.ConsumePartition("test", 0, sarama.OffsetNewest)
+	defer func() {
+		if consumer != nil {
+			consumer.Close()
+		}
+		if client != nil {
+			client.Close()
+		}
+	}()
 
+	// 消费消息（只消费一条用于测试）
+	partitionConsumer, err := consumer.ConsumePartition(bc.Data.Kafka.Topic, 0, sarama.OffsetNewest)
+	if err != nil {
+		t.Fatalf("Failed to create partition consumer: %v", err)
+	}
 	defer partitionConsumer.Close()
-	for {
-		msg := <-partitionConsumer.Messages()
-		fmt.Println(msg.Value)
-		fmt.Println(string(msg.Value))
+
+	// 设置超时，避免无限等待
+	timeout := time.After(10 * time.Second)
+	
+	select {
+	case msg := <-partitionConsumer.Messages():
+		fmt.Printf("Received message: %s\n", string(msg.Value))
+		t.Logf("Received message from topic %s: %s", msg.Topic, string(msg.Value))
+	case err := <-partitionConsumer.Errors():
+		t.Fatalf("Consumer error: %v", err)
+	case <-timeout:
+		t.Log("No messages received within timeout period")
 	}
 }

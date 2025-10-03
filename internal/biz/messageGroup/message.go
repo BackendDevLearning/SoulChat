@@ -26,7 +26,7 @@ func (m *MessageTB) TableName() string {
 }
 
 type MessageRepo interface {
-	GetMessages(message common.MessageRequest) ([]common.MessageResponse, error)
+	GetMessages(message common.MessageRequest) ([]common.MessageResponse, error) // 分页查询 1. 分页offset  2. 游标cursor
 	FetchGroupMessage(toUuid string) ([]common.MessageResponse, error)
 	SaveMessage(message v1.Message) error
 }
