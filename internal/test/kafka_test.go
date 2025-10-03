@@ -1,5 +1,3 @@
-
-
 package test
 
 import (
@@ -56,12 +54,15 @@ func TestKafkaProducer(t *testing.T) {
 	cf := sarama.NewConfig()
 	cf.Producer.Return.Successes = true
 	cf.Producer.Timeout = 5 * time.Second
-	
+
+	fmt.Println("bc.Data.Kafka", bc.Data.Kafka)
+
 	client, err := sarama.NewClient(strings.Split(bc.Data.Kafka.Hosts, ","), cf)
 	if err != nil {
 		t.Fatalf("Failed to create Kafka client: %v", err)
 	}
 
+	// 同步生产者，消息发送是阻塞的，会等待Kafka发送确认ack
 	producer, err := sarama.NewSyncProducerFromClient(client)
 	if err != nil {
 		t.Fatalf("Failed to create Kafka producer: %v", err)
@@ -122,7 +123,9 @@ func TestKafkaConsumer(t *testing.T) {
 
 	cf := sarama.NewConfig()
 	cf.Consumer.Return.Errors = true
-	
+
+	fmt.Println("bc.Data.Kafka", bc.Data.Kafka)
+
 	client, err := sarama.NewClient(strings.Split(bc.Data.Kafka.Hosts, ","), cf)
 	if err != nil {
 		t.Fatalf("Failed to create Kafka client: %v", err)
@@ -143,7 +146,11 @@ func TestKafkaConsumer(t *testing.T) {
 	}()
 
 	// 消费消息（只消费一条用于测试）
-	partitionConsumer, err := consumer.ConsumePartition(bc.Data.Kafka.Topic, 0, sarama.OffsetNewest)
+	//partitionConsumer, err := consumer.ConsumePartition(bc.Data.Kafka.Topic, 0, sarama.OffsetNewest)
+	// 消费上面生产者发送到Kafka里面的消息
+	// sarama.OffsetOldest 从最早消息开始
+	// sarama.OffsetNewest 从最新消息开始（之前的消息就不会被消费了），就是调用ConsumePartition时Partition里当前最大的offset + 1
+	partitionConsumer, err := consumer.ConsumePartition(bc.Data.Kafka.Topic, 1, sarama.OffsetOldest)
 	if err != nil {
 		t.Fatalf("Failed to create partition consumer: %v", err)
 	}
@@ -151,7 +158,7 @@ func TestKafkaConsumer(t *testing.T) {
 
 	// 设置超时，避免无限等待
 	timeout := time.After(10 * time.Second)
-	
+
 	select {
 	case msg := <-partitionConsumer.Messages():
 		fmt.Printf("Received message: %s\n", string(msg.Value))

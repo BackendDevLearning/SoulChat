@@ -81,22 +81,22 @@ func main() {
 	defer cleanup()
 
 	// 仅在开发环境执行数据库中table的创建与迁移
-	// if env.IsDev() {
-	// 	if err := migrate.InitDBTable(app.DB); err != nil {
-	// 		log.Fatal("Failed to migrate database:", err)
-	// 	}
-	// }
+	//if env.IsDev() {
+	//	if err := migrate.InitDBTable(app.DB); err != nil {
+	//		log.Fatal("Failed to migrate database:", err)
+	//	}
+	//}
 
 	// Kafka: 生产者/消费者初始化
 	if bc.Data.Kafka != nil && bc.Data.Kafka.Enabled {
 		fmt.Println("Initializing Kafka with hosts: %s, topic: %s", bc.Data.Kafka.Hosts, bc.Data.Kafka.Topic)
-		
+
 		if err := kafka.InitProducer(bc.Data.Kafka.Topic, bc.Data.Kafka.Hosts); err != nil {
 			fmt.Println("Failed to initialize Kafka producer: %v", err)
 			fmt.Println("Kafka producer disabled - WebSocket messages will not be sent to Kafka")
 		} else {
 			fmt.Println("Kafka producer initialized successfully")
-			
+
 			if err := kafka.InitConsumer(bc.Data.Kafka.Hosts); err != nil {
 				fmt.Println("Failed to initialize Kafka consumer: %v", err)
 				fmt.Println("Kafka consumer disabled - messages from Kafka will not be processed")

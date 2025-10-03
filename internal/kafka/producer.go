@@ -1,9 +1,9 @@
 package kafka
 
 import (
+	"fmt"
 	"github.com/IBM/sarama"
 	"strings"
-	"fmt"
 )
 
 // Sarama：Go 语言官方常用的 Kafka 客户端库。
@@ -31,6 +31,7 @@ func InitProducer(topicInput, hosts string) error {
 		return err
 	}
 
+	// 异步生产者，消息发送是非阻塞的
 	producer, err = sarama.NewAsyncProducerFromClient(client)
 	if nil != err {
 		fmt.Println("init kafka async client error", err.Error())

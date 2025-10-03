@@ -2,6 +2,7 @@ package migrate
 
 import (
 	"gorm.io/gorm"
+	"kratos-realworld/internal/biz/messageGroup"
 	"kratos-realworld/internal/biz/profile"
 	"kratos-realworld/internal/biz/user"
 )
@@ -11,6 +12,9 @@ func InitDBTable(db *gorm.DB) error {
 		&user.UserTB{},
 		&profile.ProfileTB{},
 		&profile.FollowFanTB{},
+		&messageGroup.MessageTB{},
+		&messageGroup.GroupTB{},
+		&messageGroup.GroupMemberTB{},
 	); err != nil {
 		return err
 	}
