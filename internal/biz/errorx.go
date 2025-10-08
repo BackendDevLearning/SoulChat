@@ -31,6 +31,9 @@ const (
 	// 关注、取关、好友相关
 	ErrCodeFollowFailed   = 60000
 	ErrCodeUnfollowFailed = 60001
+
+	// 聊天相关
+	ErrCodeMessageFailed = 70000
 )
 
 // error reason
@@ -55,4 +58,7 @@ const (
 	// 关注、取关、好友相关
 	FOLLOW_USER_FAILED   = "FOLLOW_USER_FAILED"
 	UNFOLLOW_USER_FAILED = "UNFOLLOW_USER_FAILED"
+
+	// 聊天相关
+	MESSAGE_FAILED = "MESSAGE_FAILED"
 )

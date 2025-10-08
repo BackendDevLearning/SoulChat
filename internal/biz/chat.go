@@ -1,30 +1,40 @@
 package biz
 
 import (
-    "github.com/go-kratos/kratos/v2/log"
-    bizChat "kratos-realworld/internal/biz/messageGroup"
+	"context"
+	"fmt"
+	"github.com/go-kratos/kratos/v2/log"
+	bizChat "kratos-realworld/internal/biz/messageGroup"
+	"kratos-realworld/internal/common"
 )
 
-type MessageRepoCase struct {
+type MessageUseCase struct {
 	mr  bizChat.MessageRepo
 	log *log.Helper
 }
 
-func NewMessageCase(mr bizChat.MessageRepo, logger log.Logger) *MessageRepoCase {
-	return &MessageRepoCase{
+func NewMessageUseCase(mr bizChat.MessageRepo, logger log.Logger) *MessageUseCase {
+	return &MessageUseCase{
 		mr:  mr,
 		log: log.NewHelper(logger),
 	}
 }
 
-func (mr *MessageRepoCase) SaveMessage() {
+func (mc *MessageUseCase) SaveMessage() {
 
 }
 
-func (mr *MessageRepoCase) GetMessages() {
+func (mc *MessageUseCase) GetMessages(ctx context.Context, messageReq common.MessageRequest) error {
+	MessageResponse, err := mc.mr.GetMessages(ctx, messageReq)
+	fmt.Println(MessageResponse)
 
+	if err != nil {
+		return NewErr(ErrCodeMessageFailed, MESSAGE_FAILED, "Message failed")
+	}
+
+	return nil
 }
 
-func (mr *MessageRepoCase) fetchGroupMessage() {
+func (mc *MessageUseCase) fetchGroupMessage() {
 
 }

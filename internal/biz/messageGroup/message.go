@@ -1,7 +1,7 @@
 package messageGroup
 
 import (
-	v1 "kratos-realworld/api/conduit/v1"
+	"context"
 	"kratos-realworld/internal/common"
 	"time"
 )
@@ -28,7 +28,7 @@ func (m *MessageTB) TableName() string {
 }
 
 type MessageRepo interface {
-	GetMessages(message common.MessageRequest) ([]common.MessageResponse, error) // 分页查询 1. 分页offset  2. 游标cursor
-	FetchGroupMessage(toUuid string) ([]common.MessageResponse, error)
-	SaveMessage(message v1.Message) error
+	GetMessages(ctx context.Context, message common.MessageRequest) ([]common.MessageResponse, error) // 分页查询 1. 分页offset  2. 游标cursor
+	FetchGroupMessage(ctx context.Context, toUuid string) ([]common.MessageResponse, error)
+	SaveMessage(ctx context.Context, message MessageTB) error
 }

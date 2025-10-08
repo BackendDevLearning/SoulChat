@@ -16,12 +16,14 @@ type ConduitService struct {
 
 	gt  *biz.GateWayUsecase
 	pc  *biz.ProfileUsecase
+	mc  *biz.MessageUseCase
 	log *log.Helper
 }
 
-func NewConduitService(gt *biz.GateWayUsecase, pc *biz.ProfileUsecase, logger log.Logger) *ConduitService {
+func NewConduitService(gt *biz.GateWayUsecase, pc *biz.ProfileUsecase, mc *biz.MessageUseCase, logger log.Logger) *ConduitService {
 	return &ConduitService{
 		gt:  gt,
 		pc:  pc,
+		mc:  mc,
 		log: log.NewHelper(logger)}
 }
