@@ -3,13 +3,16 @@ package server
 import (
 	"context"
 	"fmt"
+	"github.com/golang-jwt/jwt/v4"
 	v1 "kratos-realworld/api/conduit/v1"
 	"kratos-realworld/internal/conf"
 	"kratos-realworld/internal/pkg/middleware/auth"
 	"kratos-realworld/internal/service"
-	wsrv "kratos-realworld/internal/websocket"
 	swaggerui "kratos-realworld/internal/swagger-ui"
+	wsrv "kratos-realworld/internal/websocket"
 	"net/http"
+	"strconv"
+	"strings"
 
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/go-kratos/kratos/v2/middleware/logging"
@@ -20,9 +23,66 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-type websocketHandler struct{}
+type websocketHandler struct {
+	jwtc *conf.JWT
+}
+
+func NewWebsocketHandler(jwtc *conf.JWT) *websocketHandler {
+	return &websocketHandler{
+		jwtc: jwtc,
+	}
+}
 
 func (h *websocketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	//user := r.URL.Query().Get("user")
+	//if user == "" {
+	//	fmt.Println("websocket missing 'user' query parameter")
+	//	_ = conn.Close()
+	//	return
+	//}
+
+	fmt.Println("开始建立WebSocket长连接")
+
+	// 将WebSocket服务也统一使用JWT验证，通过token取得userID
+	// 从query或header中获取token
+	tokenString := r.Header.Get("Authorization")
+	if tokenString == "" {
+		tokenString = r.URL.Query().Get("token")
+	}
+
+	fmt.Println("tokenString:", tokenString)
+
+	if tokenString == "" {
+		http.Error(w, "missing token", http.StatusUnauthorized)
+	}
+
+	// 去掉Token前缀
+	auths := strings.SplitN(tokenString, " ", 2)
+	fmt.Println("auths:", auths)
+	if len(auths) == 2 && strings.EqualFold(auths[0], "Token") {
+		tokenString = auths[1]
+	}
+
+	// 解析token
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+		return []byte(h.jwtc.Secret), nil
+	})
+	if err != nil || !token.Valid {
+		http.Error(w, "invalid token", http.StatusUnauthorized)
+	}
+
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok || !token.Valid {
+		http.Error(w, "invalid claims", http.StatusUnauthorized)
+	}
+
+	// 取得userID
+	userID := uint32(claims["userid"].(float64))
+	fmt.Printf("[WS] 用户 %d 成功通过 JWT 鉴权\n\n", userID)
+
 	// 允许跨域升级
 	var upGrader = websocket.Upgrader{
 		CheckOrigin: func(r *http.Request) bool { return true },
@@ -33,16 +93,9 @@ func (h *websocketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user := r.URL.Query().Get("user")
-	if user == "" {
-		fmt.Println("websocket missing 'user' query parameter")
-		_ = conn.Close()
-		return
-	}
-
 	// 这里的 Client、MyServer 来自 internal/websocket 包
 	c := &wsrv.Client{
-		Name: user,
+		Name: strconv.Itoa(int(userID)),
 		Conn: conn,
 		Send: make(chan []byte, 16),
 	}
@@ -50,8 +103,6 @@ func (h *websocketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	go c.Read()
 	go c.Write()
 }
-
-
 
 func NewSkipRoutersMatcher() selector.MatchFunc {
 
@@ -107,7 +158,8 @@ func NewHTTPServer(c *conf.Server, jwtc *conf.JWT, s *service.ConduitService, lo
 	srv.Handle("/openapi.yaml", swaggerui.HandlerOpenapi())
 	srv.HandlePrefix("/swagger-ui/", swaggerui.Handler())
 
-	srv.Handle("/ws", &websocketHandler{})
+	//srv.Handle("/ws", &websocketHandler{})
+	srv.Handle("/ws", NewWebsocketHandler(jwtc))
 
 	return srv
 }

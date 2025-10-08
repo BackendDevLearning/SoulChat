@@ -1,36 +1,37 @@
 package websocket
 
 import (
-    // "encoding/base64"
-    // "io/ioutil"
-    // "path/filepath"
-    // "strings"
-    "sync"
-    // "github.com/google/uuid"
-    "github.com/gogo/protobuf/proto"
-    v1 "kratos-realworld/api/conduit/v1"
-    "kratos-realworld/internal/common"
-    // "kratos-realworld/internal/biz"
-    // "kratos-realworld/internal/pkg/util"
+	// "encoding/base64"
+	// "io/ioutil"
+	// "path/filepath"
+	// "strings"
+	"sync"
+	// "github.com/google/uuid"
+	//"github.com/gogo/protobuf/proto"
+	"google.golang.org/protobuf/proto"
+	v1 "kratos-realworld/api/conduit/v1"
+	"kratos-realworld/internal/common"
+	// "kratos-realworld/internal/biz"
+	// "kratos-realworld/internal/pkg/util"
 	"fmt"
 )
 
 var MyServer = NewServer()
 
 type Server struct {
-	Clients   map[string]*Client
-	mutex     *sync.Mutex
-	Broadcast chan []byte
-	Register  chan *Client
-    Unregister  chan *Client
+	Clients    map[string]*Client
+	mutex      *sync.Mutex
+	Broadcast  chan []byte
+	Register   chan *Client
+	Unregister chan *Client
 }
 
 func NewServer() *Server {
 	return &Server{
-		mutex:     &sync.Mutex{},
-		Clients:   make(map[string]*Client),
-		Broadcast: make(chan []byte),
-		Register:  make(chan *Client),
+		mutex:      &sync.Mutex{},
+		Clients:    make(map[string]*Client),
+		Broadcast:  make(chan []byte),
+		Register:   make(chan *Client),
 		Unregister: make(chan *Client),
 	}
 }
@@ -39,10 +40,10 @@ func NewServer() *Server {
 var staticBaseDir = "./static/"
 
 func SetStaticBaseDir(dir string) {
-    if dir == "" {
-        return
-    }
-    staticBaseDir = dir
+	if dir == "" {
+		return
+	}
+	staticBaseDir = dir
 }
 
 func ConsumerKafkaMsg(data []byte) {
@@ -52,7 +53,7 @@ func ConsumerKafkaMsg(data []byte) {
 func (s *Server) Start() {
 	for {
 		select {
-		case conn := <- s.Register:
+		case conn := <-s.Register:
 			s.Clients[conn.Name] = conn
 			msg := &v1.Message{
 				From:    "System",
@@ -62,20 +63,20 @@ func (s *Server) Start() {
 			protoMsg, _ := proto.Marshal(msg)
 			conn.Send <- protoMsg
 
-        case conn := <- s.Unregister:
+		case conn := <-s.Unregister:
 			if _, ok := s.Clients[conn.Name]; ok {
 				close(conn.Send)
 				delete(s.Clients, conn.Name)
 			}
 
-		case message := <- s.Broadcast:
+		case message := <-s.Broadcast:
 			msg := &v1.Message{}
-            err := proto.Unmarshal(message, msg)
+			err := proto.Unmarshal(message, msg)
 			if err != nil {
-                // ignore invalid payloads
+				// ignore invalid payloads
 				continue
 			}
-			
+
 			if msg.To != "" {
 				if msg.ContentType >= common.TEXT && msg.ContentType <= common.VIDEO {
 					_, exits := s.Clients[msg.From]
@@ -83,7 +84,7 @@ func (s *Server) Start() {
 						saveMessage(msg)
 					}
 
-                    if msg.ContentType == common.MESSAGE_TYPE_USER {
+					if msg.ContentType == common.MESSAGE_TYPE_USER {
 						client, ok := s.Clients[msg.To]
 						if ok {
 							msgByte, err := proto.Marshal(msg)
@@ -91,9 +92,9 @@ func (s *Server) Start() {
 								client.Send <- msgByte
 							}
 						}
-                    } else if msg.MessageType == common.MESSAGE_TYPE_GROUP {
-							sendGroupMessage(msg, s)
-                    } else {
+					} else if msg.MessageType == common.MESSAGE_TYPE_GROUP {
+						sendGroupMessage(msg, s)
+					} else {
 						clent, ok := s.Clients[msg.To]
 						if ok {
 							clent.Send <- message
@@ -138,8 +139,8 @@ func sendGroupMessage(msg *v1.Message, s *Server) {
 	// 		To:           msg.From,
 	// 		Content:      msg.Content,
 	// 		ContentType:  msg.ContentType,
-    //         Type:         msg.Type,
-    //         MessageType:  msg.MessageType,
+	//         Type:         msg.Type,
+	//         MessageType:  msg.MessageType,
 	// 		Url:          msg.Url,
 	// 	}
 
@@ -163,12 +164,12 @@ func saveMessage(message *v1.Message) {
 	// 	content = content[index:]
 
 	// 	dataBuffer, dataErr := base64.StdEncoding.DecodeString(content)
-    //     if dataErr != nil {
+	//     if dataErr != nil {
 	// 		return
 	// 	}
-    //     // 保存到静态目录
-    //     path := filepath.Join(staticBaseDir, url)
-    //     err := ioutil.WriteFile(path, dataBuffer, 0666)
+	//     // 保存到静态目录
+	//     path := filepath.Join(staticBaseDir, url)
+	//     err := ioutil.WriteFile(path, dataBuffer, 0666)
 	// 	if err != nil {
 	// 		return
 	// 	}
@@ -183,9 +184,9 @@ func saveMessage(message *v1.Message) {
 	// 	}
 	// 	contentType := util.GetContentTypeBySuffix(fileSuffix)
 	// 	url := uuid.New().String() + "." + fileSuffix
-    //     // 保存到静态目录
-    //     path := filepath.Join(staticBaseDir, url)
-    //     err := ioutil.WriteFile(path, message.File, 0666)
+	//     // 保存到静态目录
+	//     path := filepath.Join(staticBaseDir, url)
+	//     err := ioutil.WriteFile(path, message.File, 0666)
 	// 	if err != nil {
 	// 		return
 	// 	}
@@ -194,6 +195,6 @@ func saveMessage(message *v1.Message) {
 	// 	message.ContentType = contentType
 	// }
 
-    // biz.SaveMessage(*message)
+	// biz.SaveMessage(*message)
 	fmt.Println("saveMessage")
 }

@@ -1,8 +1,10 @@
 package websocket
 
 import (
+	"fmt"
 	"github.com/gorilla/websocket"
-	"github.com/gogo/protobuf/proto"
+	//"github.com/gogo/protobuf/proto"
+	"google.golang.org/protobuf/proto"
 	v1 "kratos-realworld/api/conduit/v1"
 	"kratos-realworld/internal/common"
 	"kratos-realworld/internal/kafka"
@@ -16,14 +18,17 @@ type Client struct {
 
 func (c *Client) Read() {
 	defer func() {
-        MyServer.Unregister <- c
+		MyServer.Unregister <- c
 		c.Conn.Close()
 	}()
 	for {
 		c.Conn.PongHandler()
 		_, message, err := c.Conn.ReadMessage()
+
+		fmt.Println("message:", message)
+
 		if err != nil {
-            MyServer.Unregister <- c
+			MyServer.Unregister <- c
 			c.Conn.Close()
 			break
 		}
