@@ -76,7 +76,7 @@ func (s *Server) Start() {
 				continue
 			}
 			
-			if msg.To == "" {
+			if msg.To != "" {
 				if msg.ContentType >= common.TEXT && msg.ContentType <= common.VIDEO {
 					_, exits := s.Clients[msg.From]
 					if exits {
