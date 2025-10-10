@@ -32,7 +32,7 @@ func (mr *MessageRepo) FetchGroupMessage(ctx context.Context, toUuid string) ([]
 	return nil, nil
 }
 
-func (mr *MessageRepo) SaveMessage(ctx context.Context, message bizChat.MessageTB) error {
+func (mr *MessageRepo) SaveMessage(message *bizChat.MessageTB) error {
 	// TODO: implement message saving logic
 	return nil
 }

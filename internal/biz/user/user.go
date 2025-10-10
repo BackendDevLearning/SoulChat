@@ -32,7 +32,7 @@ type UserRepo interface {
 	CreateUser(ctx context.Context, userRegister *UserTB) error
 	GetUserByPhone(ctx context.Context, phone string) (*UserTB, error)
 	GetPasswordByPhone(ctx context.Context, phone string) (string, error)
-
+	GetUserByUserID(ctx context.Context, userID uint32) (*UserTB, error)
 	UpdateUserPassword(ctx context.Context, phone string, newPasswordHash string) error
 	UpdateUserInfo(ctx context.Context, userID uint32, userInfo *UpdateUserInfoFields) error
 }

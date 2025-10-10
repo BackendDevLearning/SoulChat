@@ -1,19 +1,20 @@
 package websocket
 
 import (
-	// "encoding/base64"
-	// "io/ioutil"
-	// "path/filepath"
-	// "strings"
+	"encoding/base64"
+	"io/ioutil"
+	"path/filepath"
+	"strings"
 	"sync"
-	// "github.com/google/uuid"
+	"github.com/google/uuid"
 	//"github.com/gogo/protobuf/proto"
 	"google.golang.org/protobuf/proto"
 	v1 "kratos-realworld/api/conduit/v1"
 	"kratos-realworld/internal/common"
-	// "kratos-realworld/internal/biz"
+	bizChat "kratos-realworld/internal/biz/messageGroup"
 	// "kratos-realworld/internal/pkg/util"
 	"fmt"
+	// bizUser "kratos-realworld/internal/biz/user"
 )
 
 var MyServer = NewServer()
@@ -155,46 +156,50 @@ func sendGroupMessage(msg *v1.Message, s *Server) {
 // 保存消息，如果是文本消息直接保存，如果是文件，语音等消息，保存文件后，保存对应的文件路径
 func saveMessage(message *v1.Message) {
 	// // 如果上传的是base64字符串文件，解析文件保存
-	// if message.ContentType == 2 {
-	// 	url := uuid.New().String() + ".png"
-	// 	index := strings.Index(message.Content, "base64")
-	// 	index += 7
+	if message.ContentType == 2 {
+		url := uuid.New().String() + ".png"
+		index := strings.Index(message.Content, "base64")
+		index += 7
 
-	// 	content := message.Content
-	// 	content = content[index:]
+		content := message.Content
+		content = content[index:]
 
-	// 	dataBuffer, dataErr := base64.StdEncoding.DecodeString(content)
-	//     if dataErr != nil {
-	// 		return
-	// 	}
-	//     // 保存到静态目录
-	//     path := filepath.Join(staticBaseDir, url)
-	//     err := ioutil.WriteFile(path, dataBuffer, 0666)
-	// 	if err != nil {
-	// 		return
-	// 	}
-	// 	message.Url = url
-	// 	message.Content = ""
-	// } else if message.ContentType == 3 {
-	// 	// 普通的文件二进制上传
-	// 	fileSuffix := util.GetFileType(message.File)
-	// 	nullStr := ""
-	// 	if nullStr == fileSuffix {
-	// 		fileSuffix = strings.ToLower(message.FileSuffix)
-	// 	}
-	// 	contentType := util.GetContentTypeBySuffix(fileSuffix)
-	// 	url := uuid.New().String() + "." + fileSuffix
-	//     // 保存到静态目录
-	//     path := filepath.Join(staticBaseDir, url)
-	//     err := ioutil.WriteFile(path, message.File, 0666)
-	// 	if err != nil {
-	// 		return
-	// 	}
-	// 	message.Url = url
-	// 	message.File = nil
-	// 	message.ContentType = contentType
-	// }
+		dataBuffer, dataErr := base64.StdEncoding.DecodeString(content)
+	    if dataErr != nil {
+			return
+		}
+	    // 保存到静态目录
+	    path := filepath.Join(staticBaseDir, url)
+	    err := ioutil.WriteFile(path, dataBuffer, 0666)
+		if err != nil {
+			return
+		}
+		message.Url = url
+		message.Content = ""
+	} else if message.ContentType == 3 {
+		// 普通的文件二进制上传
+		fileSuffix := util.GetFileType(message.File)
+		nullStr := ""
+		if nullStr == fileSuffix {
+			fileSuffix = strings.ToLower(message.FileSuffix)
+		}
+		contentType := util.GetContentTypeBySuffix(fileSuffix)
+		url := uuid.New().String() + "." + fileSuffix
+	    // 保存到静态目录
+	    path := filepath.Join(staticBaseDir, url)
+	    err := ioutil.WriteFile(path, message.File, 0666)
+		if err != nil {
+			return
+		}
+		message.Url = url
+		message.File = nil
+		message.ContentType = contentType
+	}
 
-	// biz.SaveMessage(*message)
+	err := bizChat.MessageRepo.SaveMessage(&message)
+	if err != nil {
+		fmt.Println("save message error:", err.Error())
+		return
+	}
 	fmt.Println("saveMessage")
 }

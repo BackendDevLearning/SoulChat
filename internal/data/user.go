@@ -32,8 +32,41 @@ func (r *UserRepo) CreateUser(ctx context.Context, userRegister *bizUser.UserTB)
 	redisKey := UserRedisKey(UserCachePrefix, "Phone", userRegister.Phone)
 	_ = HSetMultiple(ctx, r.data, r.log, redisKey, userRegister)
 
+	redisKey := UserRedisKey(UserCachePrefix, "ID", userRegister.ID)
+	_ = HSetMultiple(ctx, r.data, r.log, redisKey, userRegister)
+
 	return nil
 }
+
+func (r *UserRepo) GetUserByUserID(ctx context.Context, userID uint32) (*bizUser.UserTB, error) {
+	user := &bizUser.UserTB{}
+	redisKey := UserRedisKey(UserCachePrefix, "ID", userID)
+
+	err := HGetMultiple(ctx, r.data, r.log, redisKey, user)
+	if err != nil {
+		r.log.Warnf("failed to get from cache, fallback to DB: %v", err)
+	} else {
+		return user, nil
+	}
+
+	result := r.data.DB().Where("id = ?", userID).First(user)
+
+	// 没查到用户，不算错误，返回nil, gorm.ErrRecordNotFound
+	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+		return nil, gorm.ErrRecordNotFound
+	}
+
+	// 数据库报错，如断开连接
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	// 即使缓存写入失败，也不会影响主流程，仅打印日志，不把错误传到service层
+	_ = HSetMultiple(ctx, r.data, r.log, redisKey, user)
+
+	return user, nil
+}
+	
 
 func (r *UserRepo) GetUserByPhone(ctx context.Context, phone string) (*bizUser.UserTB, error) {
 	user := &bizUser.UserTB{}
