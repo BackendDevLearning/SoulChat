@@ -27,3 +27,7 @@ func NewConduitService(gt *biz.GateWayUsecase, pc *biz.ProfileUsecase, mc *biz.M
 		mc:  mc,
 		log: log.NewHelper(logger)}
 }
+
+func (cs *ConduitService) GetMessageUseCase() *biz.MessageUseCase {
+	return cs.mc
+}

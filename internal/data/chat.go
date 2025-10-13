@@ -33,6 +33,9 @@ func (mr *MessageRepo) FetchGroupMessage(ctx context.Context, toUuid string) ([]
 }
 
 func (mr *MessageRepo) SaveMessage(message *bizChat.MessageTB) error {
-	// TODO: implement message saving logic
+	rv := mr.data.DB().Create(message)
+	if rv != nil {
+		return rv.Error
+	}
 	return nil
 }

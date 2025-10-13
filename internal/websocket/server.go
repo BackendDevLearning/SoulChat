@@ -2,22 +2,32 @@ package websocket
 
 import (
 	"encoding/base64"
+	"github.com/go-kratos/kratos/v2/log"
+	"github.com/google/uuid"
 	"io/ioutil"
+	"kratos-realworld/internal/biz"
+	"kratos-realworld/internal/pkg/util"
+	"os"
 	"path/filepath"
 	"strings"
 	"sync"
-	"github.com/google/uuid"
+	"time"
+
 	//"github.com/gogo/protobuf/proto"
 	"google.golang.org/protobuf/proto"
 	v1 "kratos-realworld/api/conduit/v1"
-	"kratos-realworld/internal/common"
 	bizChat "kratos-realworld/internal/biz/messageGroup"
+	"kratos-realworld/internal/common"
 	// "kratos-realworld/internal/pkg/util"
 	"fmt"
 	// bizUser "kratos-realworld/internal/biz/user"
 )
 
-var MyServer = NewServer()
+var MyServer *Server
+
+func InitWebsocketServer(mc *biz.MessageUseCase) {
+	MyServer = NewServer(mc)
+}
 
 type Server struct {
 	Clients    map[string]*Client
@@ -25,15 +35,17 @@ type Server struct {
 	Broadcast  chan []byte
 	Register   chan *Client
 	Unregister chan *Client
+	mc         *biz.MessageUseCase
 }
 
-func NewServer() *Server {
+func NewServer(mc *biz.MessageUseCase) *Server {
 	return &Server{
 		mutex:      &sync.Mutex{},
 		Clients:    make(map[string]*Client),
 		Broadcast:  make(chan []byte),
 		Register:   make(chan *Client),
 		Unregister: make(chan *Client),
+		mc:         mc,
 	}
 }
 
@@ -55,7 +67,9 @@ func (s *Server) Start() {
 	for {
 		select {
 		case conn := <-s.Register:
+			s.mutex.Lock()
 			s.Clients[conn.Name] = conn
+			s.mutex.Unlock()
 			msg := &v1.Message{
 				From:    "System",
 				To:      conn.Name,
@@ -65,10 +79,12 @@ func (s *Server) Start() {
 			conn.Send <- protoMsg
 
 		case conn := <-s.Unregister:
+			s.mutex.Lock()
 			if _, ok := s.Clients[conn.Name]; ok {
 				close(conn.Send)
 				delete(s.Clients, conn.Name)
 			}
+			s.mutex.Unlock()
 
 		case message := <-s.Broadcast:
 			msg := &v1.Message{}
@@ -80,13 +96,17 @@ func (s *Server) Start() {
 
 			if msg.To != "" {
 				if msg.ContentType >= common.TEXT && msg.ContentType <= common.VIDEO {
+					s.mutex.Lock()
 					_, exits := s.Clients[msg.From]
+					s.mutex.Unlock()
 					if exits {
-						saveMessage(msg)
+						s.saveMessage(msg)
 					}
 
 					if msg.ContentType == common.MESSAGE_TYPE_USER {
+						s.mutex.Lock()
 						client, ok := s.Clients[msg.To]
+						s.mutex.Unlock()
 						if ok {
 							msgByte, err := proto.Marshal(msg)
 							if err == nil {
@@ -96,12 +116,15 @@ func (s *Server) Start() {
 					} else if msg.MessageType == common.MESSAGE_TYPE_GROUP {
 						sendGroupMessage(msg, s)
 					} else {
+						s.mutex.Lock()
 						clent, ok := s.Clients[msg.To]
+						s.mutex.Unlock()
 						if ok {
 							clent.Send <- message
 						}
 					}
 				} else {
+					s.mutex.Lock()
 					for id, conn := range s.Clients {
 						select {
 						case conn.Send <- message:
@@ -110,6 +133,7 @@ func (s *Server) Start() {
 							delete(s.Clients, id)
 						}
 					}
+					s.mutex.Unlock()
 				}
 			}
 		}
@@ -154,29 +178,8 @@ func sendGroupMessage(msg *v1.Message, s *Server) {
 }
 
 // 保存消息，如果是文本消息直接保存，如果是文件，语音等消息，保存文件后，保存对应的文件路径
-func saveMessage(message *v1.Message) {
-	// // 如果上传的是base64字符串文件，解析文件保存
+func (s *Server) saveMessage(message *v1.Message) {
 	if message.ContentType == 2 {
-		url := uuid.New().String() + ".png"
-		index := strings.Index(message.Content, "base64")
-		index += 7
-
-		content := message.Content
-		content = content[index:]
-
-		dataBuffer, dataErr := base64.StdEncoding.DecodeString(content)
-	    if dataErr != nil {
-			return
-		}
-	    // 保存到静态目录
-	    path := filepath.Join(staticBaseDir, url)
-	    err := ioutil.WriteFile(path, dataBuffer, 0666)
-		if err != nil {
-			return
-		}
-		message.Url = url
-		message.Content = ""
-	} else if message.ContentType == 3 {
 		// 普通的文件二进制上传
 		fileSuffix := util.GetFileType(message.File)
 		nullStr := ""
@@ -185,21 +188,108 @@ func saveMessage(message *v1.Message) {
 		}
 		contentType := util.GetContentTypeBySuffix(fileSuffix)
 		url := uuid.New().String() + "." + fileSuffix
-	    // 保存到静态目录
-	    path := filepath.Join(staticBaseDir, url)
-	    err := ioutil.WriteFile(path, message.File, 0666)
+		// 保存到静态目录
+		path := filepath.Join(staticBaseDir, url)
+		err := ioutil.WriteFile(path, message.File, 0666)
 		if err != nil {
 			return
 		}
 		message.Url = url
 		message.File = nil
-		message.ContentType = contentType
+		message.ContentType = uint32(contentType)
+	} else if message.ContentType == 3 {
+		// 保存图片
+		message = ProcessImg(message)
 	}
 
-	err := bizChat.MessageRepo.SaveMessage(&message)
+	// 消息数据持久化到数据库
+	msg := ConvertToMessage(message)
+	err := s.mc.SaveMessage(msg)
 	if err != nil {
-		fmt.Println("save message error:", err.Error())
+		log.Error(err.Error())
 		return
 	}
-	fmt.Println("saveMessage")
+}
+
+func ProcessImg(message *v1.Message) *v1.Message {
+	var dataBuffer []byte
+	var fileSuffix string
+
+	if message.File != nil && len(message.File) > 0 {
+		// 图片直接是二进制数据流
+		dataBuffer = message.File
+		fileSuffix = strings.ToLower(message.FileSuffix)
+		if fileSuffix == "" {
+			fileSuffix = "bin" // 默认后缀
+		}
+	} else if strings.HasPrefix(message.Content, "data:") {
+		// 图片以base64形式传递过来
+		commaIndex := strings.Index(message.Content, ",")
+		if commaIndex < 0 {
+			log.Debug("base64 数据格式错误")
+			return nil
+		}
+
+		header := message.Content[:commaIndex]
+		content := message.Content[commaIndex+1:]
+
+		// 自动获取文件类型
+		if strings.Contains(header, "image/png") {
+			fileSuffix = "png"
+		} else if strings.Contains(header, "image/jpeg") {
+			fileSuffix = "jpg"
+		} else {
+			fileSuffix = "bin" // 默认
+		}
+
+		buf, err := base64.StdEncoding.DecodeString(content)
+		if err != nil {
+			log.Debug("base64 解码失败:", err)
+			return nil
+		}
+		dataBuffer = buf
+	} else {
+		log.Debug("Content 既不是文件二进制，也不是 base64，无法处理")
+		return nil
+	}
+
+	// 保存到静态目录
+	err := os.MkdirAll(staticBaseDir, 0755)
+	if err != nil {
+		log.Debug("创建目录失败")
+		log.Debug(err)
+		return nil
+	}
+	url := uuid.New().String() + "." + fileSuffix
+	path := filepath.Join(staticBaseDir, url)
+	if err := os.WriteFile(path, dataBuffer, 0644); err != nil {
+		log.Debug("写入文件失败:", err)
+		return nil
+	}
+
+	// 修改消息信息
+	message.Url = url
+	message.Content = ""
+	message.File = nil
+
+	return message
+}
+
+func ConvertToMessage(msg *v1.Message) *bizChat.MessageTB {
+	if msg == nil {
+		return nil
+	}
+	now := time.Now()
+
+	return &bizChat.MessageTB{
+		CreatedAt:   &now,
+		UpdatedAt:   &now,
+		FromUserID:  msg.From,
+		ToUserID:    msg.To,
+		Content:     msg.Content,
+		MessageType: uint16(msg.MessageType),
+		ContentType: uint16(msg.ContentType),
+		Url:         msg.Url,
+		Pic:         "",
+	}
 }

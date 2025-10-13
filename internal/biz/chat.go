@@ -20,8 +20,12 @@ func NewMessageUseCase(mr bizChat.MessageRepo, logger log.Logger) *MessageUseCas
 	}
 }
 
-func (mc *MessageUseCase) SaveMessage() {
-
+func (mc *MessageUseCase) SaveMessage(message *bizChat.MessageTB) error {
+	err := mc.mr.SaveMessage(message)
+	if err != nil {
+		return NewErr(ErrCodeMessageFailed, MESSAGE_FAILED, "Save message to database failed")
+	}
+	return nil
 }
 
 func (mc *MessageUseCase) GetMessages(ctx context.Context, messageReq common.MessageRequest) error {
@@ -29,7 +33,7 @@ func (mc *MessageUseCase) GetMessages(ctx context.Context, messageReq common.Mes
 	fmt.Println(MessageResponse)
 
 	if err != nil {
-		return NewErr(ErrCodeMessageFailed, MESSAGE_FAILED, "Message failed")
+		return NewErr(ErrCodeMessageFailed, MESSAGE_FAILED, "Get message failed")
 	}
 
 	return nil

@@ -43,3 +43,5 @@ internal/swagger-ui/dist
 internal/swagger-ui/openapi.yaml
 configs/config.yaml
 deploy/docker-compose.yaml
+
+cmd/conduit/static

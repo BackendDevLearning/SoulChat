@@ -158,7 +158,8 @@ func NewHTTPServer(c *conf.Server, jwtc *conf.JWT, s *service.ConduitService, lo
 	srv.Handle("/openapi.yaml", swaggerui.HandlerOpenapi())
 	srv.HandlePrefix("/swagger-ui/", swaggerui.Handler())
 
-	//srv.Handle("/ws", &websocketHandler{})
+	// s.mc 是 ConduitService 里已经初始化的 MessageUseCase
+	wsrv.InitWebsocketServer(s.GetMessageUseCase())
 	srv.Handle("/ws", NewWebsocketHandler(jwtc))
 
 	return srv

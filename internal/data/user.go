@@ -32,8 +32,8 @@ func (r *UserRepo) CreateUser(ctx context.Context, userRegister *bizUser.UserTB)
 	redisKey := UserRedisKey(UserCachePrefix, "Phone", userRegister.Phone)
 	_ = HSetMultiple(ctx, r.data, r.log, redisKey, userRegister)
 
-	redisKey := UserRedisKey(UserCachePrefix, "ID", userRegister.ID)
-	_ = HSetMultiple(ctx, r.data, r.log, redisKey, userRegister)
+	redisKeyID := UserRedisKey(UserCachePrefix, "ID", userRegister.ID)
+	_ = HSetMultiple(ctx, r.data, r.log, redisKeyID, userRegister)
 
 	return nil
 }
@@ -66,7 +66,6 @@ func (r *UserRepo) GetUserByUserID(ctx context.Context, userID uint32) (*bizUser
 
 	return user, nil
 }
-	
 
 func (r *UserRepo) GetUserByPhone(ctx context.Context, phone string) (*bizUser.UserTB, error) {
 	user := &bizUser.UserTB{}
