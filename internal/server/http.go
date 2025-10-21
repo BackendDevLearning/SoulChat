@@ -34,23 +34,12 @@ func NewWebsocketHandler(jwtc *conf.JWT) *websocketHandler {
 }
 
 func (h *websocketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	//user := r.URL.Query().Get("user")
-	//if user == "" {
-	//	fmt.Println("websocket missing 'user' query parameter")
-	//	_ = conn.Close()
-	//	return
-	//}
-
-	fmt.Println("开始建立WebSocket长连接")
-
 	// 将WebSocket服务也统一使用JWT验证，通过token取得userID
-	// 从query或header中获取token
+	// 从header或query中获取token
 	tokenString := r.Header.Get("Authorization")
 	if tokenString == "" {
 		tokenString = r.URL.Query().Get("token")
 	}
-
-	fmt.Println("tokenString:", tokenString)
 
 	if tokenString == "" {
 		http.Error(w, "missing token", http.StatusUnauthorized)
@@ -58,7 +47,6 @@ func (h *websocketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// 去掉Token前缀
 	auths := strings.SplitN(tokenString, " ", 2)
-	fmt.Println("auths:", auths)
 	if len(auths) == 2 && strings.EqualFold(auths[0], "Token") {
 		tokenString = auths[1]
 	}
@@ -81,7 +69,7 @@ func (h *websocketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// 取得userID
 	userID := uint32(claims["userid"].(float64))
-	fmt.Printf("[WS] 用户 %d 成功通过 JWT 鉴权\n\n", userID)
+	log.Debug("[WS] 用户 %d 成功通过JWT鉴权 ", userID)
 
 	// 允许跨域升级
 	var upGrader = websocket.Upgrader{
@@ -89,7 +77,7 @@ func (h *websocketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	conn, err := upGrader.Upgrade(w, r, nil)
 	if err != nil {
-		fmt.Println("websocket upgrade error:", err)
+		log.Debug("WebSocket upgrade error: ", err)
 		return
 	}
 

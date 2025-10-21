@@ -20,12 +20,6 @@ type Client struct {
 	closeOnce sync.Once
 }
 
-func (c *Client) Close() {
-	c.closeOnce.Do(func() {
-		c.Conn.Close()
-	})
-}
-
 const (
 	pongWait   = 60 * time.Second // 服务器等待客户端 pong 的最大时间
 	pingPeriod = 50 * time.Second // 服务器主动发送 ping 的周期，通常 < pongWait
@@ -34,7 +28,7 @@ const (
 func (c *Client) Read() {
 	defer func() {
 		MyServer.Unregister <- c
-		//c.Conn.Close()
+		c.Conn.Close()
 	}()
 
 	c.Conn.SetReadDeadline(time.Now().Add(pongWait))
@@ -51,8 +45,8 @@ func (c *Client) Read() {
 		log.Debug("message: ", message, "; err: ", err)
 
 		if err != nil {
-			//MyServer.Unregister <- c
-			//c.Conn.Close()
+			MyServer.Unregister <- c
+			c.Conn.Close()
 			break
 		}
 		msg := &v1.Message{}
@@ -66,7 +60,7 @@ func (c *Client) Read() {
 			pongByte, err2 := proto.Marshal(pong)
 			if err2 == nil {
 				//c.Conn.WriteMessage(websocket.BinaryMessage, pongByte)
-				c.Send <- pongByte // ✅ 发给写协程
+				c.Send <- pongByte // 发给写协程
 			}
 		} else {
 			// 直接放到消息队列里面，回调放到broadcast里面
@@ -77,8 +71,7 @@ func (c *Client) Read() {
 
 func (c *Client) Write() {
 	defer func() {
-		//c.Conn.Close()
-		c.Close()
+		c.Conn.Close()
 	}()
 
 	// 定时发送心跳包维持连接

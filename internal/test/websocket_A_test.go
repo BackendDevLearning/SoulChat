@@ -15,15 +15,12 @@ import (
 	"testing"
 )
 
-func TestWebSocket(t *testing.T) {
+func TestWebSocketA(t *testing.T) {
 	// 1. 建立 WebSocket 连接
 	tokenString := "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYmYiOjk3MTE3OTIwMCwidXNlcmlkIjo2fQ.7uGIGpfq6OUspnsVT3FlSNX3iUhPuXkwjLDwkC_5Cl0"
 	header := http.Header{}
 	header.Add("Authorization", fmt.Sprintf("Token %s", tokenString))
-
-	// 两种方式获取WebSocket服务的token
 	conn, _, err := websocket.DefaultDialer.Dial("ws://127.0.0.1:8000/ws", header)
-	//conn, _, err := websocket.DefaultDialer.Dial(fmt.Sprintf("ws://127.0.0.1:8000/ws?token=%s", tokenString), nil)
 
 	if err != nil {
 		log.Fatal("dial:", err)
@@ -32,7 +29,7 @@ func TestWebSocket(t *testing.T) {
 
 	// 2. 处理服务器 Ping，回复 Pong
 	conn.SetPingHandler(func(appData string) error {
-		log.Println("收到服务器 Ping，回复 Pong")
+		log.Println("A 收到服务器 Ping，回复 Pong")
 		return conn.WriteMessage(websocket.PongMessage, nil)
 	})
 
@@ -43,10 +40,10 @@ func TestWebSocket(t *testing.T) {
 		for {
 			_, msg, err := conn.ReadMessage()
 			if err != nil {
-				log.Println("ReadMessage 错误:", err)
+				log.Println("A ReadMessage 错误:", err)
 				return
 			}
-			log.Println("收到服务器消息:", string(msg))
+			log.Println("A 收到服务器消息:", string(msg))
 
 			// 收到注册确认信号后，通知主线程可以发消息
 			if strings.Contains(string(msg), "welcome!") {
@@ -56,50 +53,19 @@ func TestWebSocket(t *testing.T) {
 	}()
 
 	// 4. 准备要发送的 JSON 消息
-	// 1: 文字
-	//jsonMessage := `{
-	//	"avatar":       "1",
-	//	"fromUserName": "2",
-	//	"from":         "6",
-	//	"to":           "5",
-	//	"content":      "hello world",
-	//	"messageType":  1,
-	//	"contentType":  1,
-	//	"type":         "type",
-	//	"url":          "",
-	//	"fileSuffix":   "",
-	//	"file":         ""
-	//}`
-
-	// 2: 普通文件
-	//jsonMessage := `{
-	//	"avatar":       "1",
-	//	"fromUserName": "2",
-	//	"from":         "6",
-	//	"to":           "5",
-	//	"content":      "",
-	//	"messageType":  1,
-	//	"contentType":  2,
-	//	"type":         "type",
-	//	"url":          "http://localhost:3000",
-	//	"fileSuffix":   ".md",
-	//	"file":         "dGVzdGRhdGE="
-	//}`
-
-	// 3: 图片 base64
-	jsonMessage := fmt.Sprintf(`{
+	jsonMessage := `{
 		"avatar":       "1",
 		"fromUserName": "2",
 		"from":         "6",
 		"to":           "5",
-		"content":      "data:image/png;base64,%s",
+		"content":      "My name is A!",
 		"messageType":  1,
-		"contentType":  3,
+		"contentType":  1,
 		"type":         "type",
-		"url":          "http://localhost:3000",
-		"fileSuffix":   "png",
+		"url":          "",
+		"fileSuffix":   "",
 		"file":         ""
-	}`, imgBase64)
+	}`
 
 	// JSON → Go struct
 	var msg v1.Message
@@ -116,29 +82,29 @@ func TestWebSocket(t *testing.T) {
 	// 5. 发送一次业务消息
 	select {
 	case <-ready:
-		log.Println("收到ready信号，client在服务器注册完成，开始发送业务消息！")
+		log.Println("A 收到ready信号，client在服务器注册完成，开始发送业务消息！")
 	case <-time.After(5 * time.Second):
-		log.Println("注册超时！")
+		log.Println("A 注册超时！")
 	}
 
 	err = conn.WriteMessage(websocket.BinaryMessage, data)
 	if err != nil {
-		log.Println("发送业务消息失败:", err)
+		log.Println("A 发送业务消息失败:", err)
 	} else {
-		log.Println("发送业务消息成功")
+		log.Println("A 发送业务消息成功")
 	}
 
-	// 6. 循环发送消息（可按需加心跳或业务消息）
+	// 6. 循环发送心跳消息
 	go func() {
 		ticker := time.NewTicker(10 * time.Second)
 		defer ticker.Stop()
 		for range ticker.C {
 			err := conn.WriteMessage(websocket.PingMessage, nil)
 			if err != nil {
-				log.Println("心跳发送失败:", err)
+				log.Println("A 心跳发送失败:", err)
 				return
 			}
-			log.Println("心跳发送成功")
+			log.Println("A 心跳发送成功")
 		}
 	}()
 

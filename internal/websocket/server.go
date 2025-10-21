@@ -63,13 +63,12 @@ func ConsumerKafkaMsg(data []byte) {
 	MyServer.Broadcast <- data
 }
 
+// Start TODO 如果多端（app/微信小程序/网页）同时在线，可能需要考虑互斥锁的问题，目前先不用
 func (s *Server) Start() {
 	for {
 		select {
 		case conn := <-s.Register:
-			s.mutex.Lock()
 			s.Clients[conn.Name] = conn
-			s.mutex.Unlock()
 			msg := &v1.Message{
 				From:    "System",
 				To:      conn.Name,
@@ -79,12 +78,10 @@ func (s *Server) Start() {
 			conn.Send <- protoMsg
 
 		case conn := <-s.Unregister:
-			s.mutex.Lock()
 			if _, ok := s.Clients[conn.Name]; ok {
 				close(conn.Send)
 				delete(s.Clients, conn.Name)
 			}
-			s.mutex.Unlock()
 
 		case message := <-s.Broadcast:
 			msg := &v1.Message{}
@@ -96,17 +93,15 @@ func (s *Server) Start() {
 
 			if msg.To != "" {
 				if msg.ContentType >= common.TEXT && msg.ContentType <= common.VIDEO {
-					s.mutex.Lock()
+					// 1.文字 2.普通文件 3.图片 4.音频 5.视频
 					_, exits := s.Clients[msg.From]
-					s.mutex.Unlock()
 					if exits {
 						s.saveMessage(msg)
 					}
 
 					if msg.ContentType == common.MESSAGE_TYPE_USER {
-						s.mutex.Lock()
+						// 单聊
 						client, ok := s.Clients[msg.To]
-						s.mutex.Unlock()
 						if ok {
 							msgByte, err := proto.Marshal(msg)
 							if err == nil {
@@ -114,17 +109,16 @@ func (s *Server) Start() {
 							}
 						}
 					} else if msg.MessageType == common.MESSAGE_TYPE_GROUP {
+						// 群聊
 						sendGroupMessage(msg, s)
 					} else {
-						s.mutex.Lock()
 						clent, ok := s.Clients[msg.To]
-						s.mutex.Unlock()
 						if ok {
 							clent.Send <- message
 						}
 					}
 				} else {
-					s.mutex.Lock()
+					// 6.语音聊天 7.视频聊天
 					for id, conn := range s.Clients {
 						select {
 						case conn.Send <- message:
@@ -133,7 +127,6 @@ func (s *Server) Start() {
 							delete(s.Clients, id)
 						}
 					}
-					s.mutex.Unlock()
 				}
 			}
 		}
