@@ -4,7 +4,6 @@ import (
 	"encoding/base64"
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/google/uuid"
-	"io/ioutil"
 	"kratos-realworld/internal/biz"
 	"kratos-realworld/internal/pkg/util"
 	"os"
@@ -42,9 +41,9 @@ func NewServer(mc *biz.MessageUseCase) *Server {
 	return &Server{
 		mutex:      &sync.Mutex{},
 		Clients:    make(map[string]*Client),
-		Broadcast:  make(chan []byte),
-		Register:   make(chan *Client),
-		Unregister: make(chan *Client),
+		Broadcast:  make(chan []byte, 500),
+		Register:   make(chan *Client, 50),
+		Unregister: make(chan *Client, 50),
 		mc:         mc,
 	}
 }
@@ -170,29 +169,16 @@ func sendGroupMessage(msg *v1.Message, s *Server) {
 	fmt.Println("sendGroupMessage")
 }
 
-// 保存消息，如果是文本消息直接保存，如果是文件，语音等消息，保存文件后，保存对应的文件路径
+// 保存消息
+// 主要实现文件上传到文件服务器 + 消息存储到数据库
+// TODO 目前暂时将文件保存到本地静态目录下，后续考虑单独起文件服务器
 func (s *Server) saveMessage(message *v1.Message) {
 	if message.ContentType == 2 {
 		// 普通的文件二进制上传
-		fileSuffix := util.GetFileType(message.File)
-		nullStr := ""
-		if nullStr == fileSuffix {
-			fileSuffix = strings.ToLower(message.FileSuffix)
-		}
-		contentType := util.GetContentTypeBySuffix(fileSuffix)
-		url := uuid.New().String() + "." + fileSuffix
-		// 保存到静态目录
-		path := filepath.Join(staticBaseDir, url)
-		err := ioutil.WriteFile(path, message.File, 0666)
-		if err != nil {
-			return
-		}
-		message.Url = url
-		message.File = nil
-		message.ContentType = uint32(contentType)
+		message = SaveFile(message)
 	} else if message.ContentType == 3 {
 		// 保存图片
-		message = ProcessImg(message)
+		message = SaveImg(message)
 	}
 
 	// 消息数据持久化到数据库
@@ -204,56 +190,55 @@ func (s *Server) saveMessage(message *v1.Message) {
 	}
 }
 
-func ProcessImg(message *v1.Message) *v1.Message {
+func SaveFile(message *v1.Message) *v1.Message {
+	dataBuffer, fileSuffix := ProcessBytes(message)
+
+	contentType := util.GetContentTypeBySuffix(fileSuffix)
+	url := uuid.New().String() + "." + fileSuffix
+
+	// 保存到静态目录
+	err := os.MkdirAll(staticBaseDir, 0755)
+	if err != nil {
+		log.Debug("创建目录失败:", err)
+		return nil
+	}
+	path := filepath.Join(staticBaseDir, url)
+	if err := os.WriteFile(path, dataBuffer, 0644); err != nil {
+		log.Debug("写入文件失败:", err)
+		return nil
+	}
+
+	// 修改消息信息
+	message.ContentType = uint32(contentType)
+	message.Url = url
+	message.File = nil
+
+	return message
+}
+
+func SaveImg(message *v1.Message) *v1.Message {
 	var dataBuffer []byte
 	var fileSuffix string
 
 	if message.File != nil && len(message.File) > 0 {
 		// 图片直接是二进制数据流
-		dataBuffer = message.File
-		fileSuffix = strings.ToLower(message.FileSuffix)
-		if fileSuffix == "" {
-			fileSuffix = "bin" // 默认后缀
-		}
+		dataBuffer, fileSuffix = ProcessBytes(message)
 	} else if strings.HasPrefix(message.Content, "data:") {
 		// 图片以base64形式传递过来
-		commaIndex := strings.Index(message.Content, ",")
-		if commaIndex < 0 {
-			log.Debug("base64 数据格式错误")
-			return nil
-		}
-
-		header := message.Content[:commaIndex]
-		content := message.Content[commaIndex+1:]
-
-		// 自动获取文件类型
-		if strings.Contains(header, "image/png") {
-			fileSuffix = "png"
-		} else if strings.Contains(header, "image/jpeg") {
-			fileSuffix = "jpg"
-		} else {
-			fileSuffix = "bin" // 默认
-		}
-
-		buf, err := base64.StdEncoding.DecodeString(content)
-		if err != nil {
-			log.Debug("base64 解码失败:", err)
-			return nil
-		}
-		dataBuffer = buf
+		dataBuffer, fileSuffix = ProcessBase64(message)
 	} else {
 		log.Debug("Content 既不是文件二进制，也不是 base64，无法处理")
 		return nil
 	}
 
+	url := uuid.New().String() + "." + fileSuffix
+
 	// 保存到静态目录
 	err := os.MkdirAll(staticBaseDir, 0755)
 	if err != nil {
-		log.Debug("创建目录失败")
-		log.Debug(err)
+		log.Debug("创建目录失败:", err)
 		return nil
 	}
-	url := uuid.New().String() + "." + fileSuffix
 	path := filepath.Join(staticBaseDir, url)
 	if err := os.WriteFile(path, dataBuffer, 0644); err != nil {
 		log.Debug("写入文件失败:", err)
@@ -266,6 +251,45 @@ func ProcessImg(message *v1.Message) *v1.Message {
 	message.File = nil
 
 	return message
+}
+
+func ProcessBytes(message *v1.Message) (dataBuffer []byte, fileSuffix string) {
+	fileSuffix = util.GetFileType(message.File)
+	if fileSuffix == "" {
+		fileSuffix = strings.ToLower(message.FileSuffix)
+	}
+
+	dataBuffer = message.File
+	return dataBuffer, fileSuffix
+}
+
+// base64编码数据格式："data:image/png;base64,content"
+func ProcessBase64(message *v1.Message) (dataBuffer []byte, fileSuffix string) {
+	commaIndex := strings.Index(message.Content, ",")
+	if commaIndex < 0 {
+		log.Debug("base64 数据格式错误")
+		return nil, ""
+	}
+
+	header := message.Content[:commaIndex]
+	content := message.Content[commaIndex+1:]
+
+	// 自动获取文件类型
+	if strings.Contains(header, "image/png") {
+		fileSuffix = "png"
+	} else if strings.Contains(header, "image/jpeg") {
+		fileSuffix = "jpg"
+	} else {
+		fileSuffix = "bin" // 默认
+	}
+
+	dataBuffer, err := base64.StdEncoding.DecodeString(content)
+	if err != nil {
+		log.Debug("base64 解码失败:", err)
+		return nil, ""
+	}
+
+	return dataBuffer, fileSuffix
 }
 
 func ConvertToMessage(msg *v1.Message) *bizChat.MessageTB {

@@ -42,8 +42,6 @@ func (c *Client) Read() {
 		//c.Conn.PongHandler()
 		_, message, err := c.Conn.ReadMessage()
 
-		log.Debug("message: ", message, "; err: ", err)
-
 		if err != nil {
 			MyServer.Unregister <- c
 			c.Conn.Close()
