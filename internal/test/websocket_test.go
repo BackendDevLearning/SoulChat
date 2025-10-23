@@ -1,10 +1,10 @@
 package test
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/gorilla/websocket"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
@@ -55,60 +55,12 @@ func TestWebSocket(t *testing.T) {
 		}
 	}()
 
-	// 4. 准备要发送的 JSON 消息
-	// 1: 文字
-	//jsonMessage := `{
-	//	"avatar":       "1",
-	//	"fromUserName": "2",
-	//	"from":         "6",
-	//	"to":           "5",
-	//	"content":      "hello world",
-	//	"messageType":  1,
-	//	"contentType":  1,
-	//	"type":         "type",
-	//	"url":          "",
-	//	"fileSuffix":   "",
-	//	"file":         ""
-	//}`
+	// 4. 模拟前端构造proto消息，并转为二进制
+	//msg := CreateTextMessage()
+	msg := CreateFileMessage()
+	//msg := CreateImageMessage()
 
-	// 2: 普通文件
-	//jsonMessage := `{
-	//	"avatar":       "1",
-	//	"fromUserName": "2",
-	//	"from":         "6",
-	//	"to":           "5",
-	//	"content":      "",
-	//	"messageType":  1,
-	//	"contentType":  2,
-	//	"type":         "type",
-	//	"url":          "http://localhost:3000",
-	//	"fileSuffix":   ".md",
-	//	"file":         "dGVzdGRhdGE="
-	//}`
-
-	// 3: 图片 base64
-	jsonMessage := fmt.Sprintf(`{
-		"avatar":       "1",
-		"fromUserName": "2",
-		"from":         "6",
-		"to":           "5",
-		"content":      "data:image/png;base64,%s",
-		"messageType":  1,
-		"contentType":  3,
-		"type":         "type",
-		"url":          "http://localhost:3000",
-		"fileSuffix":   "png",
-		"file":         ""
-	}`, imgBase64)
-
-	// JSON → Go struct
-	var msg v1.Message
-	if err := json.Unmarshal([]byte(jsonMessage), &msg); err != nil {
-		log.Fatal("unmarshal json:", err)
-	}
-
-	// Go struct → protobuf 二进制
-	data, err := proto.Marshal(&msg)
+	data, err := proto.Marshal(msg)
 	if err != nil {
 		log.Fatal("marshal proto:", err)
 	}
@@ -143,4 +95,87 @@ func TestWebSocket(t *testing.T) {
 	}()
 
 	select {}
+}
+
+// 1. 生成文本消息
+func CreateTextMessage() *v1.Message {
+	return &v1.Message{
+		Avatar:       "1",
+		FromUserName: "2",
+		From:         "6",
+		To:           "5",
+		Content:      "hello world!",
+		MessageType:  1,
+		ContentType:  1,
+		Type:         "type",
+		Url:          "",
+		FileSuffix:   "",
+		File:         nil,
+	}
+}
+
+// 2. 生成文件消息
+func CreateFileMessage() *v1.Message {
+	filePath := "data/attention is all you need.pdf"
+
+	fileBytes, err := os.ReadFile(filePath)
+	if err != nil {
+		log.Fatal("读取文件失败:", err)
+	}
+
+	return &v1.Message{
+		Avatar:       "1",
+		FromUserName: "2",
+		From:         "6",
+		To:           "5",
+		Content:      "",
+		MessageType:  1,
+		ContentType:  2,
+		Type:         "type",
+		Url:          "http://localhost:3000",
+		FileSuffix:   "pdf",
+		File:         fileBytes,
+	}
+}
+
+// 3. 生成图片消息
+func CreateImageMessage() *v1.Message {
+	// Base64编码
+	//content := "data:image/png;base64," + data.GetImgBase64()
+	//return &v1.Message{
+	//	Avatar:       "1",
+	//	FromUserName: "2",
+	//	From:         "6",
+	//	To:           "5",
+	//	Content:      content,
+	//	MessageType:  1,
+	//	ContentType:  3,
+	//	Type:         "type",
+	//	Url:          "http://localhost:3000",
+	//	FileSuffix:   "",
+	//	File:         nil,
+	//}
+
+	// 文件字节流
+	//filePath := "data/sky.jpg"
+	filePath := "data/sky_compress.jpg"
+
+	fileBytes, err := os.ReadFile(filePath)
+	if err != nil {
+		log.Fatal("读取文件失败:", err)
+	}
+
+	return &v1.Message{
+		Avatar:       "1",
+		FromUserName: "2",
+		From:         "6",
+		To:           "5",
+		Content:      "",
+		MessageType:  1,
+		ContentType:  3,
+		Type:         "type",
+		Url:          "http://localhost:3000",
+		FileSuffix:   "jpg",
+		File:         fileBytes,
+	}
 }

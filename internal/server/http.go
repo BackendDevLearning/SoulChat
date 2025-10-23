@@ -69,7 +69,7 @@ func (h *websocketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// 取得userID
 	userID := uint32(claims["userid"].(float64))
-	log.Debug("[WS] 用户 %d 成功通过JWT鉴权 ", userID)
+	log.Debugf("[WS] 用户 %d 成功通过JWT鉴权 ", userID)
 
 	// 允许跨域升级
 	var upGrader = websocket.Upgrader{

@@ -9,7 +9,6 @@ import (
 func TestWebSocketAB(t *testing.T) {
 	go TestWebSocketA(t) // 启动客户端 A
 
-	//time.Sleep(5000 * time.Millisecond)
 	go TestWebSocketB(t) // 启动客户端 B
 
 	// 阻塞主 goroutine，防止程序退出

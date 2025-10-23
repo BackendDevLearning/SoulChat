@@ -47,7 +47,11 @@ func Send(data []byte) {
 	}
 	be := sarama.ByteEncoder(data)
 	// 把二进制消息发到 kafka
-	producer.Input() <- &sarama.ProducerMessage{Topic: topic, Key: nil, Value: be}
+	producer.Input() <- &sarama.ProducerMessage{
+		Topic: topic,
+		Key:   nil, // 默认采用轮询
+		Value: be,
+	}
 }
 
 func Close() {
