@@ -227,14 +227,20 @@ message Message {
 }
 
 message GetMessagesRequest {
-  int32 MessageType = 1;
-  string Uuid = 2;
-  string FriendUsername = 3;
+  int32 messageType = 1;  // 消息类型，1.单聊 2.群聊
+  string uuid = 2;        // 当前用户uuid
+  string friendUuid = 3;  // 好友用户uuid(单聊) 或 群聊uuid(群聊)
+  int32 page = 4;         // 分页页码
+  int32 pageSize = 5;     // 分页每页数量
 }
 
 message GetMessagesReply {
   int32 code = 1;
   Res res = 2;
+  repeated Message data = 3;  // 消息列表
+  int32 total = 4;           // 总消息数
+  int32 page = 5;            // 当前页码
+  int32 pageSize = 6;        // 每页数量
 }
 
 

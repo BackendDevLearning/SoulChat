@@ -10,9 +10,11 @@ import (
 func ConvertToMessage(req *v1.GetMessagesRequest) *common.MessageRequest {
 
 	return &common.MessageRequest{
-		MessageType:    req.MessageType,
-		Uuid:           req.Uuid,
-		FriendUsername: req.FriendUsername,
+		MessageType: req.MessageType,
+		Uuid:        req.Uuid,
+		FriendUuid:  req.FriendUuid,
+		Page:        req.Page,
+		PageSize:    req.PageSize,
 	}
 }
 
