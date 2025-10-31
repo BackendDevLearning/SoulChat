@@ -23,40 +23,34 @@ func NewMessageRepo(data *model.Data, logger log.Logger) bizChat.MessageRepo {
 	}
 }
 
+// 分页查询
 func (mr *MessageRepo) GetMessages(ctx context.Context, message common.MessageRequest) ([]common.MessageResponse, error) {
-	messageList := []common.MessageResponse{}
-	// 分页查询 1. 分页offset  2. 游标cursor
-	offset := (message.Page - 1) * message.PageSize
-	// 游标cursor
-	cursor := offset + message.PageSize
-	// 单聊消息
-	if message.MessageType == 1 {
-		rv := mr.data.DB().Table("t_message").
-			Where("(from_uuid = ? AND to_uuid = ?) OR (from_uuid = ? AND to_uuid = ?)",
-				message.Uuid, message.FriendUuid, message.FriendUuid, message.Uuid).
-			Order("created_at ASC").
-			Limit(int(cursor)).
-			Offset(int(offset)).
-			Find(&messageList)
-		if rv != nil {
-			return nil, rv.Error
-		}
-	}
-	// 群聊消息
-	if message.MessageType == 2 {
-		rv := mr.data.DB().Table("t_message").
-			Where("to_uuid = ?", message.FriendUuid).
-			Order("created_at ASC").
-			Limit(int(cursor)).
-			Offset(int(offset)).
-			Find(&messageList)
-		if rv != nil {
-			return nil, rv.Error
-		}
-	}
+    var messageList []common.MessageResponse
 
-	return messageList, nil
+    offset := (message.Page - 1) * message.PageSize
+    pageSize := int(message.PageSize)
+    if pageSize <= 0 {
+        pageSize = 20 // 或其他默认值
+    }
+    db := mr.data.DB().WithContext(ctx).Table("t_message").Order("created_at ASC")
+
+    if message.MessageType == 1 {
+        db = db.Where("(from_uuid = ? AND to_uuid = ?) OR (from_uuid = ? AND to_uuid = ?)",
+            message.Uuid, message.FriendUuid, message.FriendUuid, message.Uuid)
+    } else if message.MessageType == 2 {
+        db = db.Where("to_uuid = ?", message.FriendUuid)
+    } else {
+        return nil, fmt.Errorf("unknown message type: %d", message.MessageType)
+    }
+
+    res := db.Limit(pageSize).Offset(offset).Find(&messageList)
+    if res.Error != nil {
+        return nil, res.Error
+    }
+
+    return messageList, nil
 }
+
 
 func (mr *MessageRepo) FetchGroupMessage(ctx context.Context, toUuid string) ([]common.MessageResponse, error) {
 	return nil, nil
