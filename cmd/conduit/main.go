@@ -46,17 +46,37 @@ func newApp(logger log.Logger, hs *http.Server, gs *grpc.Server) *kratos.App {
 	)
 }
 
+func initLogger(bc conf.Bootstrap) log.Logger {
+	logConf := &conf.Log{
+		Director:      bc.Log.Director,  // 日志目录
+		LogInConsole:  true,              // 开发时输出到控制台
+		Format:        bc.Log.Format,            // 生产环境用 json
+		StacktraceKey: "stacktrace",
+		EncodeLevel:   "LowercaseLevelEncoder",
+	}
+	
+	// 创建不同级别的核心
+	debugCore := core.NewZapCore(zapcore.DebugLevel, logConf)
+	infoCore := core.NewZapCore(zapcore.InfoLevel, logConf)
+	warnCore := core.NewZapCore(zapcore.WarnLevel, logConf)
+	errorCore := core.NewZapCore(zapcore.ErrorLevel, logConf)
+	
+	// 组合核心
+	teeCore := zapcore.NewTee(debugCore, infoCore, warnCore, errorCore)
+	
+	// 创建 Zap Logger
+	zapLogger := zap.New(teeCore, 
+		zap.AddCaller(),      // 添加调用信息
+		zap.AddCallerSkip(1), // 跳过一层调用栈
+	)
+	
+	// 适配成 Kratos Logger
+	return core.NewZapLoggerAdapter(zapLogger)
+}
+
 func main() {
 	flag.Parse()
-	logger := log.With(log.NewStdLogger(os.Stdout),
-		"ts", log.DefaultTimestamp,
-		"caller", log.DefaultCaller,
-		"service.id", id,
-		"service.name", Name,
-		"service.version", Version,
-		"trace_id", tracing.TraceID(),
-		"span_id", tracing.SpanID(),
-	)
+
 	c := config.New(
 		config.WithSource(
 			file.NewSource(flagconf),
@@ -72,7 +92,10 @@ func main() {
 	if err := c.Scan(&bc); err != nil {
 		panic(err)
 	}
-
+	logger := initLogger(bc)
+	
+	// 设置全局 logger
+	log.SetLogger(logger)
 	app, cleanup, err := initApp(bc.Server, bc.Data, bc.Jwt, logger)
 	if err != nil {
 		panic(err)
