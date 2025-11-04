@@ -1,11 +1,11 @@
 package core
 
 import (
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
-	"im-service/app/chat/service/internal/conf"
-	"os"
-	"time"
+    "go.uber.org/zap"
+    "go.uber.org/zap/zapcore"
+    conf "kratos-realworld/internal/conf"
+    "os"
+    "time"
 )
 
 type ZapCore struct {
@@ -32,6 +32,7 @@ func (z *ZapCore) WriteSyncer(formats ...string) zapcore.WriteSyncer {
 		CutterWithFormats(formats...),
 	)
 
+	// 是否输出到终端
 	if z.logConf.LogInConsole {
 		return zapcore.AddSync(os.Stdout)
 	}
@@ -56,7 +57,7 @@ func (z *ZapCore) Check(entry zapcore.Entry, check *zapcore.CheckedEntry) *zapco
 
 func (z *ZapCore) Write(entry zapcore.Entry, fields []zapcore.Field) error {
 	for i := 0; i < len(fields); i++ {
-		if fields[i].Key == "business" || fields[i].Key == "folder" || fields[i].Key == "directory" {
+		if fields[i].Key == "service" || fields[i].Key == "biz" || fields[i].Key == "data" {
 			syncer := z.WriteSyncer(fields[i].String)
 			z.Core = zapcore.NewCore(z.DiyEncoder(), syncer, z.level)
 		}

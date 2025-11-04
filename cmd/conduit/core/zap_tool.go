@@ -1,12 +1,11 @@
 package core
 
 import (
-	"fmt"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
-	"im-service/app/chat/service/internal/conf"
-	"im-service/app/chat/service/utils"
-	"os"
+    "fmt"
+    "go.uber.org/zap"
+    "go.uber.org/zap/zapcore"
+    conf "kratos-realworld/internal/conf"
+    "os"
 )
 
 // Levels 根据字符串转化为 zapcore.Levels
@@ -25,11 +24,11 @@ func Levels(levelStr string) []zapcore.Level {
 // Zap 获取 zap.Logger
 // Author [SliverHorn](https://github.com/SliverHorn)
 func Zap(conf *conf.Log) (logger *zap.Logger) {
-	if ok, _ := utils.PathExists(conf.Director); !ok { // 判断是否有Director文件夹
-		fmt.Printf("create %v directory\n", conf.Director)
-		_ = os.Mkdir(conf.Director, os.ModePerm)
-	}
-	levels := Levels(conf.Level)
+    if _, err := os.Stat(conf.Director); os.IsNotExist(err) { // 判断是否有Director文件夹
+        fmt.Printf("create %v directory\n", conf.Director)
+        _ = os.Mkdir(conf.Director, os.ModePerm)
+    }
+    levels := Levels(conf.Level)
 	length := len(levels)
 	cores := make([]zapcore.Core, 0, length)
 	for i := 0; i < length; i++ {

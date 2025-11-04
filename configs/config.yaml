@@ -37,3 +37,11 @@ jwt:
   secret: "hello"
   expire: "24h"
 
+log:
+  director: "./logs"
+  level: "debug"
+  format: "console"           # console 或 json
+  stacktrace_key: "stacktrace"
+  encode_level: "LowercaseLevelEncoder"
+  log_in_console: false
+  show_line: true
