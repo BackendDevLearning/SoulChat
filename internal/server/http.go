@@ -95,13 +95,10 @@ func (h *websocketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func NewSkipRoutersMatcher() selector.MatchFunc {
 
 	skipRouters := map[string]struct{}{
-		"/realworld.v1.Conduit/Login":        {},
-		"/realworld.v1.Conduit/Register":     {},
-		"/realworld.v1.Conduit/GetArticle":   {},
-		"/realworld.v1.Conduit/ListArticles": {},
-		"/realworld.v1.Conduit/GetComments":  {},
-		"/realworld.v1.Conduit/GetTags":      {},
-		"/realworld.v1.Conduit/GetProfile":   {},
+		"/realworld.v1.Conduit/Register":   {},
+		"/realworld.v1.Conduit/Login":      {},
+		"/realworld.v1.Conduit/LoginBySms": {},
+		"/realworld.v1.Conduit/SendSms":    {},
 	}
 
 	return func(ctx context.Context, operation string) bool {

@@ -10,6 +10,7 @@ message Bootstrap {
   Data data = 2;
   JWT jwt = 3;
   Log log = 4;
+  Sms sms = 5;
 }
 
 message Server {
@@ -74,4 +75,39 @@ message Log {
   string encode_level = 5;    // LowercaseLevelEncoder|CapitalLevelEncoder 等
   bool log_in_console = 6;    // 是否输出到控制台
   bool show_line = 7;         // 是否显示调用行
+}
+
+message Sms {
+  string access_key_id = 1;    // 阿里云访问密钥
+  string access_key_secret = 2;
+  string endpoint = 3;         // 短信服务结点, 区分国内和国际
+  string sign_name = 4;        // 短信签名
+  string template_code = 5;    // 短信模板CODE
+
+  // 验证码配置
+  message VerificationCode {
+    int32 length = 1;          // 验证码长度, 默认6
+    string expire = 2;         // 过期时间, 如 "5m", "10m"
+    int32 max_retry = 3;       // 用户最大重试次数
+    bool debug = 4;            // 调试模式, 打印验证码到日志
+  }
+
+  VerificationCode verification_code = 6;
+
+  // 限流配置
+  message RateLimit {
+    int32 max_requests_per_minute = 1;  // 每分钟最大请求数
+    int32 max_requests_per_hour = 2;    // 每小时最大请求数
+    int32 max_requests_per_day = 3;     // 每天最大请求数
+  }
+
+  RateLimit rate_limit = 7;
+
+  // 重试配置
+  message Retry {
+    int32 max_attempts = 1;     // 系统最大重试次数
+    string backoff = 2;         // 退避策略, 如 "1s", "2s"
+  }
+
+  Retry retry = 8;
 }

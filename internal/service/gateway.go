@@ -47,6 +47,44 @@ func (cs *ConduitService) Login(ctx context.Context, req *v1.LoginRequest) (*v1.
 	}, nil
 }
 
+func (cs *ConduitService) LoginBySms(ctx context.Context, req *v1.LoginBySmsRequest) (*v1.LoginReply, error) {
+	res, err := cs.gt.LoginBySms(ctx, req.Phone, req.Code)
+
+	if err != nil {
+		log.Printf("Login error: %v", err)
+
+		return &v1.LoginReply{
+			Code:  1,
+			Res:   ErrorToRes(err),
+			Token: "",
+		}, nil
+	}
+
+	return &v1.LoginReply{
+		Code:  0,
+		Res:   ErrorToRes(err),
+		Token: res.Token,
+	}, nil
+}
+
+func (cs *ConduitService) SendSms(ctx context.Context, req *v1.SendSmsRequest) (*v1.SendSmsReply, error) {
+	err := cs.gt.SendSms(ctx, req.Phone)
+
+	if err != nil {
+		log.Printf("SendSms error: %v", err)
+
+		return &v1.SendSmsReply{
+			Code: 1,
+			Res:  ErrorToRes(err),
+		}, nil
+	}
+
+	return &v1.SendSmsReply{
+		Code: 0,
+		Res:  ErrorToRes(err),
+	}, nil
+}
+
 func (cs *ConduitService) UpdateUserPassword(ctx context.Context, req *v1.UpdateUserPwdRequest) (*v1.UpdateUserPwdReply, error) {
 	err := cs.gt.UpdateUserPassword(ctx, req.Phone, req.OldPassword, req.NewPassword)
 	if err != nil {

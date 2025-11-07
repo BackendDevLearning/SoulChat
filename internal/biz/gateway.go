@@ -15,17 +15,19 @@ import (
 )
 
 type GateWayUsecase struct {
-	ur bizUser.UserRepo
-	pr bizProfile.ProfileRepo
+	ur   bizUser.UserRepo
+	pr   bizProfile.ProfileRepo
+	smsr bizUser.SmsRepo
 
 	jwtc *conf.JWT
 	log  *log.Helper
 }
 
-func NewGateWayUsecase(ur bizUser.UserRepo, pr bizProfile.ProfileRepo, jwtc *conf.JWT, logger log.Logger) *GateWayUsecase {
+func NewGateWayUsecase(ur bizUser.UserRepo, pr bizProfile.ProfileRepo, smsr bizUser.SmsRepo, jwtc *conf.JWT, logger log.Logger) *GateWayUsecase {
 	return &GateWayUsecase{
 		ur:   ur,
 		pr:   pr,
+		smsr: smsr,
 		jwtc: jwtc,
 		log:  log.NewHelper(logger),
 	}
@@ -114,6 +116,66 @@ func (gc *GateWayUsecase) Login(ctx context.Context, phone string, password stri
 		UserName: res.UserName,
 		Token:    token,
 	}, nil
+}
+
+func (gc *GateWayUsecase) LoginBySms(ctx context.Context, phone string, inputCode string) (*UserLoginReply, error) {
+	if !IsValidPhone(phone) {
+		return nil, NewErr(ErrCodeInvalidPhone, INVALID_PHONE, "invalid phone number format")
+	}
+
+	res, err := gc.ur.GetUserByPhone(ctx, phone)
+
+	// 查询，判断用户是否已经注册
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, NewErr(ErrCodeDBQueryFailed, DB_QUERY_FAILED, "failed to query user by phone")
+	}
+	if res == nil {
+		return nil, NewErr(ErrCodeUserNotFound, USER_NOT_FOUND, "phone number not registered")
+	}
+
+	// 短信验证码输入错误
+	if ok, _ := gc.smsr.VerifyCode(ctx, phone, inputCode); !ok {
+		return nil, NewErr(ErrCodeInvalidVerificationCode, INVALID_VERIFICATION_CODE, "SMS verification code is incorrect")
+	}
+
+	token, err := gc.generateToken(res.ID)
+	if err != nil {
+		return nil, NewErr(ErrCodeCreateTokenFailed, CREATE_TOKEN_FAILED, "failed to create token")
+	}
+
+	return &UserLoginReply{
+		Phone:    res.Phone,
+		UserName: res.UserName,
+		Token:    token,
+	}, nil
+}
+
+func (gc *GateWayUsecase) SendSms(ctx context.Context, phone string) error {
+	if !IsValidPhone(phone) {
+		return NewErr(ErrCodeInvalidPhone, INVALID_PHONE, "invalid phone number format")
+	}
+
+	res, err := gc.ur.GetUserByPhone(ctx, phone)
+
+	// 查询，判断用户是否已经注册
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		return NewErr(ErrCodeDBQueryFailed, DB_QUERY_FAILED, "failed to query user by phone")
+	}
+	if res == nil {
+		return NewErr(ErrCodeUserNotFound, USER_NOT_FOUND, "phone number not registered")
+	}
+
+	code, err := gc.smsr.SendCode(ctx, phone)
+	if err != nil {
+		return NewErr(ErrCodeSendSmsFailed, SEND_SMS_FAILED, "failed to send SMS")
+	}
+
+	err = gc.smsr.SaveCode(ctx, phone, code)
+	if err != nil {
+		return NewErr(ErrCodeSendSmsFailed, SEND_SMS_FAILED, "failed to save SMS verification code to cache")
+	}
+
+	return nil
 }
 
 func (gc *GateWayUsecase) UpdateUserPassword(ctx context.Context, phone, oldPassword, newPassword string) error {

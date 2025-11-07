@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"kratos-realworld/cmd/conduit/core"
 	"kratos-realworld/internal/conf"
 	"kratos-realworld/internal/kafka"
 	wsrv "kratos-realworld/internal/websocket"
@@ -79,8 +80,8 @@ func main() {
 		"trace.id", tracing.TraceID(),
 		"span.id", tracing.SpanID(),
 	)
-	
-	app, cleanup, err := initApp(bc.Server, bc.Data, bc.Jwt, logger)
+
+	app, cleanup, err := initApp(bc.Server, bc.Data, bc.Jwt, logger, bc.Sms)
 	if err != nil {
 		panic(err)
 	}

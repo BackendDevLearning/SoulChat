@@ -23,6 +23,20 @@ service Conduit {
     };
   }
 
+  rpc LoginBySms(LoginBySmsRequest) returns (LoginReply) {
+    option (google.api.http) = {
+      post : "/api/users/login/sms",
+      body : "*",
+    };
+  }
+
+  rpc SendSms(SendSmsRequest) returns (SendSmsReply) {
+    option (google.api.http) = {
+      post : "/api/users/sendSms",
+      body : "*",
+    };
+  }
+
   rpc UpdateUserPassword(UpdateUserPwdRequest) returns (UpdateUserPwdReply) {
     option (google.api.http) = {
       post : "/api/users/updatePassword",
@@ -96,10 +110,24 @@ message LoginRequest {
   string password = 2;
 }
 
+message LoginBySmsRequest {
+  string phone = 1;
+  string code = 2;
+}
+
 message LoginReply {
   int32 code = 1;  // 0=成功, 1=失败
   Res res = 2;  // 业务信息
   string token = 3;
+}
+
+message SendSmsRequest {
+  string phone = 1;
+}
+
+message SendSmsReply {
+  int32 code = 1;
+  Res res = 2;
 }
 
 //NID_UPDATE_REQ

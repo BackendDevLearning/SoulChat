@@ -16,19 +16,22 @@ import (
 	"kratos-realworld/internal/data"
 	"kratos-realworld/internal/model"
 	"kratos-realworld/internal/model/infra"
+	"kratos-realworld/internal/pkg/middleware/sms"
 	"kratos-realworld/internal/server"
 	"kratos-realworld/internal/service"
 )
 
 // Injectors from wire.go:
 
-func initApp(confServer *conf.Server, confData *conf.Data, jwt *conf.JWT, logger log.Logger) (*CustomApp, func(), error) {
+func initApp(confServer *conf.Server, confData *conf.Data, jwt *conf.JWT, logger log.Logger, confSms *conf.Sms) (*CustomApp, func(), error) {
 	db := infra.NewDatabase(confData)
 	client := infra.NewCache(confData)
 	modelData := model.NewData(db, client)
 	userRepo := data.NewUserRepo(modelData, logger)
 	profileRepo := data.NewProfileRepo(modelData, logger)
-	gateWayUsecase := biz.NewGateWayUsecase(userRepo, profileRepo, jwt, logger)
+	smsService := sms.NewSmsService(confSms)
+	smsRepo := data.NewSmsRepo(modelData, logger, smsService)
+	gateWayUsecase := biz.NewGateWayUsecase(userRepo, profileRepo, smsRepo, jwt, logger)
 	transaction := model.NewTransaction(modelData)
 	profileUsecase := biz.NewProfileUsecase(profileRepo, transaction, jwt, logger)
 	messageRepo := data.NewMessageRepo(modelData, logger)
