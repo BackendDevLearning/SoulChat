@@ -129,7 +129,7 @@ func MapToStruct(data map[string]string, obj interface{}) error {
 const (
 	DefaultCacheTTL = 24 * time.Hour     // 默认缓存 24 小时
 	UserCacheTTL    = 24 * time.Hour     // 用户信息缓存 1 天
-	UserSMSTTL      = 1 * time.Hour      // 用户信息缓存 1 天
+	UserSMSTTL      = 5 * time.Minute    // 用户验证码缓存 5 分钟
 	TokenCacheTTL   = 7 * 24 * time.Hour // token 缓存 7 天
 )
 

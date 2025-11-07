@@ -47,6 +47,8 @@ log:
   show_line: true
 
 sms:
+  access_key_id: "AKID_EXAMPLE"
+  access_key_secret: "SECRET_EXAMPLE"
   endpoint: "dysmsapi.aliyuncs.com"
   sign_name: "阿里云"
   template_code: "SMS_154950909"

@@ -27,6 +27,7 @@ const OperationConduitGetRelationship = "/realworld.v1.Conduit/GetRelationship"
 const OperationConduitLogin = "/realworld.v1.Conduit/Login"
 const OperationConduitLoginBySms = "/realworld.v1.Conduit/LoginBySms"
 const OperationConduitRegister = "/realworld.v1.Conduit/Register"
+const OperationConduitResetUserPassword = "/realworld.v1.Conduit/ResetUserPassword"
 const OperationConduitSendSms = "/realworld.v1.Conduit/SendSms"
 const OperationConduitUnfollowUser = "/realworld.v1.Conduit/UnfollowUser"
 const OperationConduitUpdateUserInfo = "/realworld.v1.Conduit/UpdateUserInfo"
@@ -41,6 +42,7 @@ type ConduitHTTPServer interface {
 	Login(context.Context, *LoginRequest) (*LoginReply, error)
 	LoginBySms(context.Context, *LoginBySmsRequest) (*LoginReply, error)
 	Register(context.Context, *RegisterRequest) (*RegisterReply, error)
+	ResetUserPassword(context.Context, *ResetUserPwdRequest) (*ResetUserPwdReply, error)
 	SendSms(context.Context, *SendSmsRequest) (*SendSmsReply, error)
 	UnfollowUser(context.Context, *UnfollowUserRequest) (*FollowFanReply, error)
 	UpdateUserInfo(context.Context, *UpdateUserInfoRequest) (*UpdateUserInfoReply, error)
@@ -54,6 +56,7 @@ func RegisterConduitHTTPServer(s *http.Server, srv ConduitHTTPServer) {
 	r.POST("/api/users/login/sms", _Conduit_LoginBySms0_HTTP_Handler(srv))
 	r.POST("/api/users/sendSms", _Conduit_SendSms0_HTTP_Handler(srv))
 	r.POST("/api/users/updatePassword", _Conduit_UpdateUserPassword0_HTTP_Handler(srv))
+	r.POST("/api/users/resetPassword", _Conduit_ResetUserPassword0_HTTP_Handler(srv))
 	r.PUT("/api/users/updateUserInfo", _Conduit_UpdateUserInfo0_HTTP_Handler(srv))
 	r.GET("/api/profiles/{user_id}", _Conduit_GetProfile0_HTTP_Handler(srv))
 	r.POST("/api/profiles/{target_id}/follow", _Conduit_FollowUser0_HTTP_Handler(srv))
@@ -169,6 +172,28 @@ func _Conduit_UpdateUserPassword0_HTTP_Handler(srv ConduitHTTPServer) func(ctx h
 			return err
 		}
 		reply := out.(*UpdateUserPwdReply)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _Conduit_ResetUserPassword0_HTTP_Handler(srv ConduitHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in ResetUserPwdRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationConduitResetUserPassword)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.ResetUserPassword(ctx, req.(*ResetUserPwdRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*ResetUserPwdReply)
 		return ctx.Result(200, reply)
 	}
 }
@@ -342,6 +367,7 @@ type ConduitHTTPClient interface {
 	Login(ctx context.Context, req *LoginRequest, opts ...http.CallOption) (rsp *LoginReply, err error)
 	LoginBySms(ctx context.Context, req *LoginBySmsRequest, opts ...http.CallOption) (rsp *LoginReply, err error)
 	Register(ctx context.Context, req *RegisterRequest, opts ...http.CallOption) (rsp *RegisterReply, err error)
+	ResetUserPassword(ctx context.Context, req *ResetUserPwdRequest, opts ...http.CallOption) (rsp *ResetUserPwdReply, err error)
 	SendSms(ctx context.Context, req *SendSmsRequest, opts ...http.CallOption) (rsp *SendSmsReply, err error)
 	UnfollowUser(ctx context.Context, req *UnfollowUserRequest, opts ...http.CallOption) (rsp *FollowFanReply, err error)
 	UpdateUserInfo(ctx context.Context, req *UpdateUserInfoRequest, opts ...http.CallOption) (rsp *UpdateUserInfoReply, err error)
@@ -452,6 +478,19 @@ func (c *ConduitHTTPClientImpl) Register(ctx context.Context, in *RegisterReques
 	pattern := "/api/users"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationConduitRegister))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *ConduitHTTPClientImpl) ResetUserPassword(ctx context.Context, in *ResetUserPwdRequest, opts ...http.CallOption) (*ResetUserPwdReply, error) {
+	var out ResetUserPwdReply
+	pattern := "/api/users/resetPassword"
+	path := binding.EncodeURL(pattern, in, false)
+	opts = append(opts, http.Operation(OperationConduitResetUserPassword))
 	opts = append(opts, http.PathTemplate(pattern))
 	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
 	if err != nil {

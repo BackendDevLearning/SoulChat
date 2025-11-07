@@ -4,12 +4,13 @@ import (
 	"context"
 	"fmt"
 	v1 "kratos-realworld/api/conduit/v1"
+	"kratos-realworld/internal/biz"
 	bizUser "kratos-realworld/internal/biz/user"
 	"log"
 )
 
 func (cs *ConduitService) Register(ctx context.Context, req *v1.RegisterRequest) (*v1.RegisterReply, error) {
-	res, err := cs.gt.Register(ctx, req.Username, req.Phone, req.Password)
+	res, err := cs.gt.Register(ctx, req.Username, req.Phone, req.Password, req.Code)
 	if err != nil {
 		log.Printf("Register error: %v", err)
 
@@ -68,7 +69,7 @@ func (cs *ConduitService) LoginBySms(ctx context.Context, req *v1.LoginBySmsRequ
 }
 
 func (cs *ConduitService) SendSms(ctx context.Context, req *v1.SendSmsRequest) (*v1.SendSmsReply, error) {
-	err := cs.gt.SendSms(ctx, req.Phone)
+	err := cs.gt.SendSms(ctx, req.Phone, biz.SmsScene(req.Scene))
 
 	if err != nil {
 		log.Printf("SendSms error: %v", err)
@@ -97,6 +98,23 @@ func (cs *ConduitService) UpdateUserPassword(ctx context.Context, req *v1.Update
 	}
 
 	return &v1.UpdateUserPwdReply{
+		Code: 0,
+		Res:  ErrorToRes(err),
+	}, nil
+}
+
+func (cs *ConduitService) ResetUserPassword(ctx context.Context, req *v1.ResetUserPwdRequest) (*v1.ResetUserPwdReply, error) {
+	err := cs.gt.ResetUserPassword(ctx, req.Phone, req.Code, req.NewPassword)
+	if err != nil {
+		log.Printf("ResetUserPassword error: %v", err)
+
+		return &v1.ResetUserPwdReply{
+			Code: 1,
+			Res:  ErrorToRes(err),
+		}, nil
+	}
+
+	return &v1.ResetUserPwdReply{
 		Code: 0,
 		Res:  ErrorToRes(err),
 	}, nil

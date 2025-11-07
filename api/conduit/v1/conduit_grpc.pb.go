@@ -24,6 +24,7 @@ const (
 	Conduit_LoginBySms_FullMethodName         = "/realworld.v1.Conduit/LoginBySms"
 	Conduit_SendSms_FullMethodName            = "/realworld.v1.Conduit/SendSms"
 	Conduit_UpdateUserPassword_FullMethodName = "/realworld.v1.Conduit/UpdateUserPassword"
+	Conduit_ResetUserPassword_FullMethodName  = "/realworld.v1.Conduit/ResetUserPassword"
 	Conduit_UpdateUserInfo_FullMethodName     = "/realworld.v1.Conduit/UpdateUserInfo"
 	Conduit_GetProfile_FullMethodName         = "/realworld.v1.Conduit/GetProfile"
 	Conduit_FollowUser_FullMethodName         = "/realworld.v1.Conduit/FollowUser"
@@ -44,6 +45,7 @@ type ConduitClient interface {
 	LoginBySms(ctx context.Context, in *LoginBySmsRequest, opts ...grpc.CallOption) (*LoginReply, error)
 	SendSms(ctx context.Context, in *SendSmsRequest, opts ...grpc.CallOption) (*SendSmsReply, error)
 	UpdateUserPassword(ctx context.Context, in *UpdateUserPwdRequest, opts ...grpc.CallOption) (*UpdateUserPwdReply, error)
+	ResetUserPassword(ctx context.Context, in *ResetUserPwdRequest, opts ...grpc.CallOption) (*ResetUserPwdReply, error)
 	UpdateUserInfo(ctx context.Context, in *UpdateUserInfoRequest, opts ...grpc.CallOption) (*UpdateUserInfoReply, error)
 	GetProfile(ctx context.Context, in *GetProfileRequest, opts ...grpc.CallOption) (*GetProfileReply, error)
 	FollowUser(ctx context.Context, in *FollowUserRequest, opts ...grpc.CallOption) (*FollowFanReply, error)
@@ -105,6 +107,16 @@ func (c *conduitClient) UpdateUserPassword(ctx context.Context, in *UpdateUserPw
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(UpdateUserPwdReply)
 	err := c.cc.Invoke(ctx, Conduit_UpdateUserPassword_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *conduitClient) ResetUserPassword(ctx context.Context, in *ResetUserPwdRequest, opts ...grpc.CallOption) (*ResetUserPwdReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ResetUserPwdReply)
+	err := c.cc.Invoke(ctx, Conduit_ResetUserPassword_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -192,6 +204,7 @@ type ConduitServer interface {
 	LoginBySms(context.Context, *LoginBySmsRequest) (*LoginReply, error)
 	SendSms(context.Context, *SendSmsRequest) (*SendSmsReply, error)
 	UpdateUserPassword(context.Context, *UpdateUserPwdRequest) (*UpdateUserPwdReply, error)
+	ResetUserPassword(context.Context, *ResetUserPwdRequest) (*ResetUserPwdReply, error)
 	UpdateUserInfo(context.Context, *UpdateUserInfoRequest) (*UpdateUserInfoReply, error)
 	GetProfile(context.Context, *GetProfileRequest) (*GetProfileReply, error)
 	FollowUser(context.Context, *FollowUserRequest) (*FollowFanReply, error)
@@ -223,6 +236,9 @@ func (UnimplementedConduitServer) SendSms(context.Context, *SendSmsRequest) (*Se
 }
 func (UnimplementedConduitServer) UpdateUserPassword(context.Context, *UpdateUserPwdRequest) (*UpdateUserPwdReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateUserPassword not implemented")
+}
+func (UnimplementedConduitServer) ResetUserPassword(context.Context, *ResetUserPwdRequest) (*ResetUserPwdReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ResetUserPassword not implemented")
 }
 func (UnimplementedConduitServer) UpdateUserInfo(context.Context, *UpdateUserInfoRequest) (*UpdateUserInfoReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateUserInfo not implemented")
@@ -352,6 +368,24 @@ func _Conduit_UpdateUserPassword_Handler(srv interface{}, ctx context.Context, d
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ConduitServer).UpdateUserPassword(ctx, req.(*UpdateUserPwdRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Conduit_ResetUserPassword_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ResetUserPwdRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ConduitServer).ResetUserPassword(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Conduit_ResetUserPassword_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ConduitServer).ResetUserPassword(ctx, req.(*ResetUserPwdRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -508,6 +542,10 @@ var Conduit_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UpdateUserPassword",
 			Handler:    _Conduit_UpdateUserPassword_Handler,
+		},
+		{
+			MethodName: "ResetUserPassword",
+			Handler:    _Conduit_ResetUserPassword_Handler,
 		},
 		{
 			MethodName: "UpdateUserInfo",

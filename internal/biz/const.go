@@ -82,6 +82,15 @@ func verifyPassword(hashed, input string) bool {
 	return true
 }
 
+// 短信验证码使用场景
+type SmsScene string
+
+const (
+	SmsSceneRegister SmsScene = "register"
+	SmsSceneLogin    SmsScene = "login"
+	SmsSceneResetPwd SmsScene = "reset_password"
+)
+
 func Contains(source []string, tg string) bool {
 	for _, s := range source {
 		if s == tg {

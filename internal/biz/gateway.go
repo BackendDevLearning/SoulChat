@@ -33,7 +33,7 @@ func NewGateWayUsecase(ur bizUser.UserRepo, pr bizProfile.ProfileRepo, smsr bizU
 	}
 }
 
-func (gc *GateWayUsecase) Register(ctx context.Context, username string, phone string, password string) (*UserRegisterReply, error) {
+func (gc *GateWayUsecase) Register(ctx context.Context, username string, phone string, password string, inputCode string) (*UserRegisterReply, error) {
 	// 构建新用户
 	user := &bizUser.UserTB{
 		Phone:        phone,
@@ -53,6 +53,11 @@ func (gc *GateWayUsecase) Register(ctx context.Context, username string, phone s
 	}
 	if existing != nil {
 		return nil, NewErr(ErrCodePhoneAlreadyRegistered, PHONE_ALREADY_REGISTERED, "phone already registered")
+	}
+
+	// 首次注册发送短信验证码，避免恶意大量注册
+	if ok, _ := gc.smsr.VerifyCode(ctx, phone, inputCode); !ok {
+		return nil, NewErr(ErrCodeInvalidVerificationCode, INVALID_VERIFICATION_CODE, "SMS verification code is incorrect")
 	}
 
 	// 插入用户
@@ -98,7 +103,7 @@ func (gc *GateWayUsecase) Login(ctx context.Context, phone string, password stri
 		return nil, NewErr(ErrCodeDBQueryFailed, DB_QUERY_FAILED, "failed to query user by phone")
 	}
 	if res == nil {
-		return nil, NewErr(ErrCodeUserNotFound, USER_NOT_FOUND, "phone number not registered")
+		return nil, NewErr(ErrCodePhoneNotFound, PHONE_NOT_FOUND, "phone number not registered")
 	}
 
 	// 密码输入错误
@@ -130,7 +135,7 @@ func (gc *GateWayUsecase) LoginBySms(ctx context.Context, phone string, inputCod
 		return nil, NewErr(ErrCodeDBQueryFailed, DB_QUERY_FAILED, "failed to query user by phone")
 	}
 	if res == nil {
-		return nil, NewErr(ErrCodeUserNotFound, USER_NOT_FOUND, "phone number not registered")
+		return nil, NewErr(ErrCodePhoneNotFound, PHONE_NOT_FOUND, "phone number not registered")
 	}
 
 	// 短信验证码输入错误
@@ -150,7 +155,7 @@ func (gc *GateWayUsecase) LoginBySms(ctx context.Context, phone string, inputCod
 	}, nil
 }
 
-func (gc *GateWayUsecase) SendSms(ctx context.Context, phone string) error {
+func (gc *GateWayUsecase) SendSms(ctx context.Context, phone string, scene SmsScene) error {
 	if !IsValidPhone(phone) {
 		return NewErr(ErrCodeInvalidPhone, INVALID_PHONE, "invalid phone number format")
 	}
@@ -161,8 +166,19 @@ func (gc *GateWayUsecase) SendSms(ctx context.Context, phone string) error {
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		return NewErr(ErrCodeDBQueryFailed, DB_QUERY_FAILED, "failed to query user by phone")
 	}
-	if res == nil {
-		return NewErr(ErrCodeUserNotFound, USER_NOT_FOUND, "phone number not registered")
+
+	// 不同场景下对手机号是否存在的要求不同
+	switch scene {
+	case SmsSceneRegister:
+		if res != nil {
+			return NewErr(ErrCodePhoneAlreadyRegistered, PHONE_ALREADY_REGISTERED, "phone already registered")
+		}
+	case SmsSceneLogin, SmsSceneResetPwd:
+		if res == nil {
+			return NewErr(ErrCodePhoneNotFound, PHONE_NOT_FOUND, "phone number not registered")
+		}
+	default:
+		return NewErr(ErrCodeInvalidSmsScene, INVALID_SMS_SCENE, "invalid SMS scene")
 	}
 
 	code, err := gc.smsr.SendCode(ctx, phone)
@@ -193,7 +209,7 @@ func (gc *GateWayUsecase) UpdateUserPassword(ctx context.Context, phone, oldPass
 		return NewErr(ErrCodeDBQueryFailed, DB_QUERY_FAILED, "failed to query user by phone")
 	}
 	if dataPassword == "" {
-		return NewErr(ErrCodeUserNotFound, USER_NOT_FOUND, "phone number not registered")
+		return NewErr(ErrCodePhoneNotFound, PHONE_NOT_FOUND, "phone number not registered")
 	}
 
 	// 密码输入错误
@@ -210,6 +226,25 @@ func (gc *GateWayUsecase) UpdateUserPassword(ctx context.Context, phone, oldPass
 	return nil
 }
 
+func (gc *GateWayUsecase) ResetUserPassword(ctx context.Context, phone, inputCode, newPassword string) error {
+	if !IsValidPhone(phone) {
+		return NewErr(ErrCodeInvalidPhone, INVALID_PHONE, "invalid phone number format")
+	}
+
+	// 短信验证码输入错误
+	if ok, _ := gc.smsr.VerifyCode(ctx, phone, inputCode); !ok {
+		return NewErr(ErrCodeInvalidVerificationCode, INVALID_VERIFICATION_CODE, "SMS verification code is incorrect")
+	}
+
+	newPasswordHash := hashPassword(newPassword)
+	err := gc.ur.UpdateUserPassword(ctx, phone, newPasswordHash)
+	if err != nil {
+		return NewErr(ErrCodeUpdatePasswordFailed, UPDATE_PASSWORD_FAILED, "failed to reset user password")
+	}
+
+	return nil
+}
+
 func (gc *GateWayUsecase) UpdateUserInfo(ctx context.Context, userInfo *bizUser.UpdateUserInfoFields) error {
 	userID := auth.FromContext(ctx).UserID
 
@@ -221,7 +256,7 @@ func (gc *GateWayUsecase) UpdateUserInfo(ctx context.Context, userInfo *bizUser.
 	err := gc.ur.UpdateUserInfo(ctx, uint32(userID), userInfo)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return NewErr(ErrCodeUserNotFound, USER_NOT_FOUND, "user not found")
+			return NewErr(ErrCodePhoneNotFound, PHONE_NOT_FOUND, "user not found")
 		}
 		return NewErr(ErrCodeUpdateUserInfoFailed, UPDATE_USER_INFO_FAILED, "failed to update user info")
 	}

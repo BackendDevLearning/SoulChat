@@ -44,6 +44,13 @@ service Conduit {
     };
   }
 
+  rpc ResetUserPassword(ResetUserPwdRequest) returns (ResetUserPwdReply) {
+    option (google.api.http) = {
+      post : "/api/users/resetPassword",
+      body : "*",
+    };
+  }
+
   rpc UpdateUserInfo(UpdateUserInfoRequest) returns (UpdateUserInfoReply) {
     option (google.api.http) = {
       put  : "/api/users/updateUserInfo",
@@ -96,6 +103,7 @@ message RegisterRequest {
   string username = 1;
   string phone = 2;
   string password = 3;
+  string code = 4;
 }
 
 message RegisterReply {
@@ -123,6 +131,7 @@ message LoginReply {
 
 message SendSmsRequest {
   string phone = 1;
+  string scene = 2;
 }
 
 message SendSmsReply {
@@ -140,6 +149,17 @@ message UpdateUserPwdRequest {
 message UpdateUserPwdReply {
   int32 code = 1;  // 0=成功, 1=失败
   Res res = 2;  // 业务信息
+}
+
+message ResetUserPwdRequest {
+  string phone = 1;
+  string code = 2;
+  string new_password = 3;
+}
+
+message ResetUserPwdReply {
+  int32 code = 1;
+  Res res = 2;
 }
 
 message UpdateUserInfoRequest {

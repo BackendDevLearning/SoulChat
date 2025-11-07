@@ -49,6 +49,27 @@ message Sms {
 }
 ```
 
+```yaml
+sms:
+  access_key_id: "AKID_EXAMPLE"
+  access_key_secret: "SECRET_EXAMPLE"
+  endpoint: "dysmsapi.aliyuncs.com"
+  sign_name: "阿里云"
+  template_code: "SMS_154950909"
+  verification_code:
+    length: 6
+    expire: "5m"
+    max_retry: 3
+    debug: true
+  rate_limit:
+    max_requests_per_minute: 1
+    max_requests_per_hour: 5
+    max_requests_per_day: 10
+  retry:
+    max_attempts: 3
+    backoff: "1s"
+```
+
 ### 2.2 初始化
 
 SMS服务结构体
@@ -87,9 +108,16 @@ func (s *SmsService) createClient() (*dysmsapi.Client, error) {
 
 ### 2.3 RESTful API定义
 
-为了保证业务逻辑清晰，使用 **短信验证码登录** 和 **密码登录** 这两个接口相互独立，同时也方便后续扩展登录方式，比如通过微信、QQ等 **第三方平台登录** 。
+为了保证业务逻辑清晰，使用 **短信验证码登录** 和 **密码登录** 这两个接口相互独立，同时也方便后续扩展登录方式，比如通过微信、QQ等 **第三方平台登录** 。此外，还针对 **新用户首次注册** 和 **重置密码** 应用场景接入了SMS服务。
 
 ```go
+  rpc Register(RegisterRequest) returns (RegisterReply) {
+    option (google.api.http) = {
+      post : "/api/users",
+      body : "*",
+    };
+  }
+
   rpc Login(LoginRequest) returns (LoginReply) {
     option (google.api.http) = {
       post : "/api/users/login",
@@ -100,6 +128,13 @@ func (s *SmsService) createClient() (*dysmsapi.Client, error) {
   rpc LoginBySms(LoginBySmsRequest) returns (LoginReply) {
     option (google.api.http) = {
       post : "/api/users/login/sms",
+      body : "*",
+    };
+  }
+
+  rpc ResetUserPassword(ResetUserPwdRequest) returns (ResetUserPwdReply) {
+    option (google.api.http) = {
+      post : "/api/users/resetPassword",
       body : "*",
     };
   }
@@ -179,7 +214,7 @@ func (s *SmsService) SendCode(ctx context.Context, phone string) (string, error)
 
 - **用户注册/登录时的身份验证**
 - 支付确认
-- **密码重置**
+- **忘记密码后重置**
 - 安全操作确认，如更换绑定手机号码，注销账号
 
 ### 3.2 **通知提醒短信**
