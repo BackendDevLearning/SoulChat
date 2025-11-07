@@ -30,11 +30,18 @@ func Zap(conf *conf.Log) (logger *zap.Logger) {
     }
     levels := Levels(conf.Level)
 	length := len(levels)
-	cores := make([]zapcore.Core, 0, length)
+	cores := make([]zapcore.Core, 0, length+1)
+	
+	// 创建所有级别的 core，都写入 all.log
 	for i := 0; i < length; i++ {
 		core := NewZapCore(levels[i], conf)
 		cores = append(cores, core)
 	}
+	
+	// 额外创建一个 error 级别的 core，写入 error.log
+	errorCore := NewZapCoreForError(conf)
+	cores = append(cores, errorCore)
+	
 	logger = zap.New(zapcore.NewTee(cores...))
 	if conf.ShowLine {
 		logger = logger.WithOptions(zap.AddCaller())

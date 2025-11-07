@@ -43,7 +43,7 @@ logger := log.With(kratosLogger,
 
 ### 3) 落盘路径规则
 
-- 最终路径：`<director>/<YYYY-MM-DD>/<可选子目录>/<level>.log`
+- 最终路径：`<director>/<YYYY-MM-DD>/<可选子目录>/all.log`
 - 日期目录格式：`2006-01-02`（由 `CutterWithLayout(time.DateOnly)` 决定）
 - 带上 `service`/`biz`/`data` 字段可切换到对应子目录。
 
@@ -109,17 +109,17 @@ _ = logger.Log(log.LevelInfo,
 携带以下任一键即可写入对应子目录（优先级：全部等价）：`service`、`biz`、`data`。
 
 ```go
-// 写入 logs/YYYY-MM-DD/auth/info.log
+// 写入 logs/YYYY-MM-DD/auth/all.log
 s.log.Infow("msg", "service", "auth", "event", "login_ok", "user_id", uid)
 
-// 写入 logs/YYYY-MM-DD/im/error.log
+// 写入 logs/YYYY-MM-DD/im/all.log
 _ = logger.Log(log.LevelError, "msg", "delivery failed", "biz", "im", "err", err)
 
-// 写入 logs/YYYY-MM-DD/user/debug.log
+// 写入 logs/YYYY-MM-DD/user/all.log
 _ = logger.Log(log.LevelDebug, "msg", "profile loaded", "data", "user", "user_id", uid)
 ```
 
-支持多级目录：值可写为路径，如 `"service":"im/chat"` → `logs/YYYY-MM-DD/im/chat/<level>.log`。
+支持多级目录：值可写为路径，如 `"service":"im/chat"` → `logs/YYYY-MM-DD/im/chat/all.log`。
 
 ### 5.1) 使用风格对比与建议
 
@@ -153,7 +153,7 @@ _ = logger.Log(log.LevelDebug, "msg", "profile loaded", "data", "user", "user_id
 _ = logger.Log(log.LevelInfo, "msg", "service boot", "service", "system")
 ```
 
-结果示例：`./logs/<YYYY-MM-DD>/system/info.log`
+结果示例：`./logs/<YYYY-MM-DD>/system/all.log`
 
 ### 9) 常见问题
 

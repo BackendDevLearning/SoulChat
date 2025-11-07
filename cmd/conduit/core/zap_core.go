@@ -24,10 +24,39 @@ func NewZapCore(level zapcore.Level, logConf *conf.Log) *ZapCore {
 	return entity
 }
 
+// NewZapCoreForError 创建一个专门用于 error 级别日志的 core，写入 error.log
+func NewZapCoreForError(logConf *conf.Log) *ZapCore {
+	entity := &ZapCore{level: zapcore.ErrorLevel, logConf: logConf}
+	syncer := entity.WriteSyncerForError()
+	// 只接受 error 及以上级别（error, dpanic, panic, fatal）
+	levelEnabler := zap.LevelEnablerFunc(func(l zapcore.Level) bool {
+		return l >= zapcore.ErrorLevel
+	})
+	entity.Core = zapcore.NewCore(entity.DiyEncoder(), syncer, levelEnabler)
+	return entity
+}
+
 func (z *ZapCore) WriteSyncer(formats ...string) zapcore.WriteSyncer {
 	cutter := NewCutter(
 		z.logConf.Director,
-		z.level.String(),
+		"all",
+		CutterWithLayout(time.DateOnly),
+		CutterWithFormats(formats...),
+	)
+
+	// 是否输出到终端
+	if z.logConf.LogInConsole {
+		return zapcore.AddSync(os.Stdout)
+	}
+
+	return zapcore.AddSync(cutter)
+}
+
+// WriteSyncerForError 创建专门用于 error.log 的 WriteSyncer
+func (z *ZapCore) WriteSyncerForError(formats ...string) zapcore.WriteSyncer {
+	cutter := NewCutter(
+		z.logConf.Director,
+		"error",
 		CutterWithLayout(time.DateOnly),
 		CutterWithFormats(formats...),
 	)
