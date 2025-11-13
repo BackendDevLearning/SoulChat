@@ -31,7 +31,7 @@ func (mc *MessageUseCase) SaveMessage(message *bizChat.MessageTB) error {
 func (mc *MessageUseCase) GetMessages(ctx context.Context, messageReq common.MessageRequest) error {
 	MessageResponse, err := mc.mr.GetMessages(ctx, messageReq)
 	fmt.Println(MessageResponse)
-
+	
 	if err != nil {
 		return NewErr(ErrCodeMessageFailed, MESSAGE_FAILED, "Get message failed")
 	}
