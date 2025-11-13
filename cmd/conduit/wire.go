@@ -46,6 +46,6 @@ var CustomProviderSet = wire.NewSet(
 	newCustomApp,        // 封装成 *CustomApp
 )
 
-func initApp(*conf.Server, *conf.Data, *conf.JWT, log.Logger) (*CustomApp, func(), error) {
+func initApp(*conf.Server, *conf.Data, *conf.JWT, log.Logger, *conf.Sms) (*CustomApp, func(), error) {
 	panic(wire.Build(CustomProviderSet))
 }

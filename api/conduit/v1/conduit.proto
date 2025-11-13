@@ -23,9 +23,30 @@ service Conduit {
     };
   }
 
+  rpc LoginBySms(LoginBySmsRequest) returns (LoginReply) {
+    option (google.api.http) = {
+      post : "/api/users/login/sms",
+      body : "*",
+    };
+  }
+
+  rpc SendSms(SendSmsRequest) returns (SendSmsReply) {
+    option (google.api.http) = {
+      post : "/api/users/sendSms",
+      body : "*",
+    };
+  }
+
   rpc UpdateUserPassword(UpdateUserPwdRequest) returns (UpdateUserPwdReply) {
     option (google.api.http) = {
       post : "/api/users/updatePassword",
+      body : "*",
+    };
+  }
+
+  rpc ResetUserPassword(ResetUserPwdRequest) returns (ResetUserPwdReply) {
+    option (google.api.http) = {
+      post : "/api/users/resetPassword",
       body : "*",
     };
   }
@@ -82,6 +103,7 @@ message RegisterRequest {
   string username = 1;
   string phone = 2;
   string password = 3;
+  string code = 4;
 }
 
 message RegisterReply {
@@ -96,10 +118,25 @@ message LoginRequest {
   string password = 2;
 }
 
+message LoginBySmsRequest {
+  string phone = 1;
+  string code = 2;
+}
+
 message LoginReply {
   int32 code = 1;  // 0=成功, 1=失败
   Res res = 2;  // 业务信息
   string token = 3;
+}
+
+message SendSmsRequest {
+  string phone = 1;
+  string scene = 2;
+}
+
+message SendSmsReply {
+  int32 code = 1;
+  Res res = 2;
 }
 
 //NID_UPDATE_REQ
@@ -112,6 +149,17 @@ message UpdateUserPwdRequest {
 message UpdateUserPwdReply {
   int32 code = 1;  // 0=成功, 1=失败
   Res res = 2;  // 业务信息
+}
+
+message ResetUserPwdRequest {
+  string phone = 1;
+  string code = 2;
+  string new_password = 3;
+}
+
+message ResetUserPwdReply {
+  int32 code = 1;
+  Res res = 2;
 }
 
 message UpdateUserInfoRequest {

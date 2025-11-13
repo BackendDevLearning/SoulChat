@@ -2,7 +2,7 @@ package main
 
 import (
 	"flag"
-	"fmt"
+	"kratos-realworld/cmd/conduit/core"
 	"kratos-realworld/internal/conf"
 	"kratos-realworld/internal/kafka"
 	wsrv "kratos-realworld/internal/websocket"
@@ -49,15 +49,7 @@ func newApp(logger log.Logger, hs *http.Server, gs *grpc.Server) *kratos.App {
 
 func main() {
 	flag.Parse()
-	logger := log.With(log.NewStdLogger(os.Stdout),
-		"ts", log.DefaultTimestamp,
-		"caller", log.DefaultCaller,
-		"service.id", id,
-		"service.name", Name,
-		"service.version", Version,
-		"trace_id", tracing.TraceID(),
-		"span_id", tracing.SpanID(),
-	)
+
 	c := config.New(
 		config.WithSource(
 			file.NewSource(flagconf),
@@ -73,8 +65,23 @@ func main() {
 	if err := c.Scan(&bc); err != nil {
 		panic(err)
 	}
+	zapLogger := core.Zap(bc.Log)
 
-	app, cleanup, err := initApp(bc.Server, bc.Data, bc.Jwt, logger)
+	defer zapLogger.Sync()
+
+	// 创建 Kratos 适配器的 Zap Logger
+	kratosLogger := core.NewZapLoggerAdapter(zapLogger)
+
+	// 设置服务的其他元数据
+	logger := log.With(kratosLogger,
+		"service.id", id,
+		"service.name", Name,
+		"service.version", Version,
+		"trace.id", tracing.TraceID(),
+		"span.id", tracing.SpanID(),
+	)
+
+	app, cleanup, err := initApp(bc.Server, bc.Data, bc.Jwt, logger, bc.Sms)
 	if err != nil {
 		panic(err)
 	}
@@ -89,26 +96,26 @@ func main() {
 
 	// Kafka: 生产者/消费者初始化
 	if bc.Data.Kafka != nil && bc.Data.Kafka.Enabled {
-		fmt.Println("Initializing Kafka with hosts: %s, topic: %s", bc.Data.Kafka.Hosts, bc.Data.Kafka.Topic)
+		_ = logger.Log(log.LevelInfo, "msg", "initializing kafka", "hosts", bc.Data.Kafka.Hosts, "topic", bc.Data.Kafka.Topic)
 
 		if err := kafka.InitProducer(bc.Data.Kafka.Topic, bc.Data.Kafka.Hosts); err != nil {
-			fmt.Println("Failed to initialize Kafka producer: %v", err)
-			fmt.Println("Kafka producer disabled - WebSocket messages will not be sent to Kafka")
+			_ = logger.Log(log.LevelError, "msg", "init kafka producer failed", "err", err)
+			_ = logger.Log(log.LevelWarn, "msg", "kafka producer disabled - websocket messages will not be sent to kafka")
 		} else {
-			fmt.Println("Kafka producer initialized successfully")
+			_ = logger.Log(log.LevelInfo, "msg", "kafka producer initialized successfully")
 
 			if err := kafka.InitConsumer(bc.Data.Kafka.Hosts); err != nil {
-				fmt.Println("Failed to initialize Kafka consumer: %v", err)
-				fmt.Println("Kafka consumer disabled - messages from Kafka will not be processed")
+				_ = logger.Log(log.LevelError, "msg", "init kafka consumer failed", "err", err)
+				_ = logger.Log(log.LevelWarn, "msg", "kafka consumer disabled - messages from kafka will not be processed")
 			} else {
-				fmt.Println("Kafka consumer initialized successfully")
+				_ = logger.Log(log.LevelInfo, "msg", "kafka consumer initialized successfully")
 				go kafka.ConsumerMsg(wsrv.ConsumerKafkaMsg)
 			}
 			defer kafka.Close()
 			defer kafka.CloseConsumer()
 		}
 	} else {
-		fmt.Println("Kafka is disabled in configuration")
+		_ = logger.Log(log.LevelInfo, "msg", "kafka is disabled in configuration")
 	}
 
 	// 配置静态目录（可选）(暂时注释，等待 protobuf 重新生成)

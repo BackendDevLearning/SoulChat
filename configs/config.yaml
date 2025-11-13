@@ -37,3 +37,30 @@ jwt:
   secret: "hello"
   expire: "24h"
 
+log:
+  director: "./logs"
+  level: "debug"
+  format: "console"           # console 或 json
+  stacktrace_key: "stacktrace"
+  encode_level: "LowercaseLevelEncoder"
+  log_in_console: false
+  show_line: true
+
+sms:
+  access_key_id: "AKID_EXAMPLE"
+  access_key_secret: "SECRET_EXAMPLE"
+  endpoint: "dysmsapi.aliyuncs.com"
+  sign_name: "阿里云"
+  template_code: "SMS_154950909"
+  verification_code:
+    length: 6
+    expire: "5m"
+    max_retry: 3
+    debug: true
+  rate_limit:
+    max_requests_per_minute: 1
+    max_requests_per_hour: 5
+    max_requests_per_day: 10
+  retry:
+    max_attempts: 3
+    backoff: "1s"

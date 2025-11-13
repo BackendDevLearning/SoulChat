@@ -16,13 +16,16 @@ const (
 	ErrCodeInternalServer = 500
 
 	// 注册登录、更新用户信息相关
-	ErrCodeInvalidPhone           = 42201
-	ErrCodeUserNotFound           = 42202
-	ErrCodePhoneAlreadyRegistered = 42203
-	ErrCodeInvalidPassword        = 40101
-	ErrCodeCreateTokenFailed      = 50001
-	ErrCodeUpdatePasswordFailed   = 50002
-	ErrCodeUpdateUserInfoFailed   = 50003
+	ErrCodeInvalidPhone            = 42201
+	ErrCodePhoneNotFound           = 42202
+	ErrCodePhoneAlreadyRegistered  = 42203
+	ErrCodeInvalidPassword         = 40101
+	ErrCodeInvalidSmsScene         = 40402
+	ErrCodeSendSmsFailed           = 40403
+	ErrCodeInvalidVerificationCode = 40104
+	ErrCodeCreateTokenFailed       = 50001
+	ErrCodeUpdatePasswordFailed    = 50002
+	ErrCodeUpdateUserInfoFailed    = 50003
 
 	// 数据库、redis缓存相关
 	ErrCodeDBQueryFailed    = 50010
@@ -43,13 +46,16 @@ const (
 	INTERNAL_SERVER = "INTERNAL_SERVER"
 
 	// 注册登录、更新用户信息相关
-	INVALID_PHONE            = "INVALID_PHONE"
-	USER_NOT_FOUND           = "USER_NOT_FOUND"
-	PHONE_ALREADY_REGISTERED = "PHONE_ALREADY_REGISTERED"
-	INVALID_PASSWORD         = "INVALID_PASSWORD"
-	CREATE_TOKEN_FAILED      = "CREATE_TOKEN_FAILED"
-	UPDATE_PASSWORD_FAILED   = "UPDATE_PASSWORD_FAILED"
-	UPDATE_USER_INFO_FAILED  = "UPDATE_USER_INFO_FAILED"
+	INVALID_PHONE             = "INVALID_PHONE"
+	PHONE_NOT_FOUND           = "PHONE_NOT_FOUND"
+	PHONE_ALREADY_REGISTERED  = "PHONE_ALREADY_REGISTERED"
+	INVALID_PASSWORD          = "INVALID_PASSWORD"
+	INVALID_SMS_SCENE         = "INVALID_SMS_SCENE"
+	SEND_SMS_FAILED           = "SEND_SMS_FAILED"
+	INVALID_VERIFICATION_CODE = "INVALID_VERIFICATION_CODE"
+	CREATE_TOKEN_FAILED       = "CREATE_TOKEN_FAILED"
+	UPDATE_PASSWORD_FAILED    = "UPDATE_PASSWORD_FAILED"
+	UPDATE_USER_INFO_FAILED   = "UPDATE_USER_INFO_FAILED"
 
 	// 数据库相关
 	DB_QUERY_FAILED    = "DB_QUERY_FAILED"
