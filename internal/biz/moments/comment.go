@@ -1,7 +1,6 @@
-package moments
+package moment
 
 import (
-	"context"
 	"time"
 )
 
@@ -18,9 +17,4 @@ type CommentsTB struct {
 
 func (c *CommentsTB) TableName() string {
 	return "t_comments"
-}
-
-type CommentsRepo interface {
-	CreateComment(ctx context.Context, comment *CommentsTB) error
-	DeleteComment(ctx context.Context, commentID uint32) error
 }

@@ -1,7 +1,6 @@
-package moments
+package moment
 
 import (
-	"context"
 	"time"
 )
 
@@ -18,9 +17,4 @@ type MomentsBoxTB struct {
 
 func (m *MomentsBoxTB) TableName() string {
 	return "t_moments_box"
-}
-
-type MomentsBoxRepo interface {
-	CreateMomentsBox(ctx context.Context, momentsBox *MomentsBoxTB) error
-	DeleteMomentsBox(ctx context.Context, momentsBoxID uint32) error
 }

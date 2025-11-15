@@ -37,6 +37,9 @@ const (
 
 	// 聊天相关
 	ErrCodeMessageFailed = 70000
+
+	// 动态相关
+	ErrCodeMomentFailed = 80000
 )
 
 // error reason
@@ -67,4 +70,7 @@ const (
 
 	// 聊天相关
 	MESSAGE_FAILED = "MESSAGE_FAILED"
+
+	// 动态相关
+	MOMENT_FAILED = "MOMENT_FAILED"
 )
