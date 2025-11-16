@@ -5,12 +5,11 @@ import (
 )
 
 type MomentsMetaTB struct {
-	ID            uint32   `gorm:"primarykey"`
-	UserID        uint32   `gorm:"column:user_id"`
-	MomentID      uint32   `gorm:"column:moment_id"`
-	Message       string   `gorm:"type:varchar(500);column:message"`
-	MediaURL      string   `gorm:"type:varchar(500);column:media_url"`
-	ReceiveBoxIDs []uint32 `gorm:"column:receive_box_ids"`
+	ID       uint32 `gorm:"primarykey"`
+	UserID   uint32 `gorm:"column:user_id"`
+	MomentID uint32 `gorm:"column:moment_id"`
+	Message  string `gorm:"type:varchar(500);column:message"`
+	MediaURL string `gorm:"type:varchar(500);column:media_url"`
 
 	SysCreated *time.Time `gorm:"autoCreateTime;column:sys_created;type:datetime;not null;comment:创建时间" json:"sys_created"`
 	SysUpdated *time.Time `gorm:"autoUpdateTime;column:sys_updated;type:datetime;not null;comment:更新时间" json:"sys_updated"`

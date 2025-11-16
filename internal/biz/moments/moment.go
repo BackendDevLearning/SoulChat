@@ -6,14 +6,15 @@ import (
 )
 
 type MomentTB struct {
-	ID            uint32       `gorm:"primarykey"`
-	UserID        uint32       `gorm:"column:user_id;comment:发送动态的用户ID"`
-	Message       string       `gorm:"type:varchar(500);column:message;comment:动态内容"`
-	MediaURL      string       `gorm:"type:varchar(500);column:media_url;comment:动态媒体URL"`
-	ReceiveBoxIDs []uint32     `gorm:"column:receive_box_ids;comment:接收盒IDs"`
-	Comments      []CommentsTB `gorm:"foreignKey:MomentID;references:ID"`
-	LikeCount     int          `gorm:"column:like_count;comment:点赞数"`
-	LikeIDs       []uint32     `gorm:"column:like_ids;comment:点赞用户IDs"`
+	ID           uint32       `gorm:"primarykey"`
+	UserID       uint32       `gorm:"column:user_id;comment:发送动态的用户ID"`
+	Message      string       `gorm:"type:varchar(500);column:message;comment:动态内容"`
+	MediaURL     string       `gorm:"type:varchar(500);column:media_url;comment:动态媒体URL"`
+	PushIDs      []uint32     `gorm:"column:push_ids;comment:需要推送的接收盒IDs;type:json"`
+	BlackListIDs []uint32     `gorm:"column:black_list_ids;comment:黑名单用户IDs;type:json"`
+	Comments     []CommentsTB `gorm:"foreignKey:MomentID;references:ID"`
+	LikeCount    int          `gorm:"column:like_count;comment:点赞数"`
+	LikeIDs      []uint32     `gorm:"column:like_ids;comment:点赞用户IDs;type:json"`
 
 	SysCreated *time.Time `gorm:"autoCreateTime;column:sys_created;type:datetime;not null;comment:创建时间" json:"sys_created"`
 	SysUpdated *time.Time `gorm:"autoUpdateTime;column:sys_updated;type:datetime;not null;comment:更新时间" json:"sys_updated"`
@@ -32,4 +33,5 @@ type MomentRepo interface {
 	DeleteComment(ctx context.Context, commentID uint32) error
 	GetMomentMeta(ctx context.Context, momentID uint32) (*MomentsMetaTB, error)
 	GetComments(ctx context.Context, momentID uint32) ([]*CommentsTB, error)
+	UpdateMomentBlackList(ctx context.Context, momentID uint32, blackListIDs []uint32) ([]uint32, []uint32, error)
 }

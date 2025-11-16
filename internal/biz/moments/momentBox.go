@@ -7,8 +7,8 @@ import (
 type MomentsBoxTB struct {
 	ID         uint32          `gorm:"primarykey"`
 	UserID     uint32          `gorm:"column:user_id;comment:用户ID"`
-	SendBox    []MomentsMetaTB `gorm:"foreignKey:UserID;references:UserID;comment:发送盒"`
-	ReceiveBox []MomentsMetaTB `gorm:"foreignKey:UserID;references:UserID;comment:接收盒"`
+	SendBox    []MomentsMetaTB `gorm:"foreignKey:UserID;references:UserID;comment:发送盒;type:json"`
+	ReceiveBox []MomentsMetaTB `gorm:"foreignKey:UserID;references:UserID;comment:接收盒;type:json"`
 
 	SysCreated *time.Time `gorm:"autoCreateTime;column:sys_created;type:datetime;not null;comment:创建时间" json:"sys_created"`
 	SysUpdated *time.Time `gorm:"autoUpdateTime;column:sys_updated;type:datetime;not null;comment:更新时间" json:"sys_updated"`

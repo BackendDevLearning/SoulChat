@@ -4,6 +4,7 @@ import (
 	"context"
 	bizMoment "kratos-realworld/internal/biz/moments"
 	"kratos-realworld/internal/model"
+	"kratos-realworld/internal/pkg/util"
 	"time"
 
 	"github.com/go-kratos/kratos/v2/log"
@@ -23,18 +24,30 @@ func NewMomentRepo(data *model.Data, log *log.Helper) *MomentRepo {
 }
 
 func (r *MomentRepo) CreateMoment(ctx context.Context, moment *bizMoment.MomentTB) error {
+	// 如果PushIDs中有黑名单用户ID，从PushIDs中移除
+	blackMap := make(map[uint32]struct{}, len(moment.BlackListIDs))
+	for _, id := range moment.BlackListIDs {
+		blackMap[id] = struct{}{}
+	}
+	filtered := make([]uint32, 0, len(moment.PushIDs))
+	for _, id := range moment.PushIDs {
+		if _, ok := blackMap[id]; !ok {
+			filtered = append(filtered, id)
+		}
+	}
+	moment.PushIDs = filtered
+
 	err := r.data.DB().WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		err := tx.Create(moment).Error
 		if err != nil {
 			return err
 		}
 		momentMeta := &bizMoment.MomentsMetaTB{
-			ID:            moment.ID,
-			UserID:        moment.UserID,
-			MomentID:      moment.ID,
-			Message:       moment.Message,
-			MediaURL:      moment.MediaURL,
-			ReceiveBoxIDs: moment.ReceiveBoxIDs,
+			ID:       moment.ID,
+			UserID:   moment.UserID,
+			MomentID: moment.ID,
+			Message:  moment.Message,
+			MediaURL: moment.MediaURL,
 		}
 		err = tx.Create(momentMeta).Error
 		if err != nil {
@@ -50,7 +63,7 @@ func (r *MomentRepo) CreateMoment(ctx context.Context, moment *bizMoment.MomentT
 
 func (r *MomentRepo) GetMoment(ctx context.Context, momentID uint32) (*bizMoment.MomentTB, error) {
 	var moment bizMoment.MomentTB
-	err := r.data.DB().WithContext(ctx).Where("id = ?", momentID).First(&moment).Error
+	err := r.data.DB().WithContext(ctx).Model(&bizMoment.MomentTB{}).Preload("Comments").Where("id = ?", momentID).First(&moment).Error
 	if err != nil {
 		return nil, err
 	}
@@ -123,4 +136,26 @@ func (r *MomentRepo) GetMomentMeta(ctx context.Context, momentID uint32) (*bizMo
 		return nil, err
 	}
 	return &momentMeta, nil
+}
+
+func (r *MomentRepo) UpdateMomentBlackList(ctx context.Context, momentID uint32, newBlackListIDs []uint32) (added, removed []uint32, err error) {
+	var addedIDs, removedIDs []uint32
+	tx := r.data.DB().WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		old, err := r.GetMoment(ctx, momentID)
+		if err != nil {
+			return err
+		}
+		addedIDs, removedIDs = util.DiffIDs(old.BlackListIDs, newBlackListIDs)
+		old.BlackListIDs = newBlackListIDs
+		// 更新moment的黑名单ID
+		err = tx.Save(old).Error
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+	if tx != nil {
+		return nil, nil, tx
+	}
+	return addedIDs, removedIDs, nil
 }
