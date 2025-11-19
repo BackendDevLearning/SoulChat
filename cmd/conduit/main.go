@@ -104,7 +104,7 @@ func main() {
 		} else {
 			_ = logger.Log(log.LevelInfo, "msg", "kafka producer initialized successfully")
 
-			if err := kafka.InitConsumer(bc.Data.Kafka.Hosts); err != nil {
+			if err := kafka.InitConsumer(bc.Data.Kafka.Hosts, bc.Data.Kafka.Topic); err != nil {
 				_ = logger.Log(log.LevelError, "msg", "init kafka consumer failed", "err", err)
 				_ = logger.Log(log.LevelWarn, "msg", "kafka consumer disabled - messages from kafka will not be processed")
 			} else {

@@ -29,6 +29,10 @@ data:
     enabled: true
     hosts: "192.168.218.131:9092"
     topic: "go-chat-message"
+    # 以下配置项在代码中使用默认值，如需自定义可在代码中修改
+    # timeout: 10  # 超时时间（秒），默认 10
+    # partition: 1  # 分区数，默认 1
+    # message_mode: "kafka"  # 消息模式：kafka 或 channel，默认 kafka
 
   storage:
     static_dir: "./static/"
