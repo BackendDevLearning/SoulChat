@@ -47,9 +47,17 @@ message Data {
     int32 pool_size = 4;
   }
   message Kafka {
-    string hosts = 1; // 多个地址用逗号分隔
+    string hosts = 1; // 多个地址用逗号分隔，例如 "192.168.1.1:9092,192.168.1.2:9092"
     string topic = 2; // 默认 topic 名称
     bool enabled = 3; // 是否启用 kafka
+    int32 timeout = 4; // 超时时间（秒），默认 10
+    int32 partition = 5; // 分区数，默认 1
+    string group_id = 6; // 消费者组 ID，默认 "chat"
+    string start_offset = 7; // 起始消费位置：first（最早）或 last（最新），默认 "last"
+    int32 replication_factor = 8; // 副本因子，默认 1
+    bool allow_auto_topic_creation = 9; // 是否允许自动创建主题，默认 false
+    string required_acks = 10; // 消息确认机制：none（不需要确认）、one（leader确认）、all（所有副本确认），默认 "none"
+    int32 commit_interval = 11; // 提交偏移量的时间间隔（秒），默认与 timeout 相同
   }
   message Storage {
     string static_dir = 1;

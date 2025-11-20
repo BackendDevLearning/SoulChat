@@ -27,12 +27,16 @@ data:
 
   kafka:
     enabled: true
-    hosts: "192.168.218.131:9092"
+    hosts: "192.168.218.131:9092"  # 多个地址用逗号分隔，例如 "192.168.1.1:9092,192.168.1.2:9092"
     topic: "go-chat-message"
-    # 以下配置项在代码中使用默认值，如需自定义可在代码中修改
-    # timeout: 10  # 超时时间（秒），默认 10
-    # partition: 1  # 分区数，默认 1
-    # message_mode: "kafka"  # 消息模式：kafka 或 channel，默认 kafka
+    timeout: 10  # 超时时间（秒），默认 10
+    partition: 1  # 分区数，默认 1
+    group_id: "chat"  # 消费者组 ID，默认 "chat"
+    start_offset: "last"  # 起始消费位置：first（最早）或 last（最新），默认 "last"
+    replication_factor: 1  # 副本因子，默认 1
+    allow_auto_topic_creation: false  # 是否允许自动创建主题，默认 false
+    required_acks: "none"  # 消息确认机制：none（不需要确认）、one（leader确认）、all（所有副本确认），默认 "none"
+    commit_interval: 10  # 提交偏移量的时间间隔（秒），默认与 timeout 相同
 
   storage:
     static_dir: "./static/"

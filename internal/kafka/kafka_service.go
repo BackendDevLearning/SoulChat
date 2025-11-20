@@ -24,7 +24,7 @@ type kafkaService struct {
 var KafkaService = new(kafkaService)
 
 // KafkaInit 初始化kafka
-func (k *kafkaService) KafkaInit(kafkaConfig *conf.Data_Kafka, logger *zap.Logger, timeout int, partition int) error {
+func (k *kafkaService) KafkaInit(kafkaConfig *conf.Data_Kafka, logger *zap.Logger) error {
 	k.logger = logger
 	if kafkaConfig == nil {
 		return fmt.Errorf("kafka config is nil")
@@ -36,14 +36,39 @@ func (k *kafkaService) KafkaInit(kafkaConfig *conf.Data_Kafka, logger *zap.Logge
 		return fmt.Errorf("kafka hosts is empty")
 	}
 
-	// 默认超时时间为 10 秒
+	// 从配置读取超时时间，默认 10 秒
+	timeout := int(kafkaConfig.Timeout)
 	if timeout <= 0 {
 		timeout = 10
 	}
 
-	// 默认分区数为 1
-	if partition <= 0 {
-		partition = 1
+	// 从配置读取消费者组 ID，默认 "chat"
+	groupID := kafkaConfig.GroupId
+	if groupID == "" {
+		groupID = "chat"
+	}
+
+	// 从配置读取提交间隔，默认与 timeout 相同
+	commitInterval := int(kafkaConfig.CommitInterval)
+	if commitInterval <= 0 {
+		commitInterval = timeout
+	}
+
+	// 解析起始偏移量
+	startOffset := kafka.LastOffset
+	if kafkaConfig.StartOffset == "first" {
+		startOffset = kafka.FirstOffset
+	}
+
+	// 解析消息确认机制
+	var requiredAcks kafka.RequiredAcks
+	switch kafkaConfig.RequiredAcks {
+	case "one":
+		requiredAcks = kafka.RequireOne
+	case "all":
+		requiredAcks = kafka.RequireAll
+	default:
+		requiredAcks = kafka.RequireNone
 	}
 
 	// 创建 Writer
@@ -54,10 +79,10 @@ func (k *kafkaService) KafkaInit(kafkaConfig *conf.Data_Kafka, logger *zap.Logge
 		Balancer:               &kafka.Hash{},
 		// 写入超时时间
 		WriteTimeout:           time.Duration(timeout) * time.Second,
-		// 消息确认机制，RequireNone表示不需要确认
-		RequiredAcks:           kafka.RequireNone,
+		// 消息确认机制
+		RequiredAcks:           requiredAcks,
 		// 是否允许自动创建主题
-		AllowAutoTopicCreation: false,
+		AllowAutoTopicCreation: kafkaConfig.AllowAutoTopicCreation,
 	}
 
 	// 创建 Reader
@@ -65,18 +90,22 @@ func (k *kafkaService) KafkaInit(kafkaConfig *conf.Data_Kafka, logger *zap.Logge
 		Brokers:        hosts,
 		Topic:          kafkaConfig.Topic,
 		// 提交偏移量（Offset）的时间间隔，相当于提交消费的进度
-		CommitInterval: time.Duration(timeout) * time.Second,
+		CommitInterval: time.Duration(commitInterval) * time.Second,
 		// 同一 GroupID 的消费者共享消费进度，相当于共享消费的进度
 		// 用于负载均衡和故障恢复，当一个消费者宕机时，其他消费者可以继续消费
-		GroupID:     "chat",
-		// 首次启动时的起始消费位置，从最新消息开始消费（不消费历史消息）
-		StartOffset: kafka.LastOffset,
+		GroupID:     groupID,
+		// 首次启动时的起始消费位置
+		StartOffset: startOffset,
 	})
 
 	if logger != nil {
 		logger.Info("kafka service initialized",
 			zap.String("hosts", kafkaConfig.Hosts),
 			zap.String("topic", kafkaConfig.Topic),
+			zap.Int("timeout", timeout),
+			zap.String("group_id", groupID),
+			zap.String("start_offset", kafkaConfig.StartOffset),
+			zap.String("required_acks", kafkaConfig.RequiredAcks),
 		)
 	}
 
@@ -101,14 +130,21 @@ func (k *kafkaService) KafkaClose() {
 }
 
 // CreateTopic 创建topic
-func (k *kafkaService) CreateTopic(kafkaConfig *conf.Data_Kafka, partition int) error {
+func (k *kafkaService) CreateTopic(kafkaConfig *conf.Data_Kafka) error {
 	if kafkaConfig == nil {
 		return fmt.Errorf("kafka config is nil")
 	}
 
-	// 默认分区数为 1
+	// 从配置读取分区数，默认 1
+	partition := int(kafkaConfig.Partition)
 	if partition <= 0 {
 		partition = 1
+	}
+
+	// 从配置读取副本因子，默认 1
+	replicationFactor := int(kafkaConfig.ReplicationFactor)
+	if replicationFactor <= 0 {
+		replicationFactor = 1
 	}
 
 	// 解析 hosts，取第一个地址用于连接
@@ -132,8 +168,8 @@ func (k *kafkaService) CreateTopic(kafkaConfig *conf.Data_Kafka, partition int) 
 	topicConfigs := []kafka.TopicConfig{
 		{
 			Topic:             kafkaConfig.Topic,
-			NumPartitions:     partition, // 分区数
-			ReplicationFactor: 1,
+			NumPartitions:     partition,        // 分区数
+			ReplicationFactor: replicationFactor, // 副本因子
 		},
 	}
 
@@ -149,6 +185,7 @@ func (k *kafkaService) CreateTopic(kafkaConfig *conf.Data_Kafka, partition int) 
 		k.logger.Info("kafka topic created",
 			zap.String("topic", kafkaConfig.Topic),
 			zap.Int("partitions", partition),
+			zap.Int("replication_factor", replicationFactor),
 		)
 	}
 
