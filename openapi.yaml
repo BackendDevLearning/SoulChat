@@ -13,19 +13,29 @@ paths:
                 - Conduit
             operationId: Conduit_GetMessages
             parameters:
-                - name: MessageType
+                - name: messageType
                   in: query
                   schema:
                     type: integer
                     format: int32
-                - name: Uuid
+                - name: uuid
                   in: query
                   schema:
                     type: string
-                - name: FriendUsername
+                - name: friendUuid
                   in: query
                   schema:
                     type: string
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
             responses:
                 "200":
                     description: OK
@@ -177,6 +187,60 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/LoginReply'
+    /api/users/login/sms:
+        post:
+            tags:
+                - Conduit
+            operationId: Conduit_LoginBySms
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/LoginBySmsRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/LoginReply'
+    /api/users/resetPassword:
+        post:
+            tags:
+                - Conduit
+            operationId: Conduit_ResetUserPassword
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/ResetUserPwdRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ResetUserPwdReply'
+    /api/users/sendSms:
+        post:
+            tags:
+                - Conduit
+            operationId: Conduit_SendSms
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/SendSmsRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/SendSmsReply'
     /api/users/updatePassword:
         post:
             tags:
@@ -275,6 +339,19 @@ components:
                     format: int32
                 res:
                     $ref: '#/components/schemas/Res'
+                data:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/Message'
+                total:
+                    type: integer
+                    format: int32
+                page:
+                    type: integer
+                    format: int32
+                pageSize:
+                    type: integer
+                    format: int32
         GetProfileReply:
             type: object
             properties:
@@ -285,6 +362,13 @@ components:
                     $ref: '#/components/schemas/Res'
                 data:
                     $ref: '#/components/schemas/ProfileData'
+        LoginBySmsRequest:
+            type: object
+            properties:
+                phone:
+                    type: string
+                code:
+                    type: string
         LoginReply:
             type: object
             properties:
@@ -303,6 +387,35 @@ components:
                 password:
                     type: string
             description: NID_LOGIN_REQ
+        Message:
+            type: object
+            properties:
+                avatar:
+                    type: string
+                fromUserName:
+                    type: string
+                from:
+                    type: string
+                to:
+                    type: string
+                content:
+                    type: string
+                messageType:
+                    type: integer
+                    format: uint32
+                contentType:
+                    type: integer
+                    format: uint32
+                type:
+                    type: string
+                url:
+                    type: string
+                fileSuffix:
+                    type: string
+                file:
+                    type: string
+                    format: bytes
+            description: NID_MESSAGE_REQ
         ProfileData:
             type: object
             properties:
@@ -359,6 +472,8 @@ components:
                     type: string
                 password:
                     type: string
+                code:
+                    type: string
             description: NID_REGIDTER_REQ
         RelationshipData:
             type: object
@@ -396,6 +511,38 @@ components:
                 msg:
                     type: string
             description: 前端错误信息查看 NID_Describe_Message
+        ResetUserPwdReply:
+            type: object
+            properties:
+                code:
+                    type: integer
+                    format: int32
+                res:
+                    $ref: '#/components/schemas/Res'
+        ResetUserPwdRequest:
+            type: object
+            properties:
+                phone:
+                    type: string
+                code:
+                    type: string
+                newPassword:
+                    type: string
+        SendSmsReply:
+            type: object
+            properties:
+                code:
+                    type: integer
+                    format: int32
+                res:
+                    $ref: '#/components/schemas/Res'
+        SendSmsRequest:
+            type: object
+            properties:
+                phone:
+                    type: string
+                scene:
+                    type: string
         UnfollowUserRequest:
             type: object
             properties:

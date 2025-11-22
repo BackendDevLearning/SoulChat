@@ -3,15 +3,12 @@ package chat
 import (
 	"context"
 	"encoding/json"
-	"kratos-realworld/internal/common"
 	"kratos-realworld/internal/conf"
 	"kratos-realworld/internal/kafka"
 	"kratos-realworld/internal/model"
 	"log"
-	"net/http"
 	"strconv"
 
-	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 	kafkaGo "github.com/segmentio/kafka-go"
 	"go.uber.org/zap"
@@ -27,15 +24,6 @@ type Client struct {
 	Uuid     string
 	SendTo   chan []byte       // 给server端
 	SendBack chan *MessageBack // 给前端
-}
-
-var upgrader = websocket.Upgrader{
-	ReadBufferSize:  2048,
-	WriteBufferSize: 2048,
-	// 检查连接的Origin头安全检查函数，用于验证请求的 Origin 头，防止跨站 WebSocket 劫持（CSWSH）。
-	CheckOrigin: func(r *http.Request) bool {
-		return true
-	},
 }
 
 // 空的上下文
@@ -66,7 +54,7 @@ type ChatMessageRequest struct {
 	Content    string `json:"content"`    // 文本内容
 	Url        string `json:"url"`        // 文件URL
 	SendId     string `json:"sendId"`     // 发送者ID
-	SendName   string `json:"sendName"`  // 发送者名称
+	SendName   string `json:"sendName"`   // 发送者名称
 	SendAvatar string `json:"sendAvatar"` // 发送者头像
 	ReceiveId  string `json:"receiveId"`  // 接收者ID
 	FileSize   string `json:"fileSize"`   // 文件大小
@@ -176,28 +164,23 @@ func (c *Client) Write(logger *zap.Logger, data *model.Data) {
 	}
 }
 
-// NewClientInit 当接受到前端有登录消息时，会调用该函数
-func NewClientInit(c *gin.Context, clientId string, kafkaConfig *conf.Data_Kafka, logger *zap.Logger, data *model.Data) {
-	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
-	if err != nil {
-		if logger != nil {
-			logger.Error("failed to upgrade websocket connection", zap.Error(err))
-		}
-		return
-	}
+// NewClientInit 当 server 层已经升级连接后，由用例或 handler 调用以初始化客户端
+func NewClientInit(conn *websocket.Conn, userID string, kafkaConfig *conf.Data_Kafka, logger *zap.Logger, data *model.Data) {
+	clientId := userID
+
 	client := &Client{
 		Conn:     conn,
 		Uuid:     clientId,
 		SendTo:   make(chan []byte, CHANNEL_SIZE),
 		SendBack: make(chan *MessageBack, CHANNEL_SIZE),
 	}
-	
+
 	// 根据配置决定使用哪种模式
 	mode := GetMessageMode()
 	if kafkaConfig != nil && kafkaConfig.Enabled {
 		mode = "kafka"
 	}
-	
+
 	if mode == "channel" {
 		// TODO: 需要实现 ChatServer 或使用现有的 websocket server
 		if ChatServer != nil {
@@ -221,7 +204,7 @@ func ClientLogout(clientId string, kafkaConfig *conf.Data_Kafka, logger *zap.Log
 	if kafkaConfig != nil && kafkaConfig.Enabled {
 		mode = "kafka"
 	}
-	
+
 	var client *Client
 	if ChatServer != nil {
 		client = ChatServer.Clients[clientId]
@@ -229,7 +212,7 @@ func ClientLogout(clientId string, kafkaConfig *conf.Data_Kafka, logger *zap.Log
 	if client == nil && KafkaChatServer != nil {
 		client = KafkaChatServer.Clients[clientId]
 	}
-	
+
 	if client != nil {
 		if mode == "channel" {
 			if ChatServer != nil {

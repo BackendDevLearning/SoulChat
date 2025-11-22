@@ -14,15 +14,15 @@ import (
 	"sync"
 	"time"
 
-	"github.com/go-redis/redis/v8"
 	"github.com/gorilla/websocket"
+	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 )
 
 // 消息类型常量
 const (
-	MessageTypeText        = "Text"
-	MessageTypeFile        = "File"
+	MessageTypeText         = "Text"
+	MessageTypeFile         = "File"
 	MessageTypeAudioOrVideo = "AudioOrVideo"
 )
 
@@ -166,7 +166,7 @@ func (k *KafkaServer) Start(logger *zap.Logger, data *model.Data) {
 				time.Sleep(time.Second)
 				continue
 			}
-			
+
 			kafkaMessage, err := kafka.KafkaService.ChatReader.ReadMessage(context.Background())
 			if err != nil {
 				if logger != nil {
@@ -174,7 +174,7 @@ func (k *KafkaServer) Start(logger *zap.Logger, data *model.Data) {
 				}
 				continue
 			}
-			
+
 			if logger != nil {
 				logger.Info("received kafka message",
 					zap.String("topic", kafkaMessage.Topic),
@@ -184,7 +184,7 @@ func (k *KafkaServer) Start(logger *zap.Logger, data *model.Data) {
 					zap.String("value", string(kafkaMessage.Value)),
 				)
 			}
-			
+
 			data := kafkaMessage.Value
 			var chatMessageReq ChatMessageRequest
 			if err := json.Unmarshal(data, &chatMessageReq); err != nil {
@@ -193,9 +193,9 @@ func (k *KafkaServer) Start(logger *zap.Logger, data *model.Data) {
 				}
 				continue
 			}
-			
+
 			log.Println("原消息为：", data, "反序列化后为：", chatMessageReq)
-			
+
 			if chatMessageReq.Type == MessageTypeText {
 				// 存message
 				message := model.Message{
@@ -501,7 +501,7 @@ func (k *KafkaServer) Start(logger *zap.Logger, data *model.Data) {
 						}
 					}
 				}
-			} else if chatMessageReq.Type == message_type_enum.Audi   oOrVideo {
+			} else if chatMessageReq.Type == message_type_enum.AudioOrVideo {
 				var avData request.AVData
 				if err := json.Unmarshal([]byte(chatMessageReq.AVdata), &avData); err != nil {
 					zlog.Error(err.Error())

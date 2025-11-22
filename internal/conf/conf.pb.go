@@ -759,12 +759,20 @@ func (x *Data_Redis) GetPoolSize() int32 {
 }
 
 type Data_Kafka struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Hosts         string                 `protobuf:"bytes,1,opt,name=hosts,proto3" json:"hosts,omitempty"`      // 多个地址用逗号分隔
-	Topic         string                 `protobuf:"bytes,2,opt,name=topic,proto3" json:"topic,omitempty"`      // 默认 topic 名称
-	Enabled       bool                   `protobuf:"varint,3,opt,name=enabled,proto3" json:"enabled,omitempty"` // 是否启用 kafka
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"open.v1"`
+	Hosts                  string                 `protobuf:"bytes,1,opt,name=hosts,proto3" json:"hosts,omitempty"`                                                                      // 多个地址用逗号分隔，例如 "192.168.1.1:9092,192.168.1.2:9092"
+	Topic                  string                 `protobuf:"bytes,2,opt,name=topic,proto3" json:"topic,omitempty"`                                                                      // 默认 topic 名称
+	Enabled                bool                   `protobuf:"varint,3,opt,name=enabled,proto3" json:"enabled,omitempty"`                                                                 // 是否启用 kafka
+	Timeout                int32                  `protobuf:"varint,4,opt,name=timeout,proto3" json:"timeout,omitempty"`                                                                 // 超时时间（秒），默认 10
+	Partition              int32                  `protobuf:"varint,5,opt,name=partition,proto3" json:"partition,omitempty"`                                                             // 分区数，默认 1
+	GroupId                string                 `protobuf:"bytes,6,opt,name=group_id,json=groupId,proto3" json:"group_id,omitempty"`                                                   // 消费者组 ID，默认 "chat"
+	StartOffset            string                 `protobuf:"bytes,7,opt,name=start_offset,json=startOffset,proto3" json:"start_offset,omitempty"`                                       // 起始消费位置：first（最早）或 last（最新），默认 "last"
+	ReplicationFactor      int32                  `protobuf:"varint,8,opt,name=replication_factor,json=replicationFactor,proto3" json:"replication_factor,omitempty"`                    // 副本因子，默认 1
+	AllowAutoTopicCreation bool                   `protobuf:"varint,9,opt,name=allow_auto_topic_creation,json=allowAutoTopicCreation,proto3" json:"allow_auto_topic_creation,omitempty"` // 是否允许自动创建主题，默认 false
+	RequiredAcks           string                 `protobuf:"bytes,10,opt,name=required_acks,json=requiredAcks,proto3" json:"required_acks,omitempty"`                                   // 消息确认机制：none（不需要确认）、one（leader确认）、all（所有副本确认），默认 "none"
+	CommitInterval         int32                  `protobuf:"varint,11,opt,name=commit_interval,json=commitInterval,proto3" json:"commit_interval,omitempty"`                            // 提交偏移量的时间间隔（秒），默认与 timeout 相同
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *Data_Kafka) Reset() {
@@ -816,6 +824,62 @@ func (x *Data_Kafka) GetEnabled() bool {
 		return x.Enabled
 	}
 	return false
+}
+
+func (x *Data_Kafka) GetTimeout() int32 {
+	if x != nil {
+		return x.Timeout
+	}
+	return 0
+}
+
+func (x *Data_Kafka) GetPartition() int32 {
+	if x != nil {
+		return x.Partition
+	}
+	return 0
+}
+
+func (x *Data_Kafka) GetGroupId() string {
+	if x != nil {
+		return x.GroupId
+	}
+	return ""
+}
+
+func (x *Data_Kafka) GetStartOffset() string {
+	if x != nil {
+		return x.StartOffset
+	}
+	return ""
+}
+
+func (x *Data_Kafka) GetReplicationFactor() int32 {
+	if x != nil {
+		return x.ReplicationFactor
+	}
+	return 0
+}
+
+func (x *Data_Kafka) GetAllowAutoTopicCreation() bool {
+	if x != nil {
+		return x.AllowAutoTopicCreation
+	}
+	return false
+}
+
+func (x *Data_Kafka) GetRequiredAcks() string {
+	if x != nil {
+		return x.RequiredAcks
+	}
+	return ""
+}
+
+func (x *Data_Kafka) GetCommitInterval() int32 {
+	if x != nil {
+		return x.CommitInterval
+	}
+	return 0
 }
 
 type Data_Storage struct {
@@ -1067,7 +1131,7 @@ const file_internal_conf_conf_proto_rawDesc = "" +
 	"\x04GRPC\x12\x18\n" +
 	"\anetwork\x18\x01 \x01(\tR\anetwork\x12\x12\n" +
 	"\x04addr\x18\x02 \x01(\tR\x04addr\x123\n" +
-	"\atimeout\x18\x03 \x01(\v2\x19.google.protobuf.DurationR\atimeout\"\xd5\x05\n" +
+	"\atimeout\x18\x03 \x01(\v2\x19.google.protobuf.DurationR\atimeout\"\x84\b\n" +
 	"\x04Data\x125\n" +
 	"\bdatabase\x18\x01 \x01(\v2\x19.kratos.api.Data.DatabaseR\bdatabase\x12,\n" +
 	"\x05redis\x18\x02 \x01(\v2\x16.kratos.api.Data.RedisR\x05redis\x12\x10\n" +
@@ -1087,11 +1151,20 @@ const file_internal_conf_conf_proto_rawDesc = "" +
 	"\x04addr\x18\x01 \x01(\tR\x04addr\x12\x1a\n" +
 	"\bpassword\x18\x02 \x01(\tR\bpassword\x12\x0e\n" +
 	"\x02db\x18\x03 \x01(\x05R\x02db\x12\x1b\n" +
-	"\tpool_size\x18\x04 \x01(\x05R\bpoolSize\x1aM\n" +
+	"\tpool_size\x18\x04 \x01(\x05R\bpoolSize\x1a\xfb\x02\n" +
 	"\x05Kafka\x12\x14\n" +
 	"\x05hosts\x18\x01 \x01(\tR\x05hosts\x12\x14\n" +
 	"\x05topic\x18\x02 \x01(\tR\x05topic\x12\x18\n" +
-	"\aenabled\x18\x03 \x01(\bR\aenabled\x1a(\n" +
+	"\aenabled\x18\x03 \x01(\bR\aenabled\x12\x18\n" +
+	"\atimeout\x18\x04 \x01(\x05R\atimeout\x12\x1c\n" +
+	"\tpartition\x18\x05 \x01(\x05R\tpartition\x12\x19\n" +
+	"\bgroup_id\x18\x06 \x01(\tR\agroupId\x12!\n" +
+	"\fstart_offset\x18\a \x01(\tR\vstartOffset\x12-\n" +
+	"\x12replication_factor\x18\b \x01(\x05R\x11replicationFactor\x129\n" +
+	"\x19allow_auto_topic_creation\x18\t \x01(\bR\x16allowAutoTopicCreation\x12#\n" +
+	"\rrequired_acks\x18\n" +
+	" \x01(\tR\frequiredAcks\x12'\n" +
+	"\x0fcommit_interval\x18\v \x01(\x05R\x0ecommitInterval\x1a(\n" +
 	"\aStorage\x12\x1d\n" +
 	"\n" +
 	"static_dir\x18\x01 \x01(\tR\tstaticDir\"5\n" +

@@ -7,6 +7,7 @@ package main
 
 import (
 	"kratos-realworld/internal/biz"
+	"kratos-realworld/internal/chat"
 	"kratos-realworld/internal/conf"
 	"kratos-realworld/internal/data"
 	"kratos-realworld/internal/model"
@@ -40,6 +41,7 @@ var CustomProviderSet = wire.NewSet(
 	model.ProviderSet,   // 最底层数据库配置
 	data.ProviderSet,    // 数据层依赖
 	biz.ProviderSet,     // 业务逻辑层
+	chat.ProviderSet,    // chatUsecase 依赖
 	service.ProviderSet, // 接口/服务层
 	server.ProviderSet,  // HTTP/GRPC 等服务启动
 	newApp,              // 构造 kratos.App
