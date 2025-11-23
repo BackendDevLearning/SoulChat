@@ -112,35 +112,36 @@ func normalizePath(path string) string {
 	return path
 }
 
-type KafkaServer struct {
+type KafkaServerUseCase struct {
 	Clients map[string]*Client
 	mutex   *sync.Mutex
 	Login   chan *Client // 登录通道
 	Logout  chan *Client // 退出登录通道
+	log  	*log.Helper
+	data    *model.Data
+	kafkaService *kafka.KafkaService
 }
-
-var KafkaChatServer *KafkaServer
 
 // 用来接收操作系统的信号
 var kafkaQuit = make(chan os.Signal, 1)
 
-func init() {
-	if KafkaChatServer == nil {
-		KafkaChatServer = &KafkaServer{
-			Clients: make(map[string]*Client),
-			mutex:   &sync.Mutex{},
-			Login:   make(chan *Client),
-			Logout:  make(chan *Client),
-		}
+func NewKafkaServerUseCase(log *log.Helper, data *model.Data, kafkaService *kafka.KafkaService) *KafkaServerUseCase {
+	return &KafkaServerUseCase{
+		Clients: make(map[string]*Client),
+		mutex:   &sync.Mutex{},
+		Login:   make(chan *Client),
+		Logout:  make(chan *Client),
+		log: 	log,
+		data:    data,
+		kafkaService: kafkaService,
 	}
-	//signal.Notify(kafkaQuit, syscall.SIGINT, syscall.SIGTERM)
 }
 
 // Start 启动 Kafka 服务器
-func (k *KafkaServer) Start(logger *zap.Logger, data *model.Data) {
+func (k *KafkaServerUseCase) Start() {
 	defer func() {
 		if r := recover(); r != nil {
-			if logger != nil {
+			if k.log != nil {
 				logger.Error("kafka server panic", zap.Any("error", r))
 			}
 		}
@@ -153,14 +154,14 @@ func (k *KafkaServer) Start(logger *zap.Logger, data *model.Data) {
 		defer func() {
 			// 安全捕获 panic，防止kafka server崩溃
 			if r := recover(); r != nil {
-				if logger != nil {
-					logger.Error("kafka server panic in goroutine", zap.Any("error", r))
+				if k.log != nil {
+					k.log.Error("kafka server panic in goroutine", zap.Any("error", r))
 				}
 			}
 		}()
 		for {
 			if kafka.KafkaService.ChatReader == nil {
-				if logger != nil {
+				if k.log != nil {
 					logger.Warn("kafka reader is not initialized")
 				}
 				time.Sleep(time.Second)
@@ -169,14 +170,14 @@ func (k *KafkaServer) Start(logger *zap.Logger, data *model.Data) {
 
 			kafkaMessage, err := kafka.KafkaService.ChatReader.ReadMessage(context.Background())
 			if err != nil {
-				if logger != nil {
-					logger.Error("failed to read kafka message", zap.Error(err))
+				if k.log != nil {
+					k.log.Error("failed to read kafka message", zap.Error(err))
 				}
 				continue
 			}
 
-			if logger != nil {
-				logger.Info("received kafka message",
+			if k.log != nil {
+				k.log.Info("received kafka message",
 					zap.String("topic", kafkaMessage.Topic),
 					zap.Int("partition", kafkaMessage.Partition),
 					zap.Int64("offset", kafkaMessage.Offset),
@@ -188,13 +189,13 @@ func (k *KafkaServer) Start(logger *zap.Logger, data *model.Data) {
 			data := kafkaMessage.Value
 			var chatMessageReq ChatMessageRequest
 			if err := json.Unmarshal(data, &chatMessageReq); err != nil {
-				if logger != nil {
-					logger.Error("failed to unmarshal chat message", zap.Error(err))
+				if k.log != nil {
+					k.log.Error("failed to unmarshal chat message", zap.Error(err))
 				}
 				continue
 			}
 
-			log.Println("原消息为：", data, "反序列化后为：", chatMessageReq)
+			k.log.Info("原消息为：", data, "反序列化后为：", chatMessageReq)
 
 			if chatMessageReq.Type == MessageTypeText {
 				// 存message
@@ -239,9 +240,9 @@ func (k *KafkaServer) Start(logger *zap.Logger, data *model.Data) {
 					}
 					jsonMessage, err := json.Marshal(messageRsp)
 					if err != nil {
-						zlog.Error(err.Error())
+						k.log.Error("failed to marshal message", zap.Error(err))
 					}
-					log.Println("返回的消息为：", messageRsp, "序列化后为：", jsonMessage)
+					k.log.Info("返回的消息为：", messageRsp, "序列化后为：", jsonMessage)
 					var messageBack = &MessageBack{
 						Message: jsonMessage,
 						Uuid:    message.Uuid,
@@ -265,23 +266,23 @@ func (k *KafkaServer) Start(logger *zap.Logger, data *model.Data) {
 
 					// redis
 					var rspString string
-					rspString, err = myredis.GetKeyNilIsErr("message_list_" + message.SendId + "_" + message.ReceiveId)
+					rspString, err = k.data.Cache().Get(ctx, "message_list_" + message.SendId + "_" + message.ReceiveId).Result()
 					if err == nil {
 						var rsp []respond.GetMessageListRespond
 						if err := json.Unmarshal([]byte(rspString), &rsp); err != nil {
-							zlog.Error(err.Error())
+							k.log.Error("failed to unmarshal message", zap.Error(err))
 						}
 						rsp = append(rsp, messageRsp)
 						rspByte, err := json.Marshal(rsp)
 						if err != nil {
-							zlog.Error(err.Error())
+							k.log.Error("failed to marshal message", zap.Error(err))
 						}
-						if err := myredis.SetKeyEx("message_list_"+message.SendId+"_"+message.ReceiveId, string(rspByte), time.Minute*constants.REDIS_TIMEOUT); err != nil {
-							zlog.Error(err.Error())
+						if err := k.data.Cache().Set(ctx, "message_list_"+message.SendId+"_"+message.ReceiveId, string(rspByte), time.Minute*constants.REDIS_TIMEOUT); err != nil {
+							k.log.Error("failed to set message", zap.Error(err))
 						}
 					} else {
 						if !errors.Is(err, redis.Nil) {
-							zlog.Error(err.Error())
+							k.log.Error("failed to get message", zap.Error(err))
 						}
 					}
 
@@ -301,20 +302,20 @@ func (k *KafkaServer) Start(logger *zap.Logger, data *model.Data) {
 					}
 					jsonMessage, err := json.Marshal(messageRsp)
 					if err != nil {
-						zlog.Error(err.Error())
+						k.log.Error("failed to marshal message", zap.Error(err))
 					}
-					log.Println("返回的消息为：", messageRsp, "序列化后为：", jsonMessage)
+					k.log.Info("返回的消息为：", messageRsp, "序列化后为：", jsonMessage)
 					var messageBack = &MessageBack{
 						Message: jsonMessage,
 						Uuid:    message.Uuid,
 					}
 					var group model.GroupInfo
 					if res := dao.GormDB.Where("uuid = ?", message.ReceiveId).First(&group); res.Error != nil {
-						zlog.Error(res.Error.Error())
+						k.log.Error("failed to get group", zap.Error(res.Error))
 					}
 					var members []string
 					if err := json.Unmarshal(group.Members, &members); err != nil {
-						zlog.Error(err.Error())
+						k.log.Error("failed to unmarshal members", zap.Error(err))
 					}
 					k.mutex.Lock()
 					for _, member := range members {
@@ -335,19 +336,19 @@ func (k *KafkaServer) Start(logger *zap.Logger, data *model.Data) {
 					if err == nil {
 						var rsp []respond.GetGroupMessageListRespond
 						if err := json.Unmarshal([]byte(rspString), &rsp); err != nil {
-							zlog.Error(err.Error())
+							k.log.Error("failed to unmarshal message", zap.Error(err))
 						}
 						rsp = append(rsp, messageRsp)
 						rspByte, err := json.Marshal(rsp)
 						if err != nil {
-							zlog.Error(err.Error())
+							k.log.Error("failed to marshal message", zap.Error(err))
 						}
 						if err := myredis.SetKeyEx("group_messagelist_"+message.ReceiveId, string(rspByte), time.Minute*constants.REDIS_TIMEOUT); err != nil {
-							zlog.Error(err.Error())
+							k.log.Error("failed to set message", zap.Error(err))
 						}
 					} else {
 						if !errors.Is(err, redis.Nil) {
-							zlog.Error(err.Error())
+							k.log.Error("failed to get message", zap.Error(err))
 						}
 					}
 				}
@@ -394,9 +395,9 @@ func (k *KafkaServer) Start(logger *zap.Logger, data *model.Data) {
 					}
 					jsonMessage, err := json.Marshal(messageRsp)
 					if err != nil {
-						zlog.Error(err.Error())
+						k.log.Error("failed to marshal message", zap.Error(err))
 					}
-					log.Println("返回的消息为：", messageRsp, "序列化后为：", jsonMessage)
+					k.log.Info("返回的消息为：", messageRsp, "序列化后为：", jsonMessage)
 					var messageBack = &MessageBack{
 						Message: jsonMessage,
 						Uuid:    message.Uuid,
@@ -420,19 +421,19 @@ func (k *KafkaServer) Start(logger *zap.Logger, data *model.Data) {
 					if err == nil {
 						var rsp []respond.GetMessageListRespond
 						if err := json.Unmarshal([]byte(rspString), &rsp); err != nil {
-							zlog.Error(err.Error())
+							k.log.Error("failed to unmarshal message", zap.Error(err))
 						}
 						rsp = append(rsp, messageRsp)
 						rspByte, err := json.Marshal(rsp)
 						if err != nil {
-							zlog.Error(err.Error())
+							k.log.Error("failed to marshal message", zap.Error(err))
 						}
 						if err := myredis.SetKeyEx("message_list_"+message.SendId+"_"+message.ReceiveId, string(rspByte), time.Minute*constants.REDIS_TIMEOUT); err != nil {
-							zlog.Error(err.Error())
+							k.log.Error("failed to set message", zap.Error(err))
 						}
 					} else {
 						if !errors.Is(err, redis.Nil) {
-							zlog.Error(err.Error())
+							k.log.Error("failed to get message", zap.Error(err))
 						}
 					}
 				} else {
@@ -451,20 +452,20 @@ func (k *KafkaServer) Start(logger *zap.Logger, data *model.Data) {
 					}
 					jsonMessage, err := json.Marshal(messageRsp)
 					if err != nil {
-						zlog.Error(err.Error())
+						k.log.Error("failed to marshal message", zap.Error(err))
 					}
-					log.Println("返回的消息为：", messageRsp, "序列化后为：", jsonMessage)
+					k.log.Info("返回的消息为：", messageRsp, "序列化后为：", jsonMessage)
 					var messageBack = &MessageBack{
 						Message: jsonMessage,
 						Uuid:    message.Uuid,
 					}
 					var group model.GroupInfo
 					if res := dao.GormDB.Where("uuid = ?", message.ReceiveId).First(&group); res.Error != nil {
-						zlog.Error(res.Error.Error())
+						k.log.Error("failed to get group", zap.Error(res.Error))
 					}
 					var members []string
 					if err := json.Unmarshal(group.Members, &members); err != nil {
-						zlog.Error(err.Error())
+						k.log.Error("failed to unmarshal members", zap.Error(err))
 					}
 					k.mutex.Lock()
 					for _, member := range members {
@@ -485,26 +486,26 @@ func (k *KafkaServer) Start(logger *zap.Logger, data *model.Data) {
 					if err == nil {
 						var rsp []respond.GetGroupMessageListRespond
 						if err := json.Unmarshal([]byte(rspString), &rsp); err != nil {
-							zlog.Error(err.Error())
+							k.log.Error("failed to unmarshal message", zap.Error(err))
 						}
 						rsp = append(rsp, messageRsp)
 						rspByte, err := json.Marshal(rsp)
 						if err != nil {
-							zlog.Error(err.Error())
+							k.log.Error("failed to marshal message", zap.Error(err))
 						}
 						if err := myredis.SetKeyEx("group_messagelist_"+message.ReceiveId, string(rspByte), time.Minute*constants.REDIS_TIMEOUT); err != nil {
-							zlog.Error(err.Error())
+							k.log.Error("failed to set message", zap.Error(err))
 						}
 					} else {
 						if !errors.Is(err, redis.Nil) {
-							zlog.Error(err.Error())
+							k.log.Error("failed to get message", zap.Error(err))
 						}
 					}
 				}
 			} else if chatMessageReq.Type == message_type_enum.AudioOrVideo {
 				var avData request.AVData
 				if err := json.Unmarshal([]byte(chatMessageReq.AVdata), &avData); err != nil {
-					zlog.Error(err.Error())
+					k.log.Error("failed to unmarshal av data", zap.Error(err))
 				}
 				//log.Println(avData)
 				message := model.Message{
@@ -529,7 +530,7 @@ func (k *KafkaServer) Start(logger *zap.Logger, data *model.Data) {
 					// 对SendAvatar去除前面/static之前的所有内容，防止ip前缀引入
 					message.SendAvatar = normalizePath(message.SendAvatar)
 					if res := dao.GormDB.Create(&message); res.Error != nil {
-						zlog.Error(res.Error.Error())
+						k.log.Error("failed to create message", zap.Error(res.Error))
 					}
 				}
 
@@ -553,10 +554,10 @@ func (k *KafkaServer) Start(logger *zap.Logger, data *model.Data) {
 					}
 					jsonMessage, err := json.Marshal(messageRsp)
 					if err != nil {
-						zlog.Error(err.Error())
+						k.log.Error("failed to marshal message", zap.Error(err))
 					}
 					// log.Println("返回的消息为：", messageRsp, "序列化后为：", jsonMessage)
-					log.Println("返回的消息为：", messageRsp)
+					k.log.Info("返回的消息为：", messageRsp)
 					var messageBack = &MessageBack{
 						Message: jsonMessage,
 						Uuid:    message.Uuid,
@@ -584,10 +585,10 @@ func (k *KafkaServer) Start(logger *zap.Logger, data *model.Data) {
 				k.mutex.Lock()
 				k.Clients[client.Uuid] = client
 				k.mutex.Unlock()
-				zlog.Debug(fmt.Sprintf("欢迎来到kama聊天服务器，亲爱的用户%s\n", client.Uuid))
+				k.log.Info(fmt.Sprintf("欢迎来到kama聊天服务器，亲爱的用户%s\n", client.Uuid))
 				err := client.Conn.WriteMessage(websocket.TextMessage, []byte("欢迎来到kama聊天服务器"))
 				if err != nil {
-					zlog.Error(err.Error())
+					k.log.Error("failed to write message", zap.Error(err))
 				}
 			}
 
@@ -596,33 +597,33 @@ func (k *KafkaServer) Start(logger *zap.Logger, data *model.Data) {
 				k.mutex.Lock()
 				delete(k.Clients, client.Uuid)
 				k.mutex.Unlock()
-				zlog.Info(fmt.Sprintf("用户%s退出登录\n", client.Uuid))
+				k.log.Info(fmt.Sprintf("用户%s退出登录\n", client.Uuid))
 				if err := client.Conn.WriteMessage(websocket.TextMessage, []byte("已退出登录")); err != nil {
-					zlog.Error(err.Error())
+					k.log.Error("failed to write message", zap.Error(err))
 				}
 			}
 		}
 	}
 }
 
-func (k *KafkaServer) Close() {
+func (k *KafkaServerUseCase) Close() {
 	close(k.Login)
 	close(k.Logout)
 }
 
-func (k *KafkaServer) SendClientToLogin(client *Client) {
+func (k *KafkaServerUseCase) SendClientToLogin(client *Client) {
 	k.mutex.Lock()
 	k.Login <- client
 	k.mutex.Unlock()
 }
 
-func (k *KafkaServer) SendClientToLogout(client *Client) {
+func (k *KafkaServerUseCase) SendClientToLogout(client *Client) {
 	k.mutex.Lock()
 	k.Logout <- client
 	k.mutex.Unlock()
 }
 
-func (k *KafkaServer) RemoveClient(uuid string) {
+func (k *KafkaServerUseCase) RemoveClient(uuid string) {
 	k.mutex.Lock()
 	delete(k.Clients, uuid)
 	k.mutex.Unlock()

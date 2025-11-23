@@ -11,7 +11,8 @@ import (
 
 	"github.com/gorilla/websocket"
 	kafkaGo "github.com/segmentio/kafka-go"
-	"go.uber.org/zap"
+	"github.com/go-kratos/kratos/v2/log"
+	"kratos-realworld/internal/common/req"
 )
 
 type MessageBack struct {
@@ -47,40 +48,25 @@ const (
 	CHANNEL_SIZE = 256 // channel 缓冲区大小
 )
 
-// ChatMessageRequest 聊天消息请求结构
-type ChatMessageRequest struct {
-	SessionId  string `json:"sessionId"`
-	Type       string `json:"type"`       // 消息类型：Text, File, AudioOrVideo
-	Content    string `json:"content"`    // 文本内容
-	Url        string `json:"url"`        // 文件URL
-	SendId     string `json:"sendId"`     // 发送者ID
-	SendName   string `json:"sendName"`   // 发送者名称
-	SendAvatar string `json:"sendAvatar"` // 发送者头像
-	ReceiveId  string `json:"receiveId"`  // 接收者ID
-	FileSize   string `json:"fileSize"`   // 文件大小
-	FileType   string `json:"fileType"`   // 文件类型
-	FileName   string `json:"fileName"`   // 文件名
-	AVdata     string `json:"avdata"`     // 音视频数据
-}
 
 // Read 读取websocket消息并发送给send通道
-func (c *Client) Read(logger *zap.Logger) {
+func (c *Client) Read(logger *log.Helper) {
 	if logger != nil {
-		logger.Info("ws read goroutine start")
+		logger.Log(log.InfoLevel, "ws read goroutine start")
 	}
 	for {
 		// 阻塞有一定隐患，因为下面要处理缓冲的逻辑，但是可以先不做优化，问题不大
 		_, jsonMessage, err := c.Conn.ReadMessage() // 阻塞状态
 		if err != nil {
 			if logger != nil {
-				logger.Error("failed to read websocket message", zap.Error(err))
+				logger.Log(log.ErrorLevel, "failed to read websocket message", log.Error(err))
 			}
 			return // 直接断开websocket
 		} else {
-			var message = ChatMessageRequest{}
+			var message = req.ChatMessageRequest{}
 			if err := json.Unmarshal(jsonMessage, &message); err != nil {
 				if logger != nil {
-					logger.Error("failed to unmarshal message", zap.Error(err))
+					logger.Log(log.ErrorLevel, "failed to unmarshal message", log.Error(err))
 				}
 			}
 			log.Println("接受到消息为: ", jsonMessage)
@@ -101,7 +87,7 @@ func (c *Client) Read(logger *zap.Logger) {
 						// 否则考虑加宽channel size，或者使用kafka
 						if err := c.Conn.WriteMessage(websocket.TextMessage, []byte("由于目前同一时间过多用户发送消息，消息发送失败，请稍后重试")); err != nil {
 							if logger != nil {
-								logger.Error("failed to write error message", zap.Error(err))
+								logger.Log(log.ErrorLevel, "failed to write error message", log.Error(err))
 							}
 						}
 					}
@@ -118,16 +104,16 @@ func (c *Client) Read(logger *zap.Logger) {
 						Value: jsonMessage,
 					}); err != nil {
 						if logger != nil {
-							logger.Error("failed to write message to kafka", zap.Error(err))
+							logger.Log(log.ErrorLevel, "failed to write message to kafka", log.Error(err))
 						}
 					} else {
 						if logger != nil {
-							logger.Info("message sent to kafka", zap.String("message", string(jsonMessage)))
+							logger.Log(log.InfoLevel, "message sent to kafka", log.String("message", string(jsonMessage)))
 						}
 					}
 				} else {
 					if logger != nil {
-						logger.Warn("kafka writer is not initialized")
+						logger.Log(log.WarnLevel, "kafka writer is not initialized")
 					}
 				}
 			}
@@ -136,16 +122,16 @@ func (c *Client) Read(logger *zap.Logger) {
 }
 
 // Write 从send通道读取消息发送给websocket
-func (c *Client) Write(logger *zap.Logger, data *model.Data) {
+func (c *Client) Write(logger *log.Helper, data *model.Data) {
 	if logger != nil {
-		logger.Info("ws write goroutine start")
+		logger.Log(log.InfoLevel, "ws write goroutine start")
 	}
 	for messageBack := range c.SendBack { // 阻塞状态
 		// 通过 WebSocket 发送消息
 		err := c.Conn.WriteMessage(websocket.TextMessage, messageBack.Message)
 		if err != nil {
 			if logger != nil {
-				logger.Error("failed to write websocket message", zap.Error(err))
+				logger.Log(log.ErrorLevel, "failed to write websocket message", log.Error(err))
 			}
 			return // 直接断开websocket
 		}
@@ -165,7 +151,7 @@ func (c *Client) Write(logger *zap.Logger, data *model.Data) {
 }
 
 // NewClientInit 当 server 层已经升级连接后，由用例或 handler 调用以初始化客户端
-func NewClientInit(conn *websocket.Conn, userID string, kafkaConfig *conf.Data_Kafka, logger *zap.Logger, data *model.Data) {
+func NewClientInit(conn *websocket.Conn, userID string, kafkaConfig *conf.Data_Kafka, logger *log.Helper, data *model.Data) {
 	clientId := userID
 
 	client := &Client{
@@ -194,12 +180,12 @@ func NewClientInit(conn *websocket.Conn, userID string, kafkaConfig *conf.Data_K
 	go client.Read(logger)
 	go client.Write(logger, data)
 	if logger != nil {
-		logger.Info("ws connection established", zap.String("clientId", clientId))
+		logger.Log(log.InfoLevel, "ws connection established", log.String("clientId", clientId))
 	}
 }
 
 // ClientLogout 当接受到前端有登出消息时，会调用该函数
-func ClientLogout(clientId string, kafkaConfig *conf.Data_Kafka, logger *zap.Logger) (string, int) {
+func ClientLogout(clientId string, kafkaConfig *conf.Data_Kafka, logger *log.Helper) (string, int) {
 	mode := GetMessageMode()
 	if kafkaConfig != nil && kafkaConfig.Enabled {
 		mode = "kafka"
@@ -225,7 +211,7 @@ func ClientLogout(clientId string, kafkaConfig *conf.Data_Kafka, logger *zap.Log
 		}
 		if err := client.Conn.Close(); err != nil {
 			if logger != nil {
-				logger.Error("failed to close websocket connection", zap.Error(err))
+				logger.Log(log.ErrorLevel, "failed to close websocket connection", log.Error(err))
 			}
 			return "系统错误", -1
 		}

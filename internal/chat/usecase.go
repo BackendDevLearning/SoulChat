@@ -6,7 +6,7 @@ import (
 
 	"github.com/google/wire"
 	"github.com/gorilla/websocket"
-	"go.uber.org/zap"
+	"github.com/go-kratos/kratos/v2/log"
 )
 
 // ProviderSet 提供给 wire 注入使用
@@ -14,12 +14,13 @@ var ProviderSet = wire.NewSet(NewChatUsecase)
 
 type ChatUsecase struct {
 	kafkaConfig *conf.Data_Kafka
-	logger      *zap.Logger
+	logger      *log.Helper
 	data        *model.Data
+	kafkaServerUseCase *KafkaServerUseCase
 }
 
-func NewChatUsecase(kafkaConfig *conf.Data_Kafka, logger *zap.Logger, data *model.Data) *ChatUsecase {
-	return &ChatUsecase{kafkaConfig: kafkaConfig, logger: logger, data: data}
+func NewChatUsecase(kafkaConfig *conf.Data_Kafka, logger *log.Helper, data *model.Data) *ChatUsecase {
+	return &ChatUsecase{kafkaConfig: kafkaConfig, logger: logger, data: data, kafkaServerUseCase: NewKafkaServerUseCase(logger, data, kafka.KafkaService)}
 }
 
 // Login 接受已升级的 websocket 连接并交由客户端初始化处理
