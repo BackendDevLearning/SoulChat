@@ -7,10 +7,9 @@ import (
 	"fmt"
 	"kratos-realworld/internal/kafka"
 	"kratos-realworld/internal/model"
+	"kratos-realworld/internal/common/respond"
 	"log"
-	"math/rand"
 	"os"
-	"strings"
 	"sync"
 	"time"
 
@@ -37,79 +36,10 @@ const (
 	REDIS_TIMEOUT = 30 // Redis 缓存超时时间（分钟）
 )
 
-// GetMessageListRespond 消息列表响应结构
-type GetMessageListRespond struct {
-	SendId     string `json:"sendId"`
-	SendName   string `json:"sendName"`
-	SendAvatar string `json:"sendAvatar"`
-	ReceiveId  string `json:"receiveId"`
-	Type       string `json:"type"`
-	Content    string `json:"content"`
-	Url        string `json:"url"`
-	FileSize   string `json:"fileSize"`
-	FileName   string `json:"fileName"`
-	FileType   string `json:"fileType"`
-	CreatedAt  string `json:"createdAt"`
-}
-
-// GetGroupMessageListRespond 群消息列表响应结构
-type GetGroupMessageListRespond struct {
-	SendId     string `json:"sendId"`
-	SendName   string `json:"sendName"`
-	SendAvatar string `json:"sendAvatar"`
-	ReceiveId  string `json:"receiveId"`
-	Type       string `json:"type"`
-	Content    string `json:"content"`
-	Url        string `json:"url"`
-	FileSize   string `json:"fileSize"`
-	FileName   string `json:"fileName"`
-	FileType   string `json:"fileType"`
-	CreatedAt  string `json:"createdAt"`
-}
-
-// AVMessageRespond 音视频消息响应结构
-type AVMessageRespond struct {
-	SendId     string `json:"sendId"`
-	SendName   string `json:"sendName"`
-	SendAvatar string `json:"sendAvatar"`
-	ReceiveId  string `json:"receiveId"`
-	Type       string `json:"type"`
-	Content    string `json:"content"`
-	Url        string `json:"url"`
-	FileSize   string `json:"fileSize"`
-	FileName   string `json:"fileName"`
-	FileType   string `json:"fileType"`
-	CreatedAt  string `json:"createdAt"`
-	AVdata     string `json:"avdata"`
-}
-
 // AVData 音视频数据
 type AVData struct {
 	MessageId string `json:"messageId"`
 	Type      string `json:"type"`
-}
-
-// 工具函数：生成随机字符串
-func getNowAndLenRandomString(length int) string {
-	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-	b := make([]byte, length)
-	for i := range b {
-		b[i] = charset[rand.Intn(len(charset))]
-	}
-	return string(b)
-}
-
-// normalizePath 规范化路径
-func normalizePath(path string) string {
-	if path == "" {
-		return path
-	}
-	// 去除 /static 之前的所有内容
-	idx := strings.Index(path, "/static")
-	if idx >= 0 {
-		return path[idx:]
-	}
-	return path
 }
 
 type KafkaServerUseCase struct {
@@ -200,7 +130,7 @@ func (k *KafkaServerUseCase) Start() {
 			if chatMessageReq.Type == MessageTypeText {
 				// 存message
 				message := model.Message{
-					Uuid:       fmt.Sprintf("M%s", random.GetNowAndLenRandomString(11)),
+					Uuid:       fmt.Sprintf("M%s", GetNowAndLenRandomString(11)),
 					SessionId:  chatMessageReq.SessionId,
 					Type:       chatMessageReq.Type,
 					Content:    chatMessageReq.Content,
