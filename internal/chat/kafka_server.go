@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"gorm.io/gorm/logger"
 	"kratos-realworld/internal/kafka"
 	"kratos-realworld/internal/model"
 	"kratos-realworld/internal/common/respond"
@@ -43,13 +44,13 @@ type AVData struct {
 }
 
 type KafkaServerUseCase struct {
-	Clients map[string]*Client
-	mutex   *sync.Mutex
-	Login   chan *Client // 登录通道
-	Logout  chan *Client // 退出登录通道
-	log  	*log.Helper
-	data    *model.Data
-	kafkaService *kafka.KafkaService
+	Clients      map[string]*Client
+	mutex        *sync.Mutex
+	Login        chan *Client // 登录通道
+	Logout       chan *Client // 退出登录通道
+	log          *log.Helper
+	data         *model.Data
+	kafkaService *kafka.kafkaService
 }
 
 // 用来接收操作系统的信号
@@ -57,12 +58,12 @@ var kafkaQuit = make(chan os.Signal, 1)
 
 func NewKafkaServerUseCase(log *log.Helper, data *model.Data, kafkaService *kafka.KafkaService) *KafkaServerUseCase {
 	return &KafkaServerUseCase{
-		Clients: make(map[string]*Client),
-		mutex:   &sync.Mutex{},
-		Login:   make(chan *Client),
-		Logout:  make(chan *Client),
-		log: 	log,
-		data:    data,
+		Clients:      make(map[string]*Client),
+		mutex:        &sync.Mutex{},
+		Login:        make(chan *Client),
+		Logout:       make(chan *Client),
+		log:          log,
+		data:         data,
 		kafkaService: kafkaService,
 	}
 }
@@ -72,7 +73,7 @@ func (k *KafkaServerUseCase) Start() {
 	defer func() {
 		if r := recover(); r != nil {
 			if k.log != nil {
-				logger.Error("kafka server panic", zap.Any("error", r))
+				k.log.Error("kafka server panic", zap.Any("error", r))
 			}
 		}
 		close(k.Login)
@@ -196,7 +197,7 @@ func (k *KafkaServerUseCase) Start() {
 
 					// redis
 					var rspString string
-					rspString, err = k.data.Cache().Get(ctx, "message_list_" + message.SendId + "_" + message.ReceiveId).Result()
+					rspString, err = k.data.Cache().Get(ctx, "message_list_"+message.SendId+"_"+message.ReceiveId).Result()
 					if err == nil {
 						var rsp []respond.GetMessageListRespond
 						if err := json.Unmarshal([]byte(rspString), &rsp); err != nil {

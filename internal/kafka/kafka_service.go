@@ -18,13 +18,13 @@ type kafkaService struct {
 	ChatWriter *kafka.Writer
 	ChatReader *kafka.Reader
 	KafkaConn  *kafka.Conn
-	logger     *zap.Logger
+	logger     *log.Helper
 }
 
 var KafkaService = new(kafkaService)
 
 // KafkaInit 初始化kafka
-func (k *kafkaService) KafkaInit(kafkaConfig *conf.Data_Kafka, logger *zap.Logger) error {
+func (k *kafkaService) KafkaInit(kafkaConfig *conf.Data_Kafka, logger *log.Helper) error {
 	k.logger = logger
 	if kafkaConfig == nil {
 		return fmt.Errorf("kafka config is nil")
@@ -73,27 +73,27 @@ func (k *kafkaService) KafkaInit(kafkaConfig *conf.Data_Kafka, logger *zap.Logge
 
 	// 创建 Writer
 	k.ChatWriter = &kafka.Writer{
-		Addr:                   kafka.TCP(hosts...),
-		Topic:                  kafkaConfig.Topic,
+		Addr:  kafka.TCP(hosts...),
+		Topic: kafkaConfig.Topic,
 		// 分区策略，负载均衡
-		Balancer:               &kafka.Hash{},
+		Balancer: &kafka.Hash{},
 		// 写入超时时间
-		WriteTimeout:           time.Duration(timeout) * time.Second,
+		WriteTimeout: time.Duration(timeout) * time.Second,
 		// 消息确认机制
-		RequiredAcks:           requiredAcks,
+		RequiredAcks: requiredAcks,
 		// 是否允许自动创建主题
 		AllowAutoTopicCreation: kafkaConfig.AllowAutoTopicCreation,
 	}
 
 	// 创建 Reader
 	k.ChatReader = kafka.NewReader(kafka.ReaderConfig{
-		Brokers:        hosts,
-		Topic:          kafkaConfig.Topic,
+		Brokers: hosts,
+		Topic:   kafkaConfig.Topic,
 		// 提交偏移量（Offset）的时间间隔，相当于提交消费的进度
 		CommitInterval: time.Duration(commitInterval) * time.Second,
 		// 同一 GroupID 的消费者共享消费进度，相当于共享消费的进度
 		// 用于负载均衡和故障恢复，当一个消费者宕机时，其他消费者可以继续消费
-		GroupID:     groupID,
+		GroupID: groupID,
 		// 首次启动时的起始消费位置
 		StartOffset: startOffset,
 	})
@@ -168,7 +168,7 @@ func (k *kafkaService) CreateTopic(kafkaConfig *conf.Data_Kafka) error {
 	topicConfigs := []kafka.TopicConfig{
 		{
 			Topic:             kafkaConfig.Topic,
-			NumPartitions:     partition,        // 分区数
+			NumPartitions:     partition,         // 分区数
 			ReplicationFactor: replicationFactor, // 副本因子
 		},
 	}
