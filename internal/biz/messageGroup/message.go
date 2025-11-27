@@ -8,16 +8,27 @@ import (
 
 type MessageTB struct {
 	ID          uint32     `gorm:"column:id;type:int(10) unsigned;primary_key;AUTO_INCREMENT" json:"id"`
-	CreatedAt   *time.Time `gorm:"column:created_at;type:datetime(3);default:null;comment:创建时间" json:"created_at"` // 创建时间
-	UpdatedAt   *time.Time `gorm:"column:updated_at;type:datetime(3);default:null;comment:更新时间" json:"updated_at"` // 更新时间
+	Uuid       string    `gorm:"column:uuid;uniqueIndex;type:char(20);not null;comment:消息uuid"`
+	SessionId  string    `gorm:"column:session_id;index;type:char(20);not null;comment:会话uuid"`
+	SendName   string    `gorm:"column:send_name;type:varchar(20);not null;comment:发送者昵称"`
+	SendAvatar string    `gorm:"column:send_avatar;type:varchar(255);not null;comment:发送者头像"`
+	ReceiveId  string    `gorm:"column:receive_id;index;type:char(20);not null;comment:接受者uuid"`
+	AVdata     string    `gorm:"column:av_data;type:text;comment:通话传递数据"`
+	FileType   string    `gorm:"column:file_type;type:char(10);comment:文件类型"`
+	FileName   string    `gorm:"column:file_name;type:varchar(50);comment:文件名"`
+	FileSize   string    `gorm:"column:file_size;type:char(20);comment:文件大小"`
+	Status     int8      `gorm:"column:status;not null;comment:状态，0.未发送，1.已发送"`
+
+	Type       int8      `gorm:"column:type;not null;comment:消息类型，0.文本，1.语音，2.文件，3.通话"` // 通话不用存消息内容或者url
 	FromUserID  string     `gorm:"column:from_user_id;type:varchar(64);not null;index;comment:发送者用户ID" json:"fromUserId"`
 	ToUserID    string     `gorm:"column:to_user_id;type:varchar(64);not null;index;comment:接收者用户ID或群ID" json:"toUserId"`
 	Content     string     `gorm:"column:content;type:varchar(2500);not null;comment:消息内容" json:"content"`
 	MessageType uint16     `gorm:"column:message_type;type:smallint unsigned;not null;default:1;comment:消息类型：1单聊，2群聊" json:"messageType"`
-	ContentType uint16     `gorm:"column:content_type;type:smallint unsigned;not null;default:1;comment:消息内容类型：1文字 2普通文件 3图片 4音频 5视频 6语音聊天 7视频聊天" json:"contentType"`
 	Url         string     `gorm:"column:url;type:varchar(350);comment:文件或者图片地址" json:"url"`
 	Pic         string     `gorm:"column:pic;type:text;comment:缩略图" json:"pic"`
 
+	CreatedAt   *time.Time `gorm:"column:created_at;type:datetime(3);default:null;comment:创建时间" json:"created_at"` // 创建时间
+	UpdatedAt   *time.Time `gorm:"column:updated_at;type:datetime(3);default:null;comment:更新时间" json:"updated_at"` // 更新时间
 	SysCreated *time.Time `gorm:"autoCreateTime;column:sys_created;type:datetime;comment:创建时间;NOT NULL" json:"sys_created"`
 	SysUpdated *time.Time `gorm:"autoUpdateTime;column:sys_updated;type:datetime;comment:更新时间;NOT NULL" json:"sys_updated"`
 	DeletedAt  *uint64    `gorm:"column:deleted_at;type:bigint unsigned;default:null;comment:删除时间戳" json:"deleted_at"` // 删除时间戳

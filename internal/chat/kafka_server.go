@@ -5,10 +5,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"gorm.io/gorm/logger"
 	"kratos-realworld/internal/kafka"
 	"kratos-realworld/internal/model"
-	"kratos-realworld/internal/common/respond"
+	"kratos-realworld/internal/common/res"
+	"kratos-realworld/internal/common/req"
+	"kratos-realworld/internal/common/emun"
 	"log"
 	"os"
 	"sync"
@@ -434,7 +435,7 @@ func (k *KafkaServerUseCase) Start() {
 					}
 				}
 			} else if chatMessageReq.Type == message_type_enum.AudioOrVideo {
-				var avData request.AVData
+				var avData req.AVData
 				if err := json.Unmarshal([]byte(chatMessageReq.AVdata), &avData); err != nil {
 					k.log.Error("failed to unmarshal av data", zap.Error(err))
 				}

@@ -21,3 +21,10 @@ const (
 	GO_CHANNEL = "gochannel"
 	KAFKA      = "kafka"
 )
+
+// chat_type
+type AVData struct {
+	MessageId string `json:"messageId"`
+	Type      string `json:"type"`
+}
+
