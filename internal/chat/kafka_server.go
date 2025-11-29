@@ -5,38 +5,21 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"kratos-realworld/internal/biz/messageGroup"
+	"kratos-realworld/internal/common"
+	"kratos-realworld/internal/common/req"
+	"kratos-realworld/internal/common/res"
 	"kratos-realworld/internal/kafka"
 	"kratos-realworld/internal/model"
-	"kratos-realworld/internal/common/res"
-	"kratos-realworld/internal/common/req"
-	"kratos-realworld/internal/common/emun"
-	"log"
 	"os"
 	"sync"
 	"time"
 
+	"github.com/go-kratos/kratos/v2/log"
 	"github.com/gorilla/websocket"
 	"github.com/redis/go-redis/v9"
-	"go.uber.org/zap"
 )
 
-// 消息类型常量
-const (
-	MessageTypeText         = "Text"
-	MessageTypeFile         = "File"
-	MessageTypeAudioOrVideo = "AudioOrVideo"
-)
-
-// 消息状态常量
-const (
-	MessageStatusUnsent = "Unsent"
-	MessageStatusSent   = "Sent"
-)
-
-// 常量定义
-const (
-	REDIS_TIMEOUT = 30 // Redis 缓存超时时间（分钟）
-)
 
 // AVData 音视频数据
 type AVData struct {
@@ -51,7 +34,7 @@ type KafkaServerUseCase struct {
 	Logout       chan *Client // 退出登录通道
 	log          *log.Helper
 	data         *model.Data
-	kafkaService *kafka.kafkaService
+	kafkaService *kafka.KafkaService
 }
 
 // 用来接收操作系统的信号
@@ -74,7 +57,7 @@ func (k *KafkaServerUseCase) Start() {
 	defer func() {
 		if r := recover(); r != nil {
 			if k.log != nil {
-				k.log.Error("kafka server panic", zap.Any("error", r))
+				k.log.Errorf("kafka server panic, %v", r)
 			}
 		}
 		close(k.Login)
@@ -87,82 +70,90 @@ func (k *KafkaServerUseCase) Start() {
 			// 安全捕获 panic，防止kafka server崩溃
 			if r := recover(); r != nil {
 				if k.log != nil {
-					k.log.Error("kafka server panic in goroutine", zap.Any("error", r))
+					k.log.Errorf("kafka server panic in goroutine, %v", r)
 				}
 			}
 		}()
+		ctx := context.Background()
 		for {
 			if kafka.KafkaService.ChatReader == nil {
 				if k.log != nil {
-					logger.Warn("kafka reader is not initialized")
+					k.log.Warn("kafka reader is not initialized")
 				}
 				time.Sleep(time.Second)
 				continue
 			}
 
-			kafkaMessage, err := kafka.KafkaService.ChatReader.ReadMessage(context.Background())
+			kafkaMessage, err := k.kafkaService.ChatReader.ReadMessage(ctx)
 			if err != nil {
 				if k.log != nil {
-					k.log.Error("failed to read kafka message", zap.Error(err))
+					k.log.Errorf("failed to read kafka message, %v", err)
 				}
 				continue
 			}
 
 			if k.log != nil {
-				k.log.Info("received kafka message",
-					zap.String("topic", kafkaMessage.Topic),
-					zap.Int("partition", kafkaMessage.Partition),
-					zap.Int64("offset", kafkaMessage.Offset),
-					zap.String("key", string(kafkaMessage.Key)),
-					zap.String("value", string(kafkaMessage.Value)),
+				k.log.Infof("received kafka message, topic=%s, partition=%d, offset=%d, key=%s, value=%s",
+					kafkaMessage.Topic,
+					kafkaMessage.Partition,
+					kafkaMessage.Offset,
+					string(kafkaMessage.Key),
+					string(kafkaMessage.Value),
 				)
 			}
 
 			data := kafkaMessage.Value
-			var chatMessageReq ChatMessageRequest
+			var chatMessageReq req.ChatMessageRequest
 			if err := json.Unmarshal(data, &chatMessageReq); err != nil {
 				if k.log != nil {
-					k.log.Error("failed to unmarshal chat message", zap.Error(err))
+					k.log.Errorf("failed to unmarshal chat message, %v", err)
 				}
 				continue
 			}
 
-			k.log.Info("原消息为：", data, "反序列化后为：", chatMessageReq)
+			k.log.Infof("原消息为：%s, 反序列化后为：%+v", string(data), chatMessageReq)
 
 			if chatMessageReq.Type == MessageTypeText {
 				// 存message
-				message := model.Message{
-					Uuid:       fmt.Sprintf("M%s", GetNowAndLenRandomString(11)),
+				now := time.Now()
+				message := messageGroup.MessageTB{
+					Uuid:       GenerateMessageUUID(),
 					SessionId:  chatMessageReq.SessionId,
-					Type:       chatMessageReq.Type,
+					Type:       0, // 0.文本
 					Content:    chatMessageReq.Content,
 					Url:        "",
-					SendId:     chatMessageReq.SendId,
+					FromUserID: chatMessageReq.SendId,
+					ToUserID:   chatMessageReq.ReceiveId,
 					SendName:   chatMessageReq.SendName,
-					SendAvatar: chatMessageReq.SendAvatar,
+					SendAvatar: normalizePath(chatMessageReq.SendAvatar),
 					ReceiveId:  chatMessageReq.ReceiveId,
 					FileSize:   "0B",
 					FileType:   "",
 					FileName:   "",
-					Status:     message_status_enum.Unsent,
-					CreatedAt:  time.Now(),
+					Status:     0, // 0.未发送
+					MessageType: 1, // 1单聊
 					AVdata:     "",
+					CreatedAt:  &now,
 				}
-				// 对SendAvatar去除前面/static之前的所有内容，防止ip前缀引入
-				message.SendAvatar = normalizePath(message.SendAvatar)
-				if res := dao.GormDB.Create(&message); res.Error != nil {
-					zlog.Error(res.Error.Error())
+				// 判断是单聊还是群聊
+				if len(message.ReceiveId) > 0 && message.ReceiveId[0] == 'G' {
+					message.MessageType = 2 // 2群聊
 				}
+				
+				if err := k.data.DB().WithContext(ctx).Create(&message).Error; err != nil {
+					k.log.Errorf("failed to create message, %v", err)
+				}
+				
 				if message.ReceiveId[0] == 'U' { // 发送给User
 					// 如果能找到ReceiveId，说明在线，可以发送，否则存表后跳过
 					// 因为在线的时候是通过websocket更新消息记录的，离线后通过存表，登录时只调用一次数据库操作
 					// 切换chat对象后，前端的messageList也会改变，获取messageList从第二次就是从redis中获取
-					messageRsp := respond.GetMessageListRespond{
-						SendId:     message.SendId,
+					messageRsp := res.GetMessageListRespond{
+						SendId:     message.FromUserID,
 						SendName:   message.SendName,
 						SendAvatar: chatMessageReq.SendAvatar,
 						ReceiveId:  message.ReceiveId,
-						Type:       message.Type,
+						Type:       common.MessageTypeText,
 						Content:    message.Content,
 						Url:        message.Url,
 						FileSize:   message.FileSize,
@@ -172,9 +163,9 @@ func (k *KafkaServerUseCase) Start() {
 					}
 					jsonMessage, err := json.Marshal(messageRsp)
 					if err != nil {
-						k.log.Error("failed to marshal message", zap.Error(err))
+						k.log.Errorf("failed to marshal message, %v", err)
 					}
-					k.log.Info("返回的消息为：", messageRsp, "序列化后为：", jsonMessage)
+					k.log.Infof("返回的消息为：%+v, 序列化后为：%s", messageRsp, string(jsonMessage))
 					var messageBack = &MessageBack{
 						Message: jsonMessage,
 						Uuid:    message.Uuid,
@@ -197,34 +188,34 @@ func (k *KafkaServerUseCase) Start() {
 					k.mutex.Unlock()
 
 					// redis
-					var rspString string
-					rspString, err = k.data.Cache().Get(ctx, "message_list_"+message.SendId+"_"+message.ReceiveId).Result()
-					if err == nil {
-						var rsp []respond.GetMessageListRespond
+					key := "message_list_" + message.FromUserID + "_" + message.ReceiveId
+					rspString, exists, err := k.data.Cache().Get(ctx, key)
+					if err == nil && exists {
+						var rsp []res.GetMessageListRespond
 						if err := json.Unmarshal([]byte(rspString), &rsp); err != nil {
-							k.log.Error("failed to unmarshal message", zap.Error(err))
+							k.log.Errorf("failed to unmarshal message, %v", err)
+						} else {
+							rsp = append(rsp, messageRsp)
+							rspByte, err := json.Marshal(rsp)
+							if err != nil {
+								k.log.Errorf("failed to marshal message, %v", err)
+							} else {
+								if err := k.data.Cache().Set(ctx, key, string(rspByte), time.Minute*common.REDIS_TIMEOUT); err != nil {
+									k.log.Errorf("failed to set message, %v", err)
+								}
+							}
 						}
-						rsp = append(rsp, messageRsp)
-						rspByte, err := json.Marshal(rsp)
-						if err != nil {
-							k.log.Error("failed to marshal message", zap.Error(err))
-						}
-						if err := k.data.Cache().Set(ctx, "message_list_"+message.SendId+"_"+message.ReceiveId, string(rspByte), time.Minute*constants.REDIS_TIMEOUT); err != nil {
-							k.log.Error("failed to set message", zap.Error(err))
-						}
-					} else {
-						if !errors.Is(err, redis.Nil) {
-							k.log.Error("failed to get message", zap.Error(err))
-						}
+					} else if err != nil && !errors.Is(err, redis.Nil) {
+						k.log.Errorf("failed to get message, %v", err)
 					}
 
 				} else if message.ReceiveId[0] == 'G' { // 发送给Group
-					messageRsp := respond.GetGroupMessageListRespond{
-						SendId:     message.SendId,
+					messageRsp := res.GetGroupMessageListRespond{
+						SendId:     message.FromUserID,
 						SendName:   message.SendName,
 						SendAvatar: chatMessageReq.SendAvatar,
 						ReceiveId:  message.ReceiveId,
-						Type:       message.Type,
+						Type:       common.MessageTypeText,
 						Content:    message.Content,
 						Url:        message.Url,
 						FileSize:   message.FileSize,
@@ -234,90 +225,106 @@ func (k *KafkaServerUseCase) Start() {
 					}
 					jsonMessage, err := json.Marshal(messageRsp)
 					if err != nil {
-						k.log.Error("failed to marshal message", zap.Error(err))
+						k.log.Errorf("failed to marshal message, %v", err)
 					}
-					k.log.Info("返回的消息为：", messageRsp, "序列化后为：", jsonMessage)
+					k.log.Infof("返回的消息为：%+v, 序列化后为：%s", messageRsp, string(jsonMessage))
 					var messageBack = &MessageBack{
 						Message: jsonMessage,
 						Uuid:    message.Uuid,
 					}
-					var group model.GroupInfo
-					if res := dao.GormDB.Where("uuid = ?", message.ReceiveId).First(&group); res.Error != nil {
-						k.log.Error("failed to get group", zap.Error(res.Error))
+					// 查询群组信息
+					var group messageGroup.GroupTB
+					if err := k.data.DB().WithContext(ctx).Where("uuid = ?", message.ReceiveId).First(&group).Error; err != nil {
+						k.log.Errorf("failed to get group, %v", err)
+						continue
+					}
+					// 查询群成员
+					var groupMembers []messageGroup.GroupMemberTB
+					if err := k.data.DB().WithContext(ctx).Where("group_id = ?", group.ID).Find(&groupMembers).Error; err != nil {
+						k.log.Errorf("failed to get group members, %v", err)
+						continue
 					}
 					var members []string
-					if err := json.Unmarshal(group.Members, &members); err != nil {
-						k.log.Error("failed to unmarshal members", zap.Error(err))
+					for _, member := range groupMembers {
+						members = append(members, fmt.Sprintf("U%d", member.UserID))
 					}
 					k.mutex.Lock()
 					for _, member := range members {
-						if member != message.SendId {
+						if member != message.FromUserID {
 							if receiveClient, ok := k.Clients[member]; ok {
 								receiveClient.SendBack <- messageBack
 							}
 						} else {
-							sendClient := k.Clients[message.SendId]
-							sendClient.SendBack <- messageBack
+							if sendClient, ok := k.Clients[message.FromUserID]; ok {
+								sendClient.SendBack <- messageBack
+							}
 						}
 					}
 					k.mutex.Unlock()
 
 					// redis
-					var rspString string
-					rspString, err = myredis.GetKeyNilIsErr("group_messagelist_" + message.ReceiveId)
-					if err == nil {
-						var rsp []respond.GetGroupMessageListRespond
+					key := "group_messagelist_" + message.ReceiveId
+					rspString, exists, err := k.data.Cache().Get(ctx, key)
+					if err == nil && exists {
+						var rsp []res.GetGroupMessageListRespond
 						if err := json.Unmarshal([]byte(rspString), &rsp); err != nil {
-							k.log.Error("failed to unmarshal message", zap.Error(err))
+							k.log.Errorf("failed to unmarshal message, %v", err)
+						} else {
+							rsp = append(rsp, messageRsp)
+							rspByte, err := json.Marshal(rsp)
+							if err != nil {
+								k.log.Errorf("failed to marshal message, %v", err)
+							} else {
+								if err := k.data.Cache().Set(ctx, key, string(rspByte), time.Minute*common.REDIS_TIMEOUT); err != nil {
+									k.log.Errorf("failed to set message, %v", err)
+								}
+							}
 						}
-						rsp = append(rsp, messageRsp)
-						rspByte, err := json.Marshal(rsp)
-						if err != nil {
-							k.log.Error("failed to marshal message", zap.Error(err))
-						}
-						if err := myredis.SetKeyEx("group_messagelist_"+message.ReceiveId, string(rspByte), time.Minute*constants.REDIS_TIMEOUT); err != nil {
-							k.log.Error("failed to set message", zap.Error(err))
-						}
-					} else {
-						if !errors.Is(err, redis.Nil) {
-							k.log.Error("failed to get message", zap.Error(err))
-						}
+					} else if err != nil && !errors.Is(err, redis.Nil) {
+						k.log.Errorf("failed to get message, %v", err)
 					}
 				}
-			} else if chatMessageReq.Type == message_type_enum.File {
+			} else if messageTypeStr == common.MessageTypeFile {
 				// 存message
-				message := model.Message{
-					Uuid:       fmt.Sprintf("M%s", random.GetNowAndLenRandomString(11)),
+				now := time.Now()
+				message := messageGroup.MessageTB{
+					Uuid:       GenerateMessageUUID(),
 					SessionId:  chatMessageReq.SessionId,
-					Type:       chatMessageReq.Type,
+					Type:       2, // 2.文件
 					Content:    "",
 					Url:        chatMessageReq.Url,
-					SendId:     chatMessageReq.SendId,
+					FromUserID: chatMessageReq.SendId,
+					ToUserID:   chatMessageReq.ReceiveId,
 					SendName:   chatMessageReq.SendName,
-					SendAvatar: chatMessageReq.SendAvatar,
+					SendAvatar: normalizePath(chatMessageReq.SendAvatar),
 					ReceiveId:  chatMessageReq.ReceiveId,
 					FileSize:   chatMessageReq.FileSize,
 					FileType:   chatMessageReq.FileType,
 					FileName:   chatMessageReq.FileName,
-					Status:     message_status_enum.Unsent,
-					CreatedAt:  time.Now(),
+					Status:     0, // 0.未发送
+					MessageType: 1, // 1单聊
 					AVdata:     "",
+					CreatedAt:  &now,
 				}
-				// 对SendAvatar去除前面/static之前的所有内容，防止ip前缀引入
-				message.SendAvatar = normalizePath(message.SendAvatar)
-				if res := dao.GormDB.Create(&message); res.Error != nil {
-					zlog.Error(res.Error.Error())
+				// 判断是单聊还是群聊
+				if len(message.ReceiveId) > 0 && message.ReceiveId[0] == 'G' {
+					message.MessageType = 2 // 2群聊
 				}
+				
+				if err := k.data.DB().WithContext(ctx).Create(&message).Error; err != nil {
+					k.log.Errorf("failed to create message, %v", err)
+				}
+				
 				if message.ReceiveId[0] == 'U' { // 发送给User
 					// 如果能找到ReceiveId，说明在线，可以发送，否则存表后跳过
 					// 因为在线的时候是通过websocket更新消息记录的，离线后通过存表，登录时只调用一次数据库操作
 					// 切换chat对象后，前端的messageList也会改变，获取messageList从第二次就是从redis中获取
-					messageRsp := respond.GetMessageListRespond{
-						SendId:     message.SendId,
+					messageRsp := res.GetMessageListRespond{
+						SendId:     message.FromUserID,
 						SendName:   message.SendName,
 						SendAvatar: chatMessageReq.SendAvatar,
 						ReceiveId:  message.ReceiveId,
-						Type:       message.Type,
+						Type:       common.MessageTypeFile,
 						Content:    message.Content,
 						Url:        message.Url,
 						FileSize:   message.FileSize,
@@ -327,54 +334,50 @@ func (k *KafkaServerUseCase) Start() {
 					}
 					jsonMessage, err := json.Marshal(messageRsp)
 					if err != nil {
-						k.log.Error("failed to marshal message", zap.Error(err))
+						k.log.Errorf("failed to marshal message, %v", err)
 					}
-					k.log.Info("返回的消息为：", messageRsp, "序列化后为：", jsonMessage)
+					k.log.Infof("返回的消息为：%+v, 序列化后为：%s", messageRsp, string(jsonMessage))
 					var messageBack = &MessageBack{
 						Message: jsonMessage,
 						Uuid:    message.Uuid,
 					}
 					k.mutex.Lock()
 					if receiveClient, ok := k.Clients[message.ReceiveId]; ok {
-						//messageBack.Message = jsonMessage
-						//messageBack.Uuid = message.Uuid
-						receiveClient.SendBack <- messageBack // 向client.Send发送
+						receiveClient.SendBack <- messageBack
 					}
-					// 因为send_id肯定在线，所以这里在后端进行在线回显message，其实优化的话前端可以直接回显
-					// 问题在于前后端的req和rsp结构不同，前端存储message的messageList不能存req，只能存rsp
-					// 所以这里后端进行回显，前端不回显
-					sendClient := k.Clients[message.SendId]
-					sendClient.SendBack <- messageBack
+					if sendClient, ok := k.Clients[message.FromUserID]; ok {
+						sendClient.SendBack <- messageBack
+					}
 					k.mutex.Unlock()
 
 					// redis
-					var rspString string
-					rspString, err = myredis.GetKeyNilIsErr("message_list_" + message.SendId + "_" + message.ReceiveId)
-					if err == nil {
-						var rsp []respond.GetMessageListRespond
+					key := "message_list_" + message.FromUserID + "_" + message.ReceiveId
+					rspString, exists, err := k.data.Cache().Get(ctx, key)
+					if err == nil && exists {
+						var rsp []res.GetMessageListRespond
 						if err := json.Unmarshal([]byte(rspString), &rsp); err != nil {
-							k.log.Error("failed to unmarshal message", zap.Error(err))
+							k.log.Errorf("failed to unmarshal message, %v", err)
+						} else {
+							rsp = append(rsp, messageRsp)
+							rspByte, err := json.Marshal(rsp)
+							if err != nil {
+								k.log.Errorf("failed to marshal message, %v", err)
+							} else {
+								if err := k.data.Cache().Set(ctx, key, string(rspByte), time.Minute*common.REDIS_TIMEOUT); err != nil {
+									k.log.Errorf("failed to set message, %v", err)
+								}
+							}
 						}
-						rsp = append(rsp, messageRsp)
-						rspByte, err := json.Marshal(rsp)
-						if err != nil {
-							k.log.Error("failed to marshal message", zap.Error(err))
-						}
-						if err := myredis.SetKeyEx("message_list_"+message.SendId+"_"+message.ReceiveId, string(rspByte), time.Minute*constants.REDIS_TIMEOUT); err != nil {
-							k.log.Error("failed to set message", zap.Error(err))
-						}
-					} else {
-						if !errors.Is(err, redis.Nil) {
-							k.log.Error("failed to get message", zap.Error(err))
-						}
+					} else if err != nil && !errors.Is(err, redis.Nil) {
+						k.log.Errorf("failed to get message, %v", err)
 					}
 				} else {
-					messageRsp := respond.GetGroupMessageListRespond{
-						SendId:     message.SendId,
+					messageRsp := res.GetGroupMessageListRespond{
+						SendId:     message.FromUserID,
 						SendName:   message.SendName,
 						SendAvatar: chatMessageReq.SendAvatar,
 						ReceiveId:  message.ReceiveId,
-						Type:       message.Type,
+						Type:       common.MessageTypeFile,
 						Content:    message.Content,
 						Url:        message.Url,
 						FileSize:   message.FileSize,
@@ -384,85 +387,99 @@ func (k *KafkaServerUseCase) Start() {
 					}
 					jsonMessage, err := json.Marshal(messageRsp)
 					if err != nil {
-						k.log.Error("failed to marshal message", zap.Error(err))
+						k.log.Errorf("failed to marshal message, %v", err)
 					}
-					k.log.Info("返回的消息为：", messageRsp, "序列化后为：", jsonMessage)
+					k.log.Infof("返回的消息为：%+v, 序列化后为：%s", messageRsp, string(jsonMessage))
 					var messageBack = &MessageBack{
 						Message: jsonMessage,
 						Uuid:    message.Uuid,
 					}
-					var group model.GroupInfo
-					if res := dao.GormDB.Where("uuid = ?", message.ReceiveId).First(&group); res.Error != nil {
-						k.log.Error("failed to get group", zap.Error(res.Error))
+					// 查询群组信息
+					var group messageGroup.GroupTB
+					if err := k.data.DB().WithContext(ctx).Where("uuid = ?", message.ReceiveId).First(&group).Error; err != nil {
+						k.log.Errorf("failed to get group, %v", err)
+						continue
+					}
+					// 查询群成员
+					var groupMembers []messageGroup.GroupMemberTB
+					if err := k.data.DB().WithContext(ctx).Where("group_id = ?", group.ID).Find(&groupMembers).Error; err != nil {
+						k.log.Errorf("failed to get group members, %v", err)
+						continue
 					}
 					var members []string
-					if err := json.Unmarshal(group.Members, &members); err != nil {
-						k.log.Error("failed to unmarshal members", zap.Error(err))
+					for _, member := range groupMembers {
+						members = append(members, fmt.Sprintf("U%d", member.UserID))
 					}
 					k.mutex.Lock()
 					for _, member := range members {
-						if member != message.SendId {
+						if member != message.FromUserID {
 							if receiveClient, ok := k.Clients[member]; ok {
 								receiveClient.SendBack <- messageBack
 							}
 						} else {
-							sendClient := k.Clients[message.SendId]
-							sendClient.SendBack <- messageBack
+							if sendClient, ok := k.Clients[message.FromUserID]; ok {
+								sendClient.SendBack <- messageBack
+							}
 						}
 					}
 					k.mutex.Unlock()
 
 					// redis
-					var rspString string
-					rspString, err = myredis.GetKeyNilIsErr("group_messagelist_" + message.ReceiveId)
-					if err == nil {
-						var rsp []respond.GetGroupMessageListRespond
+					key := "group_messagelist_" + message.ReceiveId
+					rspString, exists, err := k.data.Cache().Get(ctx, key)
+					if err == nil && exists {
+						var rsp []res.GetGroupMessageListRespond
 						if err := json.Unmarshal([]byte(rspString), &rsp); err != nil {
-							k.log.Error("failed to unmarshal message", zap.Error(err))
+							k.log.Errorf("failed to unmarshal message, %v", err)
+						} else {
+							rsp = append(rsp, messageRsp)
+							rspByte, err := json.Marshal(rsp)
+							if err != nil {
+								k.log.Errorf("failed to marshal message, %v", err)
+							} else {
+								if err := k.data.Cache().Set(ctx, key, string(rspByte), time.Minute*common.REDIS_TIMEOUT); err != nil {
+									k.log.Errorf("failed to set message, %v", err)
+								}
+							}
 						}
-						rsp = append(rsp, messageRsp)
-						rspByte, err := json.Marshal(rsp)
-						if err != nil {
-							k.log.Error("failed to marshal message", zap.Error(err))
-						}
-						if err := myredis.SetKeyEx("group_messagelist_"+message.ReceiveId, string(rspByte), time.Minute*constants.REDIS_TIMEOUT); err != nil {
-							k.log.Error("failed to set message", zap.Error(err))
-						}
-					} else {
-						if !errors.Is(err, redis.Nil) {
-							k.log.Error("failed to get message", zap.Error(err))
-						}
+					} else if err != nil && !errors.Is(err, redis.Nil) {
+						k.log.Errorf("failed to get message, %v", err)
 					}
 				}
-			} else if chatMessageReq.Type == message_type_enum.AudioOrVideo {
-				var avData req.AVData
+			} else if messageTypeStr == common.MessageTypeAudioOrVideo {
+				var avData AVData
 				if err := json.Unmarshal([]byte(chatMessageReq.AVdata), &avData); err != nil {
-					k.log.Error("failed to unmarshal av data", zap.Error(err))
+					k.log.Errorf("failed to unmarshal av data, %v", err)
 				}
-				//log.Println(avData)
-				message := model.Message{
-					Uuid:       fmt.Sprintf("M%s", random.GetNowAndLenRandomString(11)),
+				now := time.Now()
+				message := messageGroup.MessageTB{
+					Uuid:       GenerateMessageUUID(),
 					SessionId:  chatMessageReq.SessionId,
-					Type:       chatMessageReq.Type,
+					Type:       3, // 3.通话
 					Content:    "",
 					Url:        "",
-					SendId:     chatMessageReq.SendId,
+					FromUserID: chatMessageReq.SendId,
+					ToUserID:   chatMessageReq.ReceiveId,
 					SendName:   chatMessageReq.SendName,
-					SendAvatar: chatMessageReq.SendAvatar,
+					SendAvatar: normalizePath(chatMessageReq.SendAvatar),
 					ReceiveId:  chatMessageReq.ReceiveId,
 					FileSize:   "",
 					FileType:   "",
 					FileName:   "",
-					Status:     message_status_enum.Unsent,
-					CreatedAt:  time.Now(),
+					Status:     0, // 0.未发送
+					MessageType: 1, // 1单聊
 					AVdata:     chatMessageReq.AVdata,
+					CreatedAt:  &now,
 				}
+				// 判断是单聊还是群聊
+				if len(message.ReceiveId) > 0 && message.ReceiveId[0] == 'G' {
+					message.MessageType = 2 // 2群聊
+				}
+				
 				if avData.MessageId == "PROXY" && (avData.Type == "start_call" || avData.Type == "receive_call" || avData.Type == "reject_call") {
 					// 存message
-					// 对SendAvatar去除前面/static之前的所有内容，防止ip前缀引入
-					message.SendAvatar = normalizePath(message.SendAvatar)
-					if res := dao.GormDB.Create(&message); res.Error != nil {
-						k.log.Error("failed to create message", zap.Error(res.Error))
+					if err := k.data.DB().WithContext(ctx).Create(&message).Error; err != nil {
+						k.log.Errorf("failed to create message, %v", err)
 					}
 				}
 
@@ -470,12 +487,12 @@ func (k *KafkaServerUseCase) Start() {
 					// 如果能找到ReceiveId，说明在线，可以发送，否则存表后跳过
 					// 因为在线的时候是通过websocket更新消息记录的，离线后通过存表，登录时只调用一次数据库操作
 					// 切换chat对象后，前端的messageList也会改变，获取messageList从第二次就是从redis中获取
-					messageRsp := respond.AVMessageRespond{
-						SendId:     message.SendId,
+					messageRsp := res.AVMessageRespond{
+						SendId:     message.FromUserID,
 						SendName:   message.SendName,
 						SendAvatar: message.SendAvatar,
 						ReceiveId:  message.ReceiveId,
-						Type:       message.Type,
+						Type:       common.MessageTypeAudioOrVideo,
 						Content:    message.Content,
 						Url:        message.Url,
 						FileSize:   message.FileSize,
@@ -486,23 +503,18 @@ func (k *KafkaServerUseCase) Start() {
 					}
 					jsonMessage, err := json.Marshal(messageRsp)
 					if err != nil {
-						k.log.Error("failed to marshal message", zap.Error(err))
+						k.log.Errorf("failed to marshal message, %v", err)
 					}
-					// log.Println("返回的消息为：", messageRsp, "序列化后为：", jsonMessage)
-					k.log.Info("返回的消息为：", messageRsp)
+					k.log.Infof("返回的消息为：%+v", messageRsp)
 					var messageBack = &MessageBack{
 						Message: jsonMessage,
 						Uuid:    message.Uuid,
 					}
 					k.mutex.Lock()
 					if receiveClient, ok := k.Clients[message.ReceiveId]; ok {
-						//messageBack.Message = jsonMessage
-						//messageBack.Uuid = message.Uuid
-						receiveClient.SendBack <- messageBack // 向client.Send发送
+						receiveClient.SendBack <- messageBack
 					}
 					// 通话这不能回显，发回去的话就会出现两个start_call。
-					//sendClient := s.Clients[message.SendId]
-					//sendClient.SendBack <- messageBack
 					k.mutex.Unlock()
 				}
 			}
@@ -517,10 +529,10 @@ func (k *KafkaServerUseCase) Start() {
 				k.mutex.Lock()
 				k.Clients[client.Uuid] = client
 				k.mutex.Unlock()
-				k.log.Info(fmt.Sprintf("欢迎来到kama聊天服务器，亲爱的用户%s\n", client.Uuid))
+				k.log.Infof("欢迎来到kama聊天服务器，亲爱的用户%s", client.Uuid)
 				err := client.Conn.WriteMessage(websocket.TextMessage, []byte("欢迎来到kama聊天服务器"))
 				if err != nil {
-					k.log.Error("failed to write message", zap.Error(err))
+					k.log.Errorf("failed to write message, %v", err)
 				}
 			}
 
@@ -529,9 +541,9 @@ func (k *KafkaServerUseCase) Start() {
 				k.mutex.Lock()
 				delete(k.Clients, client.Uuid)
 				k.mutex.Unlock()
-				k.log.Info(fmt.Sprintf("用户%s退出登录\n", client.Uuid))
+				k.log.Infof("用户%s退出登录", client.Uuid)
 				if err := client.Conn.WriteMessage(websocket.TextMessage, []byte("已退出登录")); err != nil {
-					k.log.Error("failed to write message", zap.Error(err))
+					k.log.Errorf("failed to write message, %v", err)
 				}
 			}
 		}

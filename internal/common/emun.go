@@ -2,9 +2,10 @@ package common
 
 // 消息类型常量
 const (
-	MessageTypeText         = "Text"
-	MessageTypeFile         = "File"
-	MessageTypeAudioOrVideo = "AudioOrVideo"
+	MessageTypeText         = 0
+	MessageTypeAudio        = 1
+	MessageTypeFile         = 2
+	MessageTypeVideo 		= 3
 )
 
 // 消息状态常量
