@@ -148,7 +148,7 @@ func (k *KafkaServerUseCase) Start() {
 					k.log.Errorf("failed to create message, %v", err)
 				}
 				
-				if message.MessageType == common.MessageTypeUser { // 发送给User
+				if chatMessageReq.MessageType == common.MessageTypeUser { // 发送给User
 					// 如果能找到ReceiveId，说明在线，可以发送，否则存表后跳过
 					// 因为在线的时候是通过websocket更新消息记录的，离线后通过存表，登录时只调用一次数据库操作
 					// 切换chat对象后，前端的messageList也会改变，获取messageList从第二次就是从redis中获取
@@ -290,13 +290,13 @@ func (k *KafkaServerUseCase) Start() {
 						k.log.Errorf("failed to get message, %v", err)
 					}
 				}
-			} else if messageTypeStr == common.MessageTypeFile {
+			} else if chatMessageReq.Type == common.MessageTypeFile {
 				// 存message
 				now := time.Now()
 				message := messageGroup.MessageTB{
 					Uuid:       GenerateMessageUUID(),
 					SessionId:  chatMessageReq.SessionId,
-					Type:       2, // 2.文件
+					Type:       chatMessageReq.Type, // 2.文件
 					Content:    "",
 					Url:        chatMessageReq.Url,
 					FromUserID: chatMessageReq.SendId,
@@ -307,21 +307,17 @@ func (k *KafkaServerUseCase) Start() {
 					FileSize:   chatMessageReq.FileSize,
 					FileType:   chatMessageReq.FileType,
 					FileName:   chatMessageReq.FileName,
-					Status:     0, // 0.未发送
-					MessageType: 1, // 1单聊
+					Status:     common.MessageStatusUnsent, // 0.未发送
+					MessageType: chatMessageReq.MessageType, // 1单聊
 					AVdata:     "",
-					CreatedAt:  &now,
-				}
-				// 判断是单聊还是群聊
-				if len(message.ReceiveId) > 0 && message.ReceiveId[0] == 'G' {
-					message.MessageType = 2 // 2群聊
+					CreatedAt:  formatMessageTime(message.CreatedAt, now),
 				}
 				
 				if err := k.data.DB().WithContext(ctx).Create(&message).Error; err != nil {
 					k.log.Errorf("failed to create message, %v", err)
 				}
 				
-				if message.ReceiveId[0] == 'U' { // 发送给User
+				if chatMessageReq.MessageType == common.MessageTypeUser { // 发送给User
 					// 如果能找到ReceiveId，说明在线，可以发送，否则存表后跳过
 					// 因为在线的时候是通过websocket更新消息记录的，离线后通过存表，登录时只调用一次数据库操作
 					// 切换chat对象后，前端的messageList也会改变，获取messageList从第二次就是从redis中获取
@@ -337,6 +333,7 @@ func (k *KafkaServerUseCase) Start() {
 						FileName:   message.FileName,
 						FileType:   message.FileType,
 						CreatedAt:  formatMessageTime(message.CreatedAt, now),
+						MessageType: message.MessageType,
 					}
 					jsonMessage, err := json.Marshal(messageRsp)
 					if err != nil {
@@ -377,7 +374,7 @@ func (k *KafkaServerUseCase) Start() {
 					} else if err != nil && !errors.Is(err, redis.Nil) {
 						k.log.Errorf("failed to get message, %v", err)
 					}
-				} else {
+				} else if chatMessageReq.MessageType == common.MessageTypeGroup { // 发送给Group
 					messageRsp := res.GetGroupMessageListRespond{
 						SendId:     message.FromUserID,
 						SendName:   message.SendName,
@@ -390,6 +387,7 @@ func (k *KafkaServerUseCase) Start() {
 						FileName:   message.FileName,
 						FileType:   message.FileType,
 						CreatedAt:  formatMessageTime(message.CreatedAt, now),
+						MessageType: chatMessageReq.MessageType,
 					}
 					jsonMessage, err := json.Marshal(messageRsp)
 					if err != nil {
@@ -452,7 +450,8 @@ func (k *KafkaServerUseCase) Start() {
 						k.log.Errorf("failed to get message, %v", err)
 					}
 				}
-			} else if messageTypeStr == common.MessageTypeAudioOrVideo {
+			// smc todo:通话这里需要好好看看怎么实现的
+			} else if chatMessageReq.Type == common.MessageTypeAudioOrVideo {
 				var avData AVData
 				if err := json.Unmarshal([]byte(chatMessageReq.AVdata), &avData); err != nil {
 					k.log.Errorf("failed to unmarshal av data, %v", err)
@@ -461,7 +460,7 @@ func (k *KafkaServerUseCase) Start() {
 				message := messageGroup.MessageTB{
 					Uuid:       GenerateMessageUUID(),
 					SessionId:  chatMessageReq.SessionId,
-					Type:       3, // 3.通话
+					Type:       chatMessageReq.Type, // 3.通话
 					Content:    "",
 					Url:        "",
 					FromUserID: chatMessageReq.SendId,
@@ -472,14 +471,10 @@ func (k *KafkaServerUseCase) Start() {
 					FileSize:   "",
 					FileType:   "",
 					FileName:   "",
-					Status:     0, // 0.未发送
-					MessageType: 1, // 1单聊
+					Status:     common.MessageStatusUnsent, // 0.未发送
+					MessageType: chatMessageReq.MessageType, // 1单聊
 					AVdata:     chatMessageReq.AVdata,
-					CreatedAt:  &now,
-				}
-				// 判断是单聊还是群聊
-				if len(message.ReceiveId) > 0 && message.ReceiveId[0] == 'G' {
-					message.MessageType = 2 // 2群聊
+					CreatedAt:  formatMessageTime(message.CreatedAt, now),
 				}
 				
 				if avData.MessageId == "PROXY" && (avData.Type == "start_call" || avData.Type == "receive_call" || avData.Type == "reject_call") {
@@ -489,7 +484,7 @@ func (k *KafkaServerUseCase) Start() {
 					}
 				}
 
-				if chatMessageReq.ReceiveId[0] == 'U' { // 发送给User
+				if chatMessageReq.MessageType == common.MessageTypeUser { // 发送给User
 					// 如果能找到ReceiveId，说明在线，可以发送，否则存表后跳过
 					// 因为在线的时候是通过websocket更新消息记录的，离线后通过存表，登录时只调用一次数据库操作
 					// 切换chat对象后，前端的messageList也会改变，获取messageList从第二次就是从redis中获取
@@ -506,6 +501,7 @@ func (k *KafkaServerUseCase) Start() {
 						FileType:   message.FileType,
 						CreatedAt:  formatMessageTime(message.CreatedAt, now),
 						AVdata:     message.AVdata,
+						MessageType: message.MessageType,
 					}
 					jsonMessage, err := json.Marshal(messageRsp)
 					if err != nil {
