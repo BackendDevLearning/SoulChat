@@ -13,7 +13,7 @@ type GetMessageListRespond struct {
 	FileName   string `json:"fileName"`
 	FileType   string `json:"fileType"`
 	CreatedAt  string `json:"createdAt"`
-	MessageType int8 `json:"messageType"`
+	MessageType int32 `json:"messageType"`
 }
 
 // GetGroupMessageListRespond 群消息列表响应结构

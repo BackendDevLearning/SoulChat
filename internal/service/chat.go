@@ -4,7 +4,8 @@ import (
 	"context"
 	v1 "kratos-realworld/api/conduit/v1"
 	"kratos-realworld/internal/common"
-	"log"
+	"github.com/go-kratos/kratos/v2/log"
+	"kratos-realworld/internal/common/res"
 )
 
 func ConvertToMessage(req *v1.GetMessagesRequest) *common.MessageRequest {
@@ -32,5 +33,22 @@ func (cs *ConduitService) GetMessages(ctx context.Context, req *v1.GetMessagesRe
 	return &v1.GetMessagesReply{
 		Code: 0,
 		Res:  ErrorToRes(err),
+	}, nil
+}
+
+// response 的结构和messageResponse 的结构一致
+func (cs *ConduitService) GetMessageList(ctx context.Context, req *v1.GetMessageListRequest) (*v1.GetMessageListReply, error) {
+	res, err := cs.mc.GetMessageList(ctx, req)
+	if err != nil {
+		cs.log.Errorf("GetMessageList err: %v\n", err)
+		return &v1.GetMessageListReply{
+			Code: 1,
+			Res:  ErrorToRes(err),
+		}, nil
+	}
+	return &v1.GetMessageListReply{
+		Code: 0,
+		Res:  ErrorToRes(err),
+		Data: res,
 	}, nil
 }
