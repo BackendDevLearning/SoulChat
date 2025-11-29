@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strconv"
 	"kratos-realworld/internal/biz/messageGroup"
 	"kratos-realworld/internal/common"
 	"kratos-realworld/internal/common/req"
@@ -19,7 +20,6 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/redis/go-redis/v9"
 )
-
 
 // AVData 音视频数据
 type AVData struct {
@@ -36,27 +36,25 @@ func formatMessageTime(t *time.Time, defaultTime time.Time) string {
 }
 
 type KafkaServerUseCase struct {
-	Clients      map[string]*Client
-	mutex        *sync.Mutex
-	Login        chan *Client // 登录通道
-	Logout       chan *Client // 退出登录通道
-	log          *log.Helper
-	data         *model.Data
-	kafkaService *kafka.KafkaService
+	Clients map[string]*Client
+	mutex   *sync.Mutex
+	Login   chan *Client // 登录通道
+	Logout  chan *Client // 退出登录通道
+	log     *log.Helper
+	data    *model.Data
 }
 
 // 用来接收操作系统的信号
 var kafkaQuit = make(chan os.Signal, 1)
 
-func NewKafkaServerUseCase(log *log.Helper, data *model.Data, kafkaService *kafka.KafkaService) *KafkaServerUseCase {
+func NewKafkaServerUseCase(log *log.Helper, data *model.Data) *KafkaServerUseCase {
 	return &KafkaServerUseCase{
-		Clients:      make(map[string]*Client),
-		mutex:        &sync.Mutex{},
-		Login:        make(chan *Client),
-		Logout:       make(chan *Client),
-		log:          log,
-		data:         data,
-		kafkaService: kafkaService,
+		Clients: make(map[string]*Client),
+		mutex:   &sync.Mutex{},
+		Login:   make(chan *Client),
+		Logout:  make(chan *Client),
+		log:     log,
+		data:    data,
 	}
 }
 
@@ -92,7 +90,7 @@ func (k *KafkaServerUseCase) Start() {
 				continue
 			}
 
-			kafkaMessage, err := k.kafkaService.ChatReader.ReadMessage(ctx)
+			kafkaMessage, err := kafka.KafkaService.ChatReader.ReadMessage(ctx)
 			if err != nil {
 				if k.log != nil {
 					k.log.Errorf("failed to read kafka message, %v", err)
@@ -121,7 +119,7 @@ func (k *KafkaServerUseCase) Start() {
 
 			k.log.Infof("原消息为：%s, 反序列化后为：%+v", string(data), chatMessageReq)
 
-			if chatMessageReq.Type == MessageTypeText {
+			if chatMessageReq.Type == common.MessageTypeText {
 				// 存message
 				now := time.Now()
 				message := messageGroup.MessageTB{
@@ -148,7 +146,7 @@ func (k *KafkaServerUseCase) Start() {
 					k.log.Errorf("failed to create message, %v", err)
 				}
 				
-				if chatMessageReq.MessageType == common.MessageTypeUser { // 发送给User
+				if chatMessageReq.MessageType == common.MESSAGE_TYPE_USER { // 发送给User
 					// 如果能找到ReceiveId，说明在线，可以发送，否则存表后跳过
 					// 因为在线的时候是通过websocket更新消息记录的，离线后通过存表，登录时只调用一次数据库操作
 					// 切换chat对象后，前端的messageList也会改变，获取messageList从第二次就是从redis中获取
@@ -157,7 +155,7 @@ func (k *KafkaServerUseCase) Start() {
 						SendName:   message.SendName,
 						SendAvatar: chatMessageReq.SendAvatar,
 						ReceiveId:  message.ReceiveId,
-						Type:       common.MessageTypeText,
+						Type:       strconv.Itoa(common.MessageTypeText),
 						Content:    message.Content,
 						Url:        message.Url,
 						FileSize:   message.FileSize,
@@ -184,7 +182,7 @@ func (k *KafkaServerUseCase) Start() {
 					// 因为send_id肯定在线，所以这里在后端进行在线回显message，其实优化的话前端可以直接回显
 					// 问题在于前后端的req和rsp结构不同，前端存储message的messageList不能存req，只能存rsp
 					// 所以这里后端进行回显，前端不回显
-					sendClient := k.Clients[message.SendId]
+					sendClient := k.Clients[message.FromUserID]
 					sendClient.SendBack <- messageBack
 					// 即使操作不同的 key，它们可能：
 					// 共享同一个 map 结构体（头部信息）
@@ -214,13 +212,13 @@ func (k *KafkaServerUseCase) Start() {
 						k.log.Errorf("failed to get message, %v", err)
 					}
 
-				} else if message.MessageType == common.MessageTypeGroup { // 发送给Group
+				} else if message.MessageType == common.MESSAGE_TYPE_GROUP { // 发送给Group
 					messageRsp := res.GetGroupMessageListRespond{
 						SendId:     message.FromUserID,
 						SendName:   message.SendName,
 						SendAvatar: chatMessageReq.SendAvatar,
 						ReceiveId:  message.ReceiveId,
-						Type:       common.MessageTypeText,
+						Type:       strconv.Itoa(common.MessageTypeText),
 						Content:    message.Content,
 						Url:        message.Url,
 						FileSize:   message.FileSize,
@@ -312,12 +310,12 @@ func (k *KafkaServerUseCase) Start() {
 					AVdata:     "",
 					CreatedAt:  formatMessageTime(message.CreatedAt, now),
 				}
-				
+
 				if err := k.data.DB().WithContext(ctx).Create(&message).Error; err != nil {
 					k.log.Errorf("failed to create message, %v", err)
 				}
 				
-				if chatMessageReq.MessageType == common.MessageTypeUser { // 发送给User
+				if chatMessageReq.MessageType == common.MESSAGE_TYPE_USER { // 发送给User
 					// 如果能找到ReceiveId，说明在线，可以发送，否则存表后跳过
 					// 因为在线的时候是通过websocket更新消息记录的，离线后通过存表，登录时只调用一次数据库操作
 					// 切换chat对象后，前端的messageList也会改变，获取messageList从第二次就是从redis中获取
@@ -326,7 +324,7 @@ func (k *KafkaServerUseCase) Start() {
 						SendName:   message.SendName,
 						SendAvatar: chatMessageReq.SendAvatar,
 						ReceiveId:  message.ReceiveId,
-						Type:       common.MessageTypeFile,
+						Type:       strconv.Itoa(common.MessageTypeFile),
 						Content:    message.Content,
 						Url:        message.Url,
 						FileSize:   message.FileSize,
@@ -374,13 +372,13 @@ func (k *KafkaServerUseCase) Start() {
 					} else if err != nil && !errors.Is(err, redis.Nil) {
 						k.log.Errorf("failed to get message, %v", err)
 					}
-				} else if chatMessageReq.MessageType == common.MessageTypeGroup { // 发送给Group
+				} else if chatMessageReq.MessageType == common.MESSAGE_TYPE_GROUP { // 发送给Group
 					messageRsp := res.GetGroupMessageListRespond{
 						SendId:     message.FromUserID,
 						SendName:   message.SendName,
 						SendAvatar: chatMessageReq.SendAvatar,
 						ReceiveId:  message.ReceiveId,
-						Type:       common.MessageTypeFile,
+						Type:       strconv.Itoa(common.MessageTypeFile),
 						Content:    message.Content,
 						Url:        message.Url,
 						FileSize:   message.FileSize,
@@ -476,7 +474,7 @@ func (k *KafkaServerUseCase) Start() {
 					AVdata:     chatMessageReq.AVdata,
 					CreatedAt:  formatMessageTime(message.CreatedAt, now),
 				}
-				
+
 				if avData.MessageId == "PROXY" && (avData.Type == "start_call" || avData.Type == "receive_call" || avData.Type == "reject_call") {
 					// 存message
 					if err := k.data.DB().WithContext(ctx).Create(&message).Error; err != nil {
@@ -484,7 +482,7 @@ func (k *KafkaServerUseCase) Start() {
 					}
 				}
 
-				if chatMessageReq.MessageType == common.MessageTypeUser { // 发送给User
+				if chatMessageReq.MessageType == common.MESSAGE_TYPE_USER { // 发送给User
 					// 如果能找到ReceiveId，说明在线，可以发送，否则存表后跳过
 					// 因为在线的时候是通过websocket更新消息记录的，离线后通过存表，登录时只调用一次数据库操作
 					// 切换chat对象后，前端的messageList也会改变，获取messageList从第二次就是从redis中获取
@@ -493,7 +491,7 @@ func (k *KafkaServerUseCase) Start() {
 						SendName:   message.SendName,
 						SendAvatar: message.SendAvatar,
 						ReceiveId:  message.ReceiveId,
-						Type:       common.MessageTypeAudioOrVideo,
+						Type:       strconv.Itoa(common.MessageTypeAudioOrVideo),
 						Content:    message.Content,
 						Url:        message.Url,
 						FileSize:   message.FileSize,

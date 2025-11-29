@@ -20,7 +20,7 @@ type ChatUsecase struct {
 }
 
 func NewChatUsecase(kafkaConfig *conf.Data_Kafka, logger *log.Helper, data *model.Data) *ChatUsecase {
-	return &ChatUsecase{kafkaConfig: kafkaConfig, logger: logger, data: data, kafkaServerUseCase: NewKafkaServerUseCase(logger, data, kafka.KafkaService)}
+	return &ChatUsecase{kafkaConfig: kafkaConfig, logger: logger, data: data, kafkaServerUseCase: NewKafkaServerUseCase(logger, data)}
 }
 
 // Login 接受已升级的 websocket 连接并交由客户端初始化处理

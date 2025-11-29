@@ -29,6 +29,7 @@ type GetGroupMessageListRespond struct {
 	FileName   string `json:"fileName"`
 	FileType   string `json:"fileType"`
 	CreatedAt  string `json:"createdAt"`
+	MessageType int8 `json:"messageType"`
 }
 
 // AVMessageRespond 音视频消息响应结构
@@ -45,4 +46,5 @@ type AVMessageRespond struct {
 	FileType   string `json:"fileType"`
 	CreatedAt  string `json:"createdAt"`
 	AVdata     string `json:"avdata"`
+	MessageType int8 `json:"messageType"`
 }

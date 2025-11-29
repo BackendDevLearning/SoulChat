@@ -1,4 +1,4 @@
-package request
+package req
 
 // ChatMessageRequest 聊天消息请求结构
 type ChatMessageRequest struct {
