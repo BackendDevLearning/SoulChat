@@ -9,7 +9,6 @@ import (
 
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/segmentio/kafka-go"
-	"go.uber.org/zap"
 )
 
 var ctx = context.Background()
@@ -99,13 +98,14 @@ func (k *kafkaService) KafkaInit(kafkaConfig *conf.Data_Kafka, logger *log.Helpe
 	})
 
 	if logger != nil {
-		logger.Info("kafka service initialized",
-			zap.String("hosts", kafkaConfig.Hosts),
-			zap.String("topic", kafkaConfig.Topic),
-			zap.Int("timeout", timeout),
-			zap.String("group_id", groupID),
-			zap.String("start_offset", kafkaConfig.StartOffset),
-			zap.String("required_acks", kafkaConfig.RequiredAcks),
+		logger.Log(log.LevelInfo,
+			"msg", "kafka service initialized",
+			"hosts", kafkaConfig.Hosts,
+			"topic", kafkaConfig.Topic,
+			"timeout", timeout,
+			"group_id", groupID,
+			"start_offset", kafkaConfig.StartOffset,
+			"required_acks", kafkaConfig.RequiredAcks,
 		)
 	}
 
@@ -116,14 +116,14 @@ func (k *kafkaService) KafkaClose() {
 	if k.ChatWriter != nil {
 		if err := k.ChatWriter.Close(); err != nil {
 			if k.logger != nil {
-				k.logger.Error("failed to close kafka writer", zap.Error(err))
+				k.logger.Log(log.LevelError, "msg", "failed to close kafka writer", "err", err)
 			}
 		}
 	}
 	if k.ChatReader != nil {
 		if err := k.ChatReader.Close(); err != nil {
 			if k.logger != nil {
-				k.logger.Error("failed to close kafka reader", zap.Error(err))
+				k.logger.Log(log.LevelError, "msg", "failed to close kafka reader", "err", err)
 			}
 		}
 	}
@@ -159,7 +159,7 @@ func (k *kafkaService) CreateTopic(kafkaConfig *conf.Data_Kafka) error {
 	k.KafkaConn, err = kafka.Dial("tcp", hosts[0])
 	if err != nil {
 		if k.logger != nil {
-			k.logger.Error("failed to dial kafka", zap.Error(err))
+			k.logger.Log(log.LevelError, "msg", "failed to dial kafka", "err", err)
 		}
 		return err
 	}
@@ -176,16 +176,17 @@ func (k *kafkaService) CreateTopic(kafkaConfig *conf.Data_Kafka) error {
 	// 创建topic
 	if err = k.KafkaConn.CreateTopics(topicConfigs...); err != nil {
 		if k.logger != nil {
-			k.logger.Error("failed to create kafka topic", zap.Error(err))
+			k.logger.Log(log.LevelError, "msg", "failed to create kafka topic", "err", err)
 		}
 		return err
 	}
 
 	if k.logger != nil {
-		k.logger.Info("kafka topic created",
-			zap.String("topic", kafkaConfig.Topic),
-			zap.Int("partitions", partition),
-			zap.Int("replication_factor", replicationFactor),
+		k.logger.Log(log.LevelInfo,
+			"msg", "kafka topic created",
+			"topic", kafkaConfig.Topic,
+			"partitions", partition,
+			"replication_factor", replicationFactor,
 		)
 	}
 

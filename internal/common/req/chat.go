@@ -14,6 +14,7 @@ type ChatMessageRequest struct {
 	FileType   string `json:"file_type"`
 	FileName   string `json:"file_name"`
 	AVdata     string `json:"av_data"`
+	MessageType int8 `json:"message_type"`
 }
 
 

@@ -119,7 +119,7 @@ func (k *KafkaServerUseCase) Start() {
 				message := messageGroup.MessageTB{
 					Uuid:       GenerateMessageUUID(),
 					SessionId:  chatMessageReq.SessionId,
-					Type:       0, // 0.文本
+					Type:       chatMessageReq.Type,
 					Content:    chatMessageReq.Content,
 					Url:        "",
 					FromUserID: chatMessageReq.SendId,
@@ -130,21 +130,17 @@ func (k *KafkaServerUseCase) Start() {
 					FileSize:   "0B",
 					FileType:   "",
 					FileName:   "",
-					Status:     0, // 0.未发送
-					MessageType: 1, // 1单聊
+					Status:     common.MessageStatusUnsent, // 0.未发送
+					MessageType: chatMessageReq.MessageType, // 1单聊
 					AVdata:     "",
 					CreatedAt:  &now,
 				}
 				// 判断是单聊还是群聊
-				if len(message.ReceiveId) > 0 && message.ReceiveId[0] == 'G' {
-					message.MessageType = 2 // 2群聊
-				}
-				
 				if err := k.data.DB().WithContext(ctx).Create(&message).Error; err != nil {
 					k.log.Errorf("failed to create message, %v", err)
 				}
 				
-				if message.ReceiveId[0] == 'U' { // 发送给User
+				if message.MessageType == common.MessageTypeUser { // 发送给User
 					// 如果能找到ReceiveId，说明在线，可以发送，否则存表后跳过
 					// 因为在线的时候是通过websocket更新消息记录的，离线后通过存表，登录时只调用一次数据库操作
 					// 切换chat对象后，前端的messageList也会改变，获取messageList从第二次就是从redis中获取
@@ -160,6 +156,7 @@ func (k *KafkaServerUseCase) Start() {
 						FileName:   message.FileName,
 						FileType:   message.FileType,
 						CreatedAt:  message.CreatedAt.Format("2006-01-02 15:04:05"),
+						MessageType: message.MessageType,
 					}
 					jsonMessage, err := json.Marshal(messageRsp)
 					if err != nil {

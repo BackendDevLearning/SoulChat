@@ -10,8 +10,8 @@ const (
 
 // 消息状态常量
 const (
-	MessageStatusUnsent = "Unsent"
-	MessageStatusSent   = "Sent"
+	MessageStatusUnsent = 0
+	MessageStatusSent   = 1
 )
 
 // 常量定义
