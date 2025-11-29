@@ -19,7 +19,7 @@ type MessageTB struct {
 	FileSize   string    `gorm:"column:file_size;type:char(20);comment:文件大小"`
 	Status     int8      `gorm:"column:status;not null;comment:状态，0.未发送，1.已发送"`
 
-	Type       int8      `gorm:"column:type;not null;comment:消息类型，0.文本，1.语音，2.文件，3.通话"` // 通话不用存消息内容或者url
+	Type       	int8      `gorm:"column:type;not null;comment:消息类型，0.文本，1.语音，2.文件，3.通话"` // 通话不用存消息内容或者url
 	FromUserID  string     `gorm:"column:from_user_id;type:varchar(64);not null;index;comment:发送者用户ID" json:"fromUserId"`
 	ToUserID    string     `gorm:"column:to_user_id;type:varchar(64);not null;index;comment:接收者用户ID或群ID" json:"toUserId"`
 	Content     string     `gorm:"column:content;type:varchar(2500);not null;comment:消息内容" json:"content"`

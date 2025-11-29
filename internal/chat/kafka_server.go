@@ -27,6 +27,14 @@ type AVData struct {
 	Type      string `json:"type"`
 }
 
+// formatMessageTime 格式化消息时间，如果为 nil 则使用当前时间
+func formatMessageTime(t *time.Time, defaultTime time.Time) string {
+	if t != nil {
+		return t.Format("2006-01-02 15:04:05")
+	}
+	return defaultTime.Format("2006-01-02 15:04:05")
+}
+
 type KafkaServerUseCase struct {
 	Clients      map[string]*Client
 	mutex        *sync.Mutex
@@ -155,7 +163,7 @@ func (k *KafkaServerUseCase) Start() {
 						FileSize:   message.FileSize,
 						FileName:   message.FileName,
 						FileType:   message.FileType,
-						CreatedAt:  message.CreatedAt.Format("2006-01-02 15:04:05"),
+						CreatedAt:  formatMessageTime(message.CreatedAt, now),
 						MessageType: message.MessageType,
 					}
 					jsonMessage, err := json.Marshal(messageRsp)
@@ -206,7 +214,7 @@ func (k *KafkaServerUseCase) Start() {
 						k.log.Errorf("failed to get message, %v", err)
 					}
 
-				} else if message.ReceiveId[0] == 'G' { // 发送给Group
+				} else if message.MessageType == common.MessageTypeGroup { // 发送给Group
 					messageRsp := res.GetGroupMessageListRespond{
 						SendId:     message.FromUserID,
 						SendName:   message.SendName,
@@ -218,7 +226,8 @@ func (k *KafkaServerUseCase) Start() {
 						FileSize:   message.FileSize,
 						FileName:   message.FileName,
 						FileType:   message.FileType,
-						CreatedAt:  message.CreatedAt.Format("2006-01-02 15:04:05"),
+						CreatedAt:  formatMessageTime(message.CreatedAt, now),
+						MessageType: message.MessageType,
 					}
 					jsonMessage, err := json.Marshal(messageRsp)
 					if err != nil {
@@ -327,7 +336,7 @@ func (k *KafkaServerUseCase) Start() {
 						FileSize:   message.FileSize,
 						FileName:   message.FileName,
 						FileType:   message.FileType,
-						CreatedAt:  message.CreatedAt.Format("2006-01-02 15:04:05"),
+						CreatedAt:  formatMessageTime(message.CreatedAt, now),
 					}
 					jsonMessage, err := json.Marshal(messageRsp)
 					if err != nil {
@@ -380,7 +389,7 @@ func (k *KafkaServerUseCase) Start() {
 						FileSize:   message.FileSize,
 						FileName:   message.FileName,
 						FileType:   message.FileType,
-						CreatedAt:  message.CreatedAt.Format("2006-01-02 15:04:05"),
+						CreatedAt:  formatMessageTime(message.CreatedAt, now),
 					}
 					jsonMessage, err := json.Marshal(messageRsp)
 					if err != nil {
@@ -495,7 +504,7 @@ func (k *KafkaServerUseCase) Start() {
 						FileSize:   message.FileSize,
 						FileName:   message.FileName,
 						FileType:   message.FileType,
-						CreatedAt:  message.CreatedAt.Format("2006-01-02 15:04:05"),
+						CreatedAt:  formatMessageTime(message.CreatedAt, now),
 						AVdata:     message.AVdata,
 					}
 					jsonMessage, err := json.Marshal(messageRsp)
