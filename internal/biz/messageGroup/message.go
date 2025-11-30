@@ -39,8 +39,7 @@ func (m *MessageTB) TableName() string {
 }
 
 type MessageRepo interface {
-	GetMessages(ctx context.Context, message common.MessageRequest) ([]common.MessageResponse, error) // 分页查询 1. 分页offset  2. 游标cursor
-	FetchGroupMessage(ctx context.Context, toUuid string) ([]common.MessageResponse, error)
+	GetMessages(ctx context.Context, message req.MessageRequest) ([]res.GetMessageListRespond, int64, error) // 分页查询 1. 分页offset  2. 游标cursor
 	SaveMessage(message *MessageTB) error
-	GetMessagesList(ctx context.Context, message common.MessageRequest) ([]common.MessageResponse, error)
+	GetMessagesList(ctx context.Context, uuid1 string, uuid2 string) ([]res.GetMessageListRespond, error)
 }

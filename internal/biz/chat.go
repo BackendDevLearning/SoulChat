@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/go-kratos/kratos/v2/log"
 	bizChat "kratos-realworld/internal/biz/messageGroup"
-	"kratos-realworld/internal/common"
+	"kratos-realworld/internal/common/req"
 	"kratos-realworld/internal/common/res"
 )
 
@@ -29,27 +29,25 @@ func (mc *MessageUseCase) SaveMessage(message *bizChat.MessageTB) error {
 	return nil
 }
 
-func (mc *MessageUseCase) GetMessages(ctx context.Context, messageReq common.MessageRequest) error {
-	MessageResponse, err := mc.mr.GetMessages(ctx, messageReq)
-	fmt.Println(MessageResponse)
-
+func (mc *MessageUseCase) GetMessages(ctx context.Context, messageReq req.MessageRequest) ([]res.GetMessageListRespond, int64, error) {
+	MessageResponse, total, err := mc.mr.GetMessages(ctx, messageReq)
 	if err != nil {
 		return NewErr(ErrCodeMessageFailed, MESSAGE_FAILED, "Get message failed")
 	}
-
-	return nil
+	return MessageResponse, total, nil
 }
 
 func (mc *MessageUseCase) fetchGroupMessage() {
 
 }
 
+
 func (mc *MessageUseCase) GetMessageList(ctx context.Context, uuid1 string, uuid2 string) ([]res.GetMessageListRespond, error) {
 	res, err := mc.mr.GetMessagesList(ctx, uuid1, uuid2)
 	var messageList []res.GetMessageListRespond
 	if err != nil {
-
-		for _, message := range res {
+		mc.log.Errorf("GetMessageList err: %v\n", err)
+		return []res.GetMessageListRespond{}, err
 	}
-	return 
+	return ConvertToMessageList(res), nil
 }

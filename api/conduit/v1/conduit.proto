@@ -106,19 +106,6 @@ service Conduit {
 
 }
 
-// NID_GET_MESSAGE_LIST_REQ
-message GetMessageListRequest {
-  string uuid1 = 1;
-  string uuid2 = 2;
-}
-
-// NID_GET_MESSAGE_LIST_RES
-message GetMessageListReply {
-  int32 code = 1;
-  Res res = 2;
-  repeated Message data = 3;
-}
-
 // NID_REGIDTER_REQ
 message RegisterRequest {
   string username = 1;
@@ -280,20 +267,20 @@ message CanAddFriendRes {
 
 message AddFriendRes {}
 
-// NID_MESSAGE_REQ
+// 全量请求的回包数据
 message Message {
   string sendId = 1;         // 发送者ID
   string sendName = 2;       // 发送者昵称
   string sendAvatar = 3;     // 发送者头像
   string receiveId = 4;      // 接收者ID
-  string type = 5;            // 消息类型（字符串格式）
-  string content = 6;         // 消息内容
-  string url = 7;             // 文件或图片地址
-  string fileSize = 8;       // 文件大小
-  string fileName = 9;      // 文件名
-  string fileType = 10;     // 文件类型
-  string createdAt = 11;     // 创建时间（字符串格式）
-  int32 messageType = 12;    // 消息类型：1单聊，2群聊
+  string receiveAvatar = 5;  // 接收者头像
+  string type = 6;            // 消息类型（字符串格式）
+  string content = 7;         // 消息内容
+  string url = 8;             // 文件或图片地址
+  string fileSize = 9;       // 文件大小
+  string fileName = 10;      // 文件名
+  string fileType = 11;     // 文件类型
+  string avdata = 13;     // 音视频数据
 }
 
 message GetMessagesRequest {
@@ -311,6 +298,19 @@ message GetMessagesReply {
   int32 total = 4;           // 总消息数
   int32 page = 5;            // 当前页码
   int32 pageSize = 6;        // 每页数量
+}
+
+// NID_GET_MESSAGE_LIST_REQ
+message GetMessageListRequest {
+  string uuid1 = 1;
+  string uuid2 = 2;
+}
+
+// NID_GET_MESSAGE_LIST_RES
+message GetMessageListReply {
+  int32 code = 1;
+  Res res = 2;
+  repeated Message data = 3;
 }
 
 

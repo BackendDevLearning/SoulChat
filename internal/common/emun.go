@@ -18,3 +18,9 @@ const (
 const (
 	REDIS_TIMEOUT = 30 // Redis 缓存超时时间（分钟）
 )
+
+// 消息类型常量
+const (
+	MESSAGE_TYPE_SINGLE = 1
+	MESSAGE_TYPE_GROUP  = 2
+)

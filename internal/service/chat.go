@@ -20,7 +20,7 @@ func ConvertToMessage(req *v1.GetMessagesRequest) *common.MessageRequest {
 }
 
 func (cs *ConduitService) GetMessages(ctx context.Context, req *v1.GetMessagesRequest) (*v1.GetMessagesReply, error) {
-	err := cs.mc.GetMessages(ctx, *ConvertToMessage(req))
+	messageResponse, total, err := cs.mc.GetMessages(ctx, *ConvertToMessage(req))
 	if err != nil {
 		log.Printf("GetMessages err: %v\n", err)
 
@@ -33,6 +33,10 @@ func (cs *ConduitService) GetMessages(ctx context.Context, req *v1.GetMessagesRe
 	return &v1.GetMessagesReply{
 		Code: 0,
 		Res:  ErrorToRes(err),
+		Data: messageResponse,
+		Total: total,
+		Page: req.Page,
+		PageSize: req.PageSize,
 	}, nil
 }
 
