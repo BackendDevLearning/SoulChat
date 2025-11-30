@@ -128,11 +128,12 @@ func (k *KafkaServerUseCase) Start() {
 					Type:       chatMessageReq.Type,
 					Content:    chatMessageReq.Content,
 					Url:        "",
-					FromUserID: chatMessageReq.SendId,
-					ToUserID:   chatMessageReq.ReceiveId,
+					SendId: chatMessageReq.SendId,
 					SendName:   chatMessageReq.SendName,
 					SendAvatar: normalizePath(chatMessageReq.SendAvatar),
+					ReceiveAvatar: normalizePath(chatMessageReq.ReceiveAvatar),
 					ReceiveId:  chatMessageReq.ReceiveId,
+					ReceiveAvatar: normalizePath(chatMessageReq.ReceiveAvatar),
 					FileSize:   "0B",
 					FileType:   "",
 					FileName:   "",
@@ -151,10 +152,12 @@ func (k *KafkaServerUseCase) Start() {
 					// 因为在线的时候是通过websocket更新消息记录的，离线后通过存表，登录时只调用一次数据库操作
 					// 切换chat对象后，前端的messageList也会改变，获取messageList从第二次就是从redis中获取
 					messageRsp := res.GetMessageListRespond{
-						SendId:     message.FromUserID,
+						SessionId:  message.SessionId,
+						SendId:     message.SendId,
 						SendName:   message.SendName,
 						SendAvatar: chatMessageReq.SendAvatar,
 						ReceiveId:  message.ReceiveId,
+						ReceiveAvatar: chatMessageReq.ReceiveAvatar,
 						Type:       strconv.Itoa(common.MessageTypeText),
 						Content:    message.Content,
 						Url:        message.Url,
@@ -214,13 +217,15 @@ func (k *KafkaServerUseCase) Start() {
 
 				} else if message.MessageType == common.MESSAGE_TYPE_GROUP { // 发送给Group
 					messageRsp := res.GetGroupMessageListRespond{
-						SendId:     message.FromUserID,
+						SendId:     message.SendId,
+						SessionId:  message.SessionId,
 						SendName:   message.SendName,
 						SendAvatar: chatMessageReq.SendAvatar,
 						ReceiveId:  message.ReceiveId,
 						Type:       strconv.Itoa(common.MessageTypeText),
 						Content:    message.Content,
 						Url:        message.Url,
+						ReceiveAvatar: chatMessageReq.ReceiveAvatar,
 						FileSize:   message.FileSize,
 						FileName:   message.FileName,
 						FileType:   message.FileType,
@@ -297,10 +302,10 @@ func (k *KafkaServerUseCase) Start() {
 					Type:       chatMessageReq.Type, // 2.文件
 					Content:    "",
 					Url:        chatMessageReq.Url,
-					FromUserID: chatMessageReq.SendId,
-					ToUserID:   chatMessageReq.ReceiveId,
+					SendId: chatMessageReq.SendId,
 					SendName:   chatMessageReq.SendName,
 					SendAvatar: normalizePath(chatMessageReq.SendAvatar),
+					ReceiveAvatar: normalizePath(chatMessageReq.ReceiveAvatar),
 					ReceiveId:  chatMessageReq.ReceiveId,
 					FileSize:   chatMessageReq.FileSize,
 					FileType:   chatMessageReq.FileType,
@@ -320,8 +325,10 @@ func (k *KafkaServerUseCase) Start() {
 					// 因为在线的时候是通过websocket更新消息记录的，离线后通过存表，登录时只调用一次数据库操作
 					// 切换chat对象后，前端的messageList也会改变，获取messageList从第二次就是从redis中获取
 					messageRsp := res.GetMessageListRespond{
-						SendId:     message.FromUserID,
+						SendId:     message.SendId,
+						SessionId:  message.SessionId,
 						SendName:   message.SendName,
+						ReceiveAvatar: chatMessageReq.ReceiveAvatar,
 						SendAvatar: chatMessageReq.SendAvatar,
 						ReceiveId:  message.ReceiveId,
 						Type:       strconv.Itoa(common.MessageTypeFile),
@@ -374,9 +381,11 @@ func (k *KafkaServerUseCase) Start() {
 					}
 				} else if chatMessageReq.MessageType == common.MESSAGE_TYPE_GROUP { // 发送给Group
 					messageRsp := res.GetGroupMessageListRespond{
-						SendId:     message.FromUserID,
+						SendId:     message.SendId,
+						SessionId:  message.SessionId,
 						SendName:   message.SendName,
 						SendAvatar: chatMessageReq.SendAvatar,
+						ReceiveAvatar: chatMessageReq.ReceiveAvatar,
 						ReceiveId:  message.ReceiveId,
 						Type:       strconv.Itoa(common.MessageTypeFile),
 						Content:    message.Content,
@@ -461,10 +470,11 @@ func (k *KafkaServerUseCase) Start() {
 					Type:       chatMessageReq.Type, // 3.通话
 					Content:    "",
 					Url:        "",
-					FromUserID: chatMessageReq.SendId,
+					SendId: chatMessageReq.SendId,
 					ToUserID:   chatMessageReq.ReceiveId,
 					SendName:   chatMessageReq.SendName,
 					SendAvatar: normalizePath(chatMessageReq.SendAvatar),
+					ReceiveAvatar: normalizePath(chatMessageReq.ReceiveAvatar),
 					ReceiveId:  chatMessageReq.ReceiveId,
 					FileSize:   "",
 					FileType:   "",
@@ -487,9 +497,11 @@ func (k *KafkaServerUseCase) Start() {
 					// 因为在线的时候是通过websocket更新消息记录的，离线后通过存表，登录时只调用一次数据库操作
 					// 切换chat对象后，前端的messageList也会改变，获取messageList从第二次就是从redis中获取
 					messageRsp := res.AVMessageRespond{
-						SendId:     message.FromUserID,
+						SendId:     message.SendId,
+						SessionId:  message.SessionId,
 						SendName:   message.SendName,
 						SendAvatar: message.SendAvatar,
+						ReceiveAvatar: chatMessageReq.ReceiveAvatar,
 						ReceiveId:  message.ReceiveId,
 						Type:       strconv.Itoa(common.MessageTypeAudioOrVideo),
 						Content:    message.Content,

@@ -6,6 +6,7 @@ import (
 	"github.com/go-kratos/kratos/v2/log"
 	bizChat "kratos-realworld/internal/biz/messageGroup"
 	"kratos-realworld/internal/common"
+	"kratos-realworld/internal/common/res"
 )
 
 type MessageUseCase struct {
@@ -43,12 +44,7 @@ func (mc *MessageUseCase) fetchGroupMessage() {
 
 }
 
-func (mc *MessageUseCase) GetMessageList(ctx context.Context, messageReq common.MessageRequest) ([]common.MessageResponse, error) {
-	res, err := mc.mr.GetMessagesList(ctx, messageReq)
-	if err != nil {
-		mc.log.Errorf("GetMessageList err: %v\n", err)
-		return nil, err
-	}
-	return res, nil
-
+func (mc *MessageUseCase) GetMessageList(ctx context.Context, uuid1 string, uuid2 string) ([]res.GetMessageListRespond, error) {
+	res, err := mc.mr.GetMessagesList(ctx, uuid1, uuid2)
+	return 
 }

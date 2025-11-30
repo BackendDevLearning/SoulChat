@@ -38,7 +38,8 @@ func (cs *ConduitService) GetMessages(ctx context.Context, req *v1.GetMessagesRe
 
 // response 的结构和messageResponse 的结构一致
 func (cs *ConduitService) GetMessageList(ctx context.Context, req *v1.GetMessageListRequest) (*v1.GetMessageListReply, error) {
-	res, err := cs.mc.GetMessageList(ctx, req)
+	res, err := cs.mc.GetMessageList(ctx, req.Uuid1, req.Uuid2)
+	
 	if err != nil {
 		cs.log.Errorf("GetMessageList err: %v\n", err)
 		return &v1.GetMessageListReply{
@@ -46,6 +47,7 @@ func (cs *ConduitService) GetMessageList(ctx context.Context, req *v1.GetMessage
 			Res:  ErrorToRes(err),
 		}, nil
 	}
+
 	return &v1.GetMessageListReply{
 		Code: 0,
 		Res:  ErrorToRes(err),

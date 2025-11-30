@@ -108,7 +108,7 @@ service Conduit {
 
 // NID_GET_MESSAGE_LIST_REQ
 message GetMessageListRequest {
-  string uuid = 1;
+  string uuid1 = 1;
   string uuid2 = 2;
 }
 

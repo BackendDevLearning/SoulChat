@@ -24,9 +24,9 @@ func NewMessageRepo(data *model.Data, logger log.Logger) bizChat.MessageRepo {
 	}
 }
 
-func (mr *MessageRepo) GetMessagesList(ctx context.Context, message common.MessageRequest) ([]common.MessageResponse, error) {
+func (mr *MessageRepo) GetMessagesList(ctx context.Context, message common.MessageRequest) ([]res.GetMessageListRespond, error) {
 	rspString, ok, err := mr.data.Cache().Get(ctx, "message_list_"+message.Uuid+"_"+message.FriendUuid)
-	if !ok and err == nil {
+	if !ok && err == nil {
 		// 缓存没有命中
 		var messageList []bizChat.MessageTB
 		if res := mr.data.DB().WithContext(ctx).Table("t_message").Where("(from_uuid = ? AND to_uuid = ?) OR (from_uuid = ? AND to_uuid = ?)",
