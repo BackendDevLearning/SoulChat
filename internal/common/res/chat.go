@@ -2,7 +2,6 @@ package res
 
 // GetMessageListRespond 消息列表响应结构
 type GetMessageListRespond struct {
-	SessionId  string `json:"session_id"`
 	Type       int8   `json:"type"`
 	Content    string `json:"content"`
 	Url        string `json:"url"`
@@ -15,7 +14,6 @@ type GetMessageListRespond struct {
 	FileType   string `json:"file_type"`
 	FileName   string `json:"file_name"`
 	AVdata     string `json:"av_data"`
-	MessageType int8 `json:"message_type"`
 }
 
 // GetGroupMessageListRespond 群消息列表响应结构

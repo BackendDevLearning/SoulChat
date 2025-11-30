@@ -46,5 +46,10 @@ func (mc *MessageUseCase) fetchGroupMessage() {
 
 func (mc *MessageUseCase) GetMessageList(ctx context.Context, uuid1 string, uuid2 string) ([]res.GetMessageListRespond, error) {
 	res, err := mc.mr.GetMessagesList(ctx, uuid1, uuid2)
+	var messageList []res.GetMessageListRespond
+	if err != nil {
+
+		for _, message := range res {
+	}
 	return 
 }

@@ -152,7 +152,6 @@ func (k *KafkaServerUseCase) Start() {
 					// 因为在线的时候是通过websocket更新消息记录的，离线后通过存表，登录时只调用一次数据库操作
 					// 切换chat对象后，前端的messageList也会改变，获取messageList从第二次就是从redis中获取
 					messageRsp := res.GetMessageListRespond{
-						SessionId:  message.SessionId,
 						SendId:     message.SendId,
 						SendName:   message.SendName,
 						SendAvatar: chatMessageReq.SendAvatar,
@@ -165,7 +164,7 @@ func (k *KafkaServerUseCase) Start() {
 						FileName:   message.FileName,
 						FileType:   message.FileType,
 						CreatedAt:  formatMessageTime(message.CreatedAt, now),
-						MessageType: message.MessageType,
+						AVdata:     message.AVdata,
 					}
 					jsonMessage, err := json.Marshal(messageRsp)
 					if err != nil {
@@ -218,19 +217,18 @@ func (k *KafkaServerUseCase) Start() {
 				} else if message.MessageType == common.MESSAGE_TYPE_GROUP { // 发送给Group
 					messageRsp := res.GetGroupMessageListRespond{
 						SendId:     message.SendId,
-						SessionId:  message.SessionId,
 						SendName:   message.SendName,
 						SendAvatar: chatMessageReq.SendAvatar,
 						ReceiveId:  message.ReceiveId,
+						ReceiveAvatar: chatMessageReq.ReceiveAvatar,
 						Type:       strconv.Itoa(common.MessageTypeText),
 						Content:    message.Content,
 						Url:        message.Url,
-						ReceiveAvatar: chatMessageReq.ReceiveAvatar,
 						FileSize:   message.FileSize,
 						FileName:   message.FileName,
 						FileType:   message.FileType,
 						CreatedAt:  formatMessageTime(message.CreatedAt, now),
-						MessageType: message.MessageType,
+						AVdata:     message.AVdata,
 					}
 					jsonMessage, err := json.Marshal(messageRsp)
 					if err != nil {
@@ -326,10 +324,9 @@ func (k *KafkaServerUseCase) Start() {
 					// 切换chat对象后，前端的messageList也会改变，获取messageList从第二次就是从redis中获取
 					messageRsp := res.GetMessageListRespond{
 						SendId:     message.SendId,
-						SessionId:  message.SessionId,
 						SendName:   message.SendName,
-						ReceiveAvatar: chatMessageReq.ReceiveAvatar,
 						SendAvatar: chatMessageReq.SendAvatar,
+						ReceiveAvatar: chatMessageReq.ReceiveAvatar,
 						ReceiveId:  message.ReceiveId,
 						Type:       strconv.Itoa(common.MessageTypeFile),
 						Content:    message.Content,
@@ -338,7 +335,7 @@ func (k *KafkaServerUseCase) Start() {
 						FileName:   message.FileName,
 						FileType:   message.FileType,
 						CreatedAt:  formatMessageTime(message.CreatedAt, now),
-						MessageType: message.MessageType,
+						AVdata:     message.AVdata,
 					}
 					jsonMessage, err := json.Marshal(messageRsp)
 					if err != nil {
@@ -382,7 +379,6 @@ func (k *KafkaServerUseCase) Start() {
 				} else if chatMessageReq.MessageType == common.MESSAGE_TYPE_GROUP { // 发送给Group
 					messageRsp := res.GetGroupMessageListRespond{
 						SendId:     message.SendId,
-						SessionId:  message.SessionId,
 						SendName:   message.SendName,
 						SendAvatar: chatMessageReq.SendAvatar,
 						ReceiveAvatar: chatMessageReq.ReceiveAvatar,
@@ -394,7 +390,7 @@ func (k *KafkaServerUseCase) Start() {
 						FileName:   message.FileName,
 						FileType:   message.FileType,
 						CreatedAt:  formatMessageTime(message.CreatedAt, now),
-						MessageType: chatMessageReq.MessageType,
+						AVdata:     message.AVdata,
 					}
 					jsonMessage, err := json.Marshal(messageRsp)
 					if err != nil {
@@ -498,7 +494,6 @@ func (k *KafkaServerUseCase) Start() {
 					// 切换chat对象后，前端的messageList也会改变，获取messageList从第二次就是从redis中获取
 					messageRsp := res.AVMessageRespond{
 						SendId:     message.SendId,
-						SessionId:  message.SessionId,
 						SendName:   message.SendName,
 						SendAvatar: message.SendAvatar,
 						ReceiveAvatar: chatMessageReq.ReceiveAvatar,
@@ -511,7 +506,6 @@ func (k *KafkaServerUseCase) Start() {
 						FileType:   message.FileType,
 						CreatedAt:  formatMessageTime(message.CreatedAt, now),
 						AVdata:     message.AVdata,
-						MessageType: message.MessageType,
 					}
 					jsonMessage, err := json.Marshal(messageRsp)
 					if err != nil {

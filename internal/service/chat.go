@@ -47,7 +47,7 @@ func (cs *ConduitService) GetMessageList(ctx context.Context, req *v1.GetMessage
 			Res:  ErrorToRes(err),
 		}, nil
 	}
-
+	
 	return &v1.GetMessageListReply{
 		Code: 0,
 		Res:  ErrorToRes(err),
