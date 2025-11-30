@@ -42,4 +42,5 @@ type MessageRepo interface {
 	GetMessages(ctx context.Context, message common.MessageRequest) ([]common.MessageResponse, error) // 分页查询 1. 分页offset  2. 游标cursor
 	FetchGroupMessage(ctx context.Context, toUuid string) ([]common.MessageResponse, error)
 	SaveMessage(message *MessageTB) error
+	GetMessagesList(ctx context.Context, message common.MessageRequest) ([]common.MessageResponse, error)
 }

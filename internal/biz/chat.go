@@ -42,3 +42,13 @@ func (mc *MessageUseCase) GetMessages(ctx context.Context, messageReq common.Mes
 func (mc *MessageUseCase) fetchGroupMessage() {
 
 }
+
+func (mc *MessageUseCase) GetMessageList(ctx context.Context, messageReq common.MessageRequest) ([]common.MessageResponse, error) {
+	res, err := mc.mr.GetMessagesList(ctx, messageReq)
+	if err != nil {
+		mc.log.Errorf("GetMessageList err: %v\n", err)
+		return nil, err
+	}
+	return res, nil
+
+}
