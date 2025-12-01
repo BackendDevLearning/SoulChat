@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"strconv"
 	"kratos-realworld/internal/biz/messageGroup"
 	"kratos-realworld/internal/common"
 	"kratos-realworld/internal/common/req"
@@ -123,48 +122,48 @@ func (k *KafkaServerUseCase) Start() {
 				// 存message
 				now := time.Now()
 				message := messageGroup.MessageTB{
-					Uuid:       GenerateMessageUUID(),
-					SessionId:  chatMessageReq.SessionId,
-					Type:       chatMessageReq.Type,
-					Content:    chatMessageReq.Content,
-					Url:        "",
-					SendId: chatMessageReq.SendId,
-					SendName:   chatMessageReq.SendName,
-					SendAvatar: normalizePath(chatMessageReq.SendAvatar),
+					Uuid:          GenerateMessageUUID(),
+					SessionId:     chatMessageReq.SessionId,
+					SendId:        chatMessageReq.SendId,
+					SendName:      chatMessageReq.SendName,
+					SendAvatar:    normalizePath(chatMessageReq.SendAvatar),
+					ReceiveId:     chatMessageReq.ReceiveId,
 					ReceiveAvatar: normalizePath(chatMessageReq.ReceiveAvatar),
-					ReceiveId:  chatMessageReq.ReceiveId,
-					ReceiveAvatar: normalizePath(chatMessageReq.ReceiveAvatar),
-					FileSize:   "0B",
-					FileType:   "",
-					FileName:   "",
-					Status:     common.MessageStatusUnsent, // 0.未发送
-					MessageType: chatMessageReq.MessageType, // 1单聊
-					AVdata:     "",
-					CreatedAt:  &now,
+					Type:          int8(chatMessageReq.Type),
+					MessageType:   int8(chatMessageReq.MessageType), // 1单聊
+					Content:       chatMessageReq.Content,
+					Url:           "",
+					Pic:           "",
+					FileType:      "",
+					FileName:      "",
+					FileSize:      "",
+					AVdata:        "",
+					Status:        common.MessageStatusUnsent, // 0.未发送
+					CreatedAt:     &now,
 				}
 				// 判断是单聊还是群聊
 				if err := k.data.DB().WithContext(ctx).Create(&message).Error; err != nil {
 					k.log.Errorf("failed to create message, %v", err)
 				}
-				
+
 				if chatMessageReq.MessageType == common.MESSAGE_TYPE_USER { // 发送给User
 					// 如果能找到ReceiveId，说明在线，可以发送，否则存表后跳过
 					// 因为在线的时候是通过websocket更新消息记录的，离线后通过存表，登录时只调用一次数据库操作
 					// 切换chat对象后，前端的messageList也会改变，获取messageList从第二次就是从redis中获取
 					messageRsp := res.GetMessageListRespond{
-						SendId:     message.SendId,
-						SendName:   message.SendName,
-						SendAvatar: chatMessageReq.SendAvatar,
-						ReceiveId:  message.ReceiveId,
+						SendId:        message.SendId,
+						SendName:      message.SendName,
+						SendAvatar:    chatMessageReq.SendAvatar,
+						ReceiveId:     message.ReceiveId,
 						ReceiveAvatar: chatMessageReq.ReceiveAvatar,
-						Type:       strconv.Itoa(common.MessageTypeText),
-						Content:    message.Content,
-						Url:        message.Url,
-						FileSize:   message.FileSize,
-						FileName:   message.FileName,
-						FileType:   message.FileType,
-						CreatedAt:  formatMessageTime(message.CreatedAt, now),
-						AVdata:     message.AVdata,
+						Type:          common.MessageTypeText,
+						Content:       message.Content,
+						Url:           message.Url,
+						FileSize:      message.FileSize,
+						FileName:      message.FileName,
+						FileType:      message.FileType,
+						CreatedAt:     formatMessageTime(message.CreatedAt, now),
+						AVdata:        message.AVdata,
 					}
 					jsonMessage, err := json.Marshal(messageRsp)
 					if err != nil {
@@ -185,7 +184,7 @@ func (k *KafkaServerUseCase) Start() {
 					// 因为send_id肯定在线，所以这里在后端进行在线回显message，其实优化的话前端可以直接回显
 					// 问题在于前后端的req和rsp结构不同，前端存储message的messageList不能存req，只能存rsp
 					// 所以这里后端进行回显，前端不回显
-					sendClient := k.Clients[message.SendID]
+					sendClient := k.Clients[message.SendId]
 					sendClient.SendBack <- messageBack
 					// 即使操作不同的 key，它们可能：
 					// 共享同一个 map 结构体（头部信息）
@@ -217,19 +216,19 @@ func (k *KafkaServerUseCase) Start() {
 
 				} else if message.MessageType == common.MESSAGE_TYPE_GROUP { // 发送给Group
 					messageRsp := res.GetGroupMessageListRespond{
-						SendId:     message.SendId,
-						SendName:   message.SendName,
-						SendAvatar: chatMessageReq.SendAvatar,
-						ReceiveId:  message.ReceiveId,
+						SendId:        message.SendId,
+						SendName:      message.SendName,
+						SendAvatar:    chatMessageReq.SendAvatar,
+						ReceiveId:     message.ReceiveId,
 						ReceiveAvatar: chatMessageReq.ReceiveAvatar,
-						Type:       strconv.Itoa(common.MessageTypeText),
-						Content:    message.Content,
-						Url:        message.Url,
-						FileSize:   message.FileSize,
-						FileName:   message.FileName,
-						FileType:   message.FileType,
-						CreatedAt:  formatMessageTime(message.CreatedAt, now),
-						AVdata:     message.AVdata,
+						Type:          common.MessageTypeText,
+						Content:       message.Content,
+						Url:           message.Url,
+						FileSize:      message.FileSize,
+						FileName:      message.FileName,
+						FileType:      message.FileType,
+						CreatedAt:     formatMessageTime(message.CreatedAt, now),
+						AVdata:        message.AVdata,
 					}
 					jsonMessage, err := json.Marshal(messageRsp)
 					if err != nil {
@@ -258,12 +257,12 @@ func (k *KafkaServerUseCase) Start() {
 					}
 					k.mutex.Lock()
 					for _, member := range members {
-						if member != message.SendID {
+						if member != message.SendId {
 							if receiveClient, ok := k.Clients[member]; ok {
 								receiveClient.SendBack <- messageBack
 							}
 						} else {
-							if sendClient, ok := k.Clients[message.SendID]; ok {
+							if sendClient, ok := k.Clients[message.SendId]; ok {
 								sendClient.SendBack <- messageBack
 							}
 						}
@@ -296,47 +295,48 @@ func (k *KafkaServerUseCase) Start() {
 				// 存message
 				now := time.Now()
 				message := messageGroup.MessageTB{
-					Uuid:       GenerateMessageUUID(),
-					SessionId:  chatMessageReq.SessionId,
-					Type:       chatMessageReq.Type, // 2.文件
-					Content:    "",
-					Url:        chatMessageReq.Url,
-					SendId: chatMessageReq.SendId,
-					SendName:   chatMessageReq.SendName,
-					SendAvatar: normalizePath(chatMessageReq.SendAvatar),
+					Uuid:          GenerateMessageUUID(),
+					SessionId:     chatMessageReq.SessionId,
+					SendId:        chatMessageReq.SendId,
+					SendName:      chatMessageReq.SendName,
+					SendAvatar:    normalizePath(chatMessageReq.SendAvatar),
+					ReceiveId:     chatMessageReq.ReceiveId,
 					ReceiveAvatar: normalizePath(chatMessageReq.ReceiveAvatar),
-					ReceiveId:  chatMessageReq.ReceiveId,
-					FileSize:   chatMessageReq.FileSize,
-					FileType:   chatMessageReq.FileType,
-					FileName:   chatMessageReq.FileName,
-					Status:     common.MessageStatusUnsent, // 0.未发送
-					MessageType: chatMessageReq.MessageType, // 1单聊
-					AVdata:     "",
-					CreatedAt:  formatMessageTime(message.CreatedAt, now),
+					Type:          int8(chatMessageReq.Type),        // 2.文件
+					MessageType:   int8(chatMessageReq.MessageType), // 1单聊
+					Content:       "",
+					Url:           chatMessageReq.Url,
+					Pic:           chatMessageReq.Pic,
+					FileType:      chatMessageReq.FileType,
+					FileName:      chatMessageReq.FileName,
+					FileSize:      chatMessageReq.FileSize,
+					AVdata:        "",
+					Status:        common.MessageStatusUnsent, // 0.未发送
+					CreatedAt:     &now,
 				}
 
 				if err := k.data.DB().WithContext(ctx).Create(&message).Error; err != nil {
 					k.log.Errorf("failed to create message, %v", err)
 				}
-				
+
 				if chatMessageReq.MessageType == common.MESSAGE_TYPE_USER { // 发送给User
 					// 如果能找到ReceiveId，说明在线，可以发送，否则存表后跳过
 					// 因为在线的时候是通过websocket更新消息记录的，离线后通过存表，登录时只调用一次数据库操作
 					// 切换chat对象后，前端的messageList也会改变，获取messageList从第二次就是从redis中获取
 					messageRsp := res.GetMessageListRespond{
-						SendId:     message.SendId,
-						SendName:   message.SendName,
-						SendAvatar: chatMessageReq.SendAvatar,
+						SendId:        message.SendId,
+						SendName:      message.SendName,
+						SendAvatar:    chatMessageReq.SendAvatar,
 						ReceiveAvatar: chatMessageReq.ReceiveAvatar,
-						ReceiveId:  message.ReceiveId,
-						Type:       strconv.Itoa(common.MessageTypeFile),
-						Content:    message.Content,
-						Url:        message.Url,
-						FileSize:   message.FileSize,
-						FileName:   message.FileName,
-						FileType:   message.FileType,
-						CreatedAt:  formatMessageTime(message.CreatedAt, now),
-						AVdata:     message.AVdata,
+						ReceiveId:     message.ReceiveId,
+						Type:          common.MessageTypeFile,
+						Content:       message.Content,
+						Url:           message.Url,
+						FileSize:      message.FileSize,
+						FileName:      message.FileName,
+						FileType:      message.FileType,
+						CreatedAt:     formatMessageTime(message.CreatedAt, now),
+						AVdata:        message.AVdata,
 					}
 					jsonMessage, err := json.Marshal(messageRsp)
 					if err != nil {
@@ -351,7 +351,7 @@ func (k *KafkaServerUseCase) Start() {
 					if receiveClient, ok := k.Clients[message.ReceiveId]; ok {
 						receiveClient.SendBack <- messageBack
 					}
-					if sendClient, ok := k.Clients[message.SendID]; ok {
+					if sendClient, ok := k.Clients[message.SendId]; ok {
 						sendClient.SendBack <- messageBack
 					}
 					k.mutex.Unlock()
@@ -379,19 +379,19 @@ func (k *KafkaServerUseCase) Start() {
 					}
 				} else if chatMessageReq.MessageType == common.MESSAGE_TYPE_GROUP { // 发送给Group
 					messageRsp := res.GetGroupMessageListRespond{
-						SendId:     message.SendId,
-						SendName:   message.SendName,
-						SendAvatar: chatMessageReq.SendAvatar,
+						SendId:        message.SendId,
+						SendName:      message.SendName,
+						SendAvatar:    chatMessageReq.SendAvatar,
 						ReceiveAvatar: chatMessageReq.ReceiveAvatar,
-						ReceiveId:  message.ReceiveId,
-						Type:       strconv.Itoa(common.MessageTypeFile),
-						Content:    message.Content,
-						Url:        message.Url,
-						FileSize:   message.FileSize,
-						FileName:   message.FileName,
-						FileType:   message.FileType,
-						CreatedAt:  formatMessageTime(message.CreatedAt, now),
-						AVdata:     message.AVdata,
+						ReceiveId:     message.ReceiveId,
+						Type:          common.MessageTypeFile,
+						Content:       message.Content,
+						Url:           message.Url,
+						FileSize:      message.FileSize,
+						FileName:      message.FileName,
+						FileType:      message.FileType,
+						CreatedAt:     formatMessageTime(message.CreatedAt, now),
+						AVdata:        message.AVdata,
 					}
 					jsonMessage, err := json.Marshal(messageRsp)
 					if err != nil {
@@ -420,12 +420,12 @@ func (k *KafkaServerUseCase) Start() {
 					}
 					k.mutex.Lock()
 					for _, member := range members {
-						if member != message.SendID {
+						if member != message.SendId {
 							if receiveClient, ok := k.Clients[member]; ok {
 								receiveClient.SendBack <- messageBack
 							}
 						} else {
-							if sendClient, ok := k.Clients[message.SendID]; ok {
+							if sendClient, ok := k.Clients[message.SendId]; ok {
 								sendClient.SendBack <- messageBack
 							}
 						}
@@ -454,7 +454,7 @@ func (k *KafkaServerUseCase) Start() {
 						k.log.Errorf("failed to get message, %v", err)
 					}
 				}
-			// smc todo:通话这里需要好好看看怎么实现的
+				// smc todo:通话这里需要好好看看怎么实现的
 			} else if chatMessageReq.Type == common.MessageTypeAudioOrVideo {
 				var avData AVData
 				if err := json.Unmarshal([]byte(chatMessageReq.AVdata), &avData); err != nil {
@@ -462,24 +462,24 @@ func (k *KafkaServerUseCase) Start() {
 				}
 				now := time.Now()
 				message := messageGroup.MessageTB{
-					Uuid:       GenerateMessageUUID(),
-					SessionId:  chatMessageReq.SessionId,
-					Type:       chatMessageReq.Type, // 3.通话
-					Content:    "",
-					Url:        "",
-					SendId: chatMessageReq.SendId,
-					ToUserID:   chatMessageReq.ReceiveId,
-					SendName:   chatMessageReq.SendName,
-					SendAvatar: normalizePath(chatMessageReq.SendAvatar),
+					Uuid:          GenerateMessageUUID(),
+					SessionId:     chatMessageReq.SessionId,
+					SendId:        chatMessageReq.SendId,
+					SendName:      chatMessageReq.SendName,
+					SendAvatar:    normalizePath(chatMessageReq.SendAvatar),
+					ReceiveId:     chatMessageReq.ReceiveId,
 					ReceiveAvatar: normalizePath(chatMessageReq.ReceiveAvatar),
-					ReceiveId:  chatMessageReq.ReceiveId,
-					FileSize:   "",
-					FileType:   "",
-					FileName:   "",
-					Status:     common.MessageStatusUnsent, // 0.未发送
-					MessageType: chatMessageReq.MessageType, // 1单聊
-					AVdata:     chatMessageReq.AVdata,
-					CreatedAt:  formatMessageTime(message.CreatedAt, now),
+					Type:          int8(chatMessageReq.Type), // 3.通话
+					MessageType:   int8(chatMessageReq.MessageType), // 1单聊
+					Content:       "",
+					Url:           "",
+					Pic:					 "",
+					FileType:      "",
+					FileName:      "",
+					FileSize:      "",
+					AVdata:        chatMessageReq.AVdata,
+					Status:        common.MessageStatusUnsent,       // 0.未发送
+					CreatedAt:     &now,
 				}
 
 				if avData.MessageId == "PROXY" && (avData.Type == "start_call" || avData.Type == "receive_call" || avData.Type == "reject_call") {
@@ -494,19 +494,19 @@ func (k *KafkaServerUseCase) Start() {
 					// 因为在线的时候是通过websocket更新消息记录的，离线后通过存表，登录时只调用一次数据库操作
 					// 切换chat对象后，前端的messageList也会改变，获取messageList从第二次就是从redis中获取
 					messageRsp := res.AVMessageRespond{
-						SendId:     message.SendId,
-						SendName:   message.SendName,
-						SendAvatar: message.SendAvatar,
+						SendId:        message.SendId,
+						SendName:      message.SendName,
+						SendAvatar:    message.SendAvatar,
 						ReceiveAvatar: chatMessageReq.ReceiveAvatar,
-						ReceiveId:  message.ReceiveId,
-						Type:       strconv.Itoa(common.MessageTypeAudioOrVideo),
-						Content:    message.Content,
-						Url:        message.Url,
-						FileSize:   message.FileSize,
-						FileName:   message.FileName,
-						FileType:   message.FileType,
-						CreatedAt:  formatMessageTime(message.CreatedAt, now),
-						AVdata:     message.AVdata,
+						ReceiveId:     message.ReceiveId,
+						Type:          common.MessageTypeAudioOrVideo,
+						Content:       message.Content,
+						Url:           message.Url,
+						FileSize:      message.FileSize,
+						FileName:      message.FileName,
+						FileType:      message.FileType,
+						CreatedAt:     formatMessageTime(message.CreatedAt, now),
+						AVdata:        message.AVdata,
 					}
 					jsonMessage, err := json.Marshal(messageRsp)
 					if err != nil {
@@ -536,7 +536,7 @@ func (k *KafkaServerUseCase) Start() {
 				k.mutex.Lock()
 				k.Clients[client.Uuid] = client
 				k.mutex.Unlock()
-				k.log.Infof("欢迎来到kama聊天服务器，亲爱的用户%s", client.Uuid)
+				k.log.Infof("欢迎来到kama聊天服务器, 亲爱的用户%s", client.Uuid)
 				err := client.Conn.WriteMessage(websocket.TextMessage, []byte("欢迎来到kama聊天服务器"))
 				if err != nil {
 					k.log.Errorf("failed to write message, %v", err)

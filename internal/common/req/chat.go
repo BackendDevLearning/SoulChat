@@ -2,22 +2,22 @@ package req
 
 // ChatMessageRequest 聊天消息请求结构
 type ChatMessageRequest struct {
-	SessionId  string `json:"session_id"`
-	Type       int32   `json:"type"`
-	Content    string `json:"content"`
-	Url        string `json:"url"`
-	SendId     string `json:"send_id"`
-	SendName   string `json:"send_name"`
-	SendAvatar string `json:"send_avatar"`
+	SessionId     string `json:"session_id"`
+	SendId        string `json:"send_id"`
+	SendName      string `json:"send_name"`
+	SendAvatar    string `json:"send_avatar"`
+	ReceiveId     string `json:"receive_id"`
 	ReceiveAvatar string `json:"receive_avatar"`
-	ReceiveId  string `json:"receive_id"`
-	FileSize   string `json:"file_size"`
-	FileType   string `json:"file_type"`
-	FileName   string `json:"file_name"`
-	AVdata     string `json:"av_data"`
-	MessageType int32 `json:"message_type"`
+	Type          int32  `json:"type"`
+	MessageType   int32  `json:"message_type"`
+	Content       string `json:"content"`
+	Url           string `json:"url"`
+	Pic           string `json:"pic"`
+	FileType      string `json:"file_type"`
+	FileName      string `json:"file_name"`
+	FileSize      string `json:"file_size"`
+	AVdata        string `json:"av_data"`
 }
-
 
 type MessageRequest struct {
 	MessageType int32  `json:"messageType"` // 消息类型，1.单聊 2.群聊

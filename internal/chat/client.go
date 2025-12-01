@@ -12,7 +12,6 @@ import (
 	"kratos-realworld/internal/conf"
 	"kratos-realworld/internal/kafka"
 	"kratos-realworld/internal/model"
-	"log"
 	"strconv"
 )
 
@@ -64,7 +63,7 @@ func (c *Client) Read(logger *diyLog.Helper) {
 					logger.Error("failed to unmarshal message", diyLog.Any("error", err))
 				}
 			}
-			log.Println("接受到消息为: ", jsonMessage)
+			logger.Info("接受到消息为: ", jsonMessage)
 			if messageMode == "channel" {
 				// 如果server的转发channel没满，先把sendto中的给transmit
 				// 注意：ChatServer 需要在使用前初始化
