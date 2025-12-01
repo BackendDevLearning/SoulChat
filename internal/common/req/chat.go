@@ -3,7 +3,7 @@ package req
 // ChatMessageRequest 聊天消息请求结构
 type ChatMessageRequest struct {
 	SessionId  string `json:"session_id"`
-	Type       int8   `json:"type"`
+	Type       int32   `json:"type"`
 	Content    string `json:"content"`
 	Url        string `json:"url"`
 	SendId     string `json:"send_id"`

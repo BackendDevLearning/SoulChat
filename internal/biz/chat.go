@@ -49,5 +49,5 @@ func (mc *MessageUseCase) GetMessageList(ctx context.Context, uuid1 string, uuid
 		mc.log.Errorf("GetMessageList err: %v\n", err)
 		return []res.GetMessageListRespond{}, err
 	}
-	return ConvertToMessageList(res), nil
+	return res, nil
 }

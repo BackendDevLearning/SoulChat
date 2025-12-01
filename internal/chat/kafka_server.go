@@ -180,11 +180,12 @@ func (k *KafkaServerUseCase) Start() {
 						//messageBack.Message = jsonMessage
 						//messageBack.Uuid = message.Uuid
 						receiveClient.SendBack <- messageBack // 向client.Send发送
+						// 设置status，sql
 					}
 					// 因为send_id肯定在线，所以这里在后端进行在线回显message，其实优化的话前端可以直接回显
 					// 问题在于前后端的req和rsp结构不同，前端存储message的messageList不能存req，只能存rsp
 					// 所以这里后端进行回显，前端不回显
-					sendClient := k.Clients[message.FromUserID]
+					sendClient := k.Clients[message.SendID]
 					sendClient.SendBack <- messageBack
 					// 即使操作不同的 key，它们可能：
 					// 共享同一个 map 结构体（头部信息）
@@ -193,7 +194,7 @@ func (k *KafkaServerUseCase) Start() {
 					k.mutex.Unlock()
 
 					// redis
-					key := "message_list_" + message.FromUserID + "_" + message.ReceiveId
+					key := "message_list_" + message.SendId + "_" + message.ReceiveId
 					rspString, exists, err := k.data.Cache().Get(ctx, key)
 					if err == nil && exists {
 						var rsp []res.GetMessageListRespond
@@ -211,7 +212,7 @@ func (k *KafkaServerUseCase) Start() {
 							}
 						}
 					} else if err != nil && !errors.Is(err, redis.Nil) {
-						k.log.Errorf("failed to get message, %v", err)
+						k.log.Warnf("failed to get message, %v", err)
 					}
 
 				} else if message.MessageType == common.MESSAGE_TYPE_GROUP { // 发送给Group
@@ -257,12 +258,12 @@ func (k *KafkaServerUseCase) Start() {
 					}
 					k.mutex.Lock()
 					for _, member := range members {
-						if member != message.FromUserID {
+						if member != message.SendID {
 							if receiveClient, ok := k.Clients[member]; ok {
 								receiveClient.SendBack <- messageBack
 							}
 						} else {
-							if sendClient, ok := k.Clients[message.FromUserID]; ok {
+							if sendClient, ok := k.Clients[message.SendID]; ok {
 								sendClient.SendBack <- messageBack
 							}
 						}
@@ -350,13 +351,13 @@ func (k *KafkaServerUseCase) Start() {
 					if receiveClient, ok := k.Clients[message.ReceiveId]; ok {
 						receiveClient.SendBack <- messageBack
 					}
-					if sendClient, ok := k.Clients[message.FromUserID]; ok {
+					if sendClient, ok := k.Clients[message.SendID]; ok {
 						sendClient.SendBack <- messageBack
 					}
 					k.mutex.Unlock()
 
 					// redis
-					key := "message_list_" + message.FromUserID + "_" + message.ReceiveId
+					key := "message_list_" + message.SendId + "_" + message.ReceiveId
 					rspString, exists, err := k.data.Cache().Get(ctx, key)
 					if err == nil && exists {
 						var rsp []res.GetMessageListRespond
@@ -419,12 +420,12 @@ func (k *KafkaServerUseCase) Start() {
 					}
 					k.mutex.Lock()
 					for _, member := range members {
-						if member != message.FromUserID {
+						if member != message.SendID {
 							if receiveClient, ok := k.Clients[member]; ok {
 								receiveClient.SendBack <- messageBack
 							}
 						} else {
-							if sendClient, ok := k.Clients[message.FromUserID]; ok {
+							if sendClient, ok := k.Clients[message.SendID]; ok {
 								sendClient.SendBack <- messageBack
 							}
 						}

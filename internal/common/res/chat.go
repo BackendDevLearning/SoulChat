@@ -2,7 +2,7 @@ package res
 
 // GetMessageListRespond 消息列表响应结构
 type GetMessageListRespond struct {
-	Type       int8   `json:"type"`
+	Type       int32   `json:"type"`
 	Content    string `json:"content"`
 	Url        string `json:"url"`
 	SendId     string `json:"send_id"`
@@ -14,6 +14,7 @@ type GetMessageListRespond struct {
 	FileType   string `json:"file_type"`
 	FileName   string `json:"file_name"`
 	AVdata     string `json:"av_data"`
+	Status	 	int32   `json:"status"`
 }
 
 // GetGroupMessageListRespond 群消息列表响应结构
@@ -30,7 +31,7 @@ type GetGroupMessageListRespond struct {
 	FileName   string `json:"fileName"`
 	FileType   string `json:"fileType"`
 	CreatedAt  string `json:"createdAt"`
-	MessageType int8 `json:"messageType"`
+	MessageType int32 `json:"messageType"`
 }
 
 // AVMessageRespond 音视频消息响应结构
@@ -47,5 +48,5 @@ type AVMessageRespond struct {
 	FileType   string `json:"fileType"`
 	CreatedAt  string `json:"createdAt"`
 	AVdata     string `json:"avdata"`
-	MessageType int8 `json:"messageType"`
+	MessageType int32 `json:"messageType"`
 }

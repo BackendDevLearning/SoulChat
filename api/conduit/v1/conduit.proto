@@ -104,6 +104,35 @@ service Conduit {
     };
   }
 
+  rpc CreateGroup(CreateGroupRequest) returns (CreateGroupReply) {
+    option (google.api.http) = {
+      post : "/api/group/create",
+      body : "*",
+    };
+  }
+
+}
+
+// 前端错误信息查看
+// NID_Describe_Message
+message Res {
+  int32 code = 1;  // 业务状态码，例如 200、422
+  string reason = 2;  // 原因
+  string msg = 3;  // 详细描述信息
+}
+
+message CreateGroupRequest {
+  uint32 user_id = 1;
+  string name = 2;
+  uint32 mode = 3;      // 群模式 0-公开群 1-私密群
+  uint32 add_mode = 4;  // 加群方式 0-自由加入 1-需要验证
+  string intro = 5;     // 群简介
+}
+
+message CreateGroupReply {
+  int32 code = 1;
+  Res res = 2;
+  uint32 group_id = 3;
 }
 
 // NID_REGIDTER_REQ
@@ -281,6 +310,7 @@ message Message {
   string fileName = 10;      // 文件名
   string fileType = 11;     // 文件类型
   string avdata = 13;     // 音视频数据
+  int32 status = 14;         // 消息状态，0.发送中 1.已送达 2.已读
 }
 
 message GetMessagesRequest {
@@ -314,13 +344,7 @@ message GetMessageListReply {
 }
 
 
-// 前端错误信息查看
-// NID_Describe_Message
-message Res {
-  int32 code = 1;  // 业务状态码，例如 200、422
-  string reason = 2;  // 原因
-  string msg = 3;  // 详细描述信息
-}
+
 
 
 

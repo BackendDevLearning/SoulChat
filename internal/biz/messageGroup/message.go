@@ -18,12 +18,12 @@ type MessageTB struct {
 	FileType   string    `gorm:"column:file_type;type:char(10);comment:文件类型"`
 	FileName   string    `gorm:"column:file_name;type:varchar(50);comment:文件名"`
 	FileSize   string    `gorm:"column:file_size;type:char(20);comment:文件大小"`
-	Status     int8      `gorm:"column:status;not null;comment:状态, 0.未发送, 1.已发送"`
+	Status     int32      `gorm:"column:status;not null;comment:状态, 0.未发送, 1.已发送"`
 
-	Type       	int8      `gorm:"column:type;not null;comment:消息类型, 0.文本, 1.语音, 2.文件, 3.通话"` // 通话不用存消息内容或者url
+	Type       	int32      `gorm:"column:type;not null;comment:消息类型, 0.文本, 1.语音, 2.文件, 3.通话"` // 通话不用存消息内容或者url
 	SendId  string     `gorm:"column:send_id;type:varchar(64);not null;index;comment:发送者uuid" json:"sendId"`
 	Content     string     `gorm:"column:content;type:varchar(2500);not null;comment:消息内容" json:"content"`
-	MessageType int8     `gorm:"column:message_type;type:smallint unsigned;not null;default:1;comment:聊天类型: 1.单聊, 2.群聊" json:"messageType"`
+	MessageType int32     `gorm:"column:message_type;type:smallint unsigned;not null;default:1;comment:聊天类型: 1.单聊, 2.群聊" json:"messageType"`
 	Url         string     `gorm:"column:url;type:varchar(350);comment:文件或者图片地址" json:"url"`
 	Pic         string     `gorm:"column:pic;type:text;comment:缩略图" json:"pic"`
 

@@ -58,6 +58,8 @@ func (mr *MessageRepo) GetMessagesList(ctx context.Context, uuid1 string, uuid2 
 			mr.log.Errorf("GetMessagesList err: %v\n", dbRes.Error)
 			return nil, dbRes.Error
 		}
+		// 设置缓存
+		
 		return ConvertToMessageList(messageList), nil
 	} else if ok && err == nil {
 		// 缓存命中
