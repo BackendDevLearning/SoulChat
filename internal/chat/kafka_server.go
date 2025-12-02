@@ -9,6 +9,7 @@ import (
 	"kratos-realworld/internal/common"
 	"kratos-realworld/internal/common/req"
 	"kratos-realworld/internal/common/res"
+	"kratos-realworld/internal/data"
 	"kratos-realworld/internal/kafka"
 	"kratos-realworld/internal/model"
 	"os"
@@ -141,11 +142,8 @@ func (k *KafkaServerUseCase) Start() {
 					Status:        common.MessageStatusUnsent, // 0.未发送
 					CreatedAt:     &now,
 				}
-				// 判断是单聊还是群聊
-				if err := k.data.DB().WithContext(ctx).Create(&message).Error; err != nil {
-					k.log.Errorf("failed to create message, %v", err)
-				}
 
+				// 判断是单聊还是群聊
 				if chatMessageReq.MessageType == common.MESSAGE_TYPE_USER { // 发送给User
 					// 如果能找到ReceiveId，说明在线，可以发送，否则存表后跳过
 					// 因为在线的时候是通过websocket更新消息记录的，离线后通过存表，登录时只调用一次数据库操作
@@ -175,11 +173,15 @@ func (k *KafkaServerUseCase) Start() {
 						Uuid:    message.Uuid,
 					}
 					k.mutex.Lock()
+
+					// mysql持久化和redis缓存的数据都应该和最底层的MessageTB保持一致，而不是和rsp结构一致
+					// rsp结构是给前端看的，和后端存储的结构可能会存在差异
 					if receiveClient, ok := k.Clients[message.ReceiveId]; ok {
 						//messageBack.Message = jsonMessage
 						//messageBack.Uuid = message.Uuid
 						receiveClient.SendBack <- messageBack // 向client.Send发送
-						// 设置status，sql
+						// 设置status
+						message.Status = common.MessageStatusSent // 1.已发送
 					}
 					// 因为send_id肯定在线，所以这里在后端进行在线回显message，其实优化的话前端可以直接回显
 					// 问题在于前后端的req和rsp结构不同，前端存储message的messageList不能存req，只能存rsp
@@ -192,25 +194,43 @@ func (k *KafkaServerUseCase) Start() {
 					// 修改 map 的内部计数器
 					k.mutex.Unlock()
 
+					// message的状态更新为已发送
+					// mysql
+					if err := k.data.DB().WithContext(ctx).Create(&message).Error; err != nil {
+						k.log.Errorf("failed to create message, %v", err)
+					}
+
 					// redis
 					key := "message_list_" + message.SendId + "_" + message.ReceiveId
-					rspString, exists, err := k.data.Cache().Get(ctx, key)
-					if err == nil && exists {
-						var rsp []res.GetMessageListRespond
-						if err := json.Unmarshal([]byte(rspString), &rsp); err != nil {
-							k.log.Errorf("failed to unmarshal message, %v", err)
+					messageListLen, err := k.data.Cache().LLen(ctx, key)
+					if err == nil && messageListLen != 0 {
+						// 当前消息列表存在于缓存中，直接追加
+						// 如果缓存消息列表不存在，则等用户下次获取消息列表时再写入缓存，在grpc协议GetMessageList中实现
+						msgBytes, err := json.Marshal(message)
+						if err != nil {
+							k.log.Errorf("failed to marshal message, %v", err)
 						} else {
-							rsp = append(rsp, messageRsp)
-							rspByte, err := json.Marshal(rsp)
-							if err != nil {
-								k.log.Errorf("failed to marshal message, %v", err)
-							} else {
-								if err := k.data.Cache().Set(ctx, key, string(rspByte), time.Minute*common.REDIS_TIMEOUT); err != nil {
-									k.log.Errorf("failed to set message, %v", err)
+							err := k.data.Cache().Pipeline(ctx, func(pipe redis.Pipeliner) error {
+								// 缓存到消息列表
+								if err := pipe.RPush(ctx, key, string(msgBytes)); err != nil {
+									k.log.Errorf("failed to rpush message in pipeline: %v", err)
 								}
+								// 只保留最近100条消息
+								if err := pipe.LTrim(ctx, key, -MessagListLength, -1).Err(); err != nil {
+									k.log.Errorf("failed to ltrim message list in pipeline: %v", err)
+								}
+								// 设置过期时间
+								if err := pipe.Expire(ctx, key, MessageListCacheTTL).Err(); err != nil {
+									k.log.Errorf("failed to set expire for message list: %v", err)
+								}
+								return nil
+							})
+							if err != nil {
+								k.log.Errorf("failed to set message list cache: %v", err)
 							}
 						}
-					} else if err != nil && !errors.Is(err, redis.Nil) {
+					} else {
+						// redis 出错挂掉
 						k.log.Warnf("failed to get message, %v", err)
 					}
 
@@ -269,6 +289,11 @@ func (k *KafkaServerUseCase) Start() {
 					}
 					k.mutex.Unlock()
 
+					// mysql
+					if err := k.data.DB().WithContext(ctx).Create(&message).Error; err != nil {
+						k.log.Errorf("failed to create message, %v", err)
+					}
+
 					// redis
 					key := "group_messagelist_" + message.ReceiveId
 					rspString, exists, err := k.data.Cache().Get(ctx, key)
@@ -315,10 +340,6 @@ func (k *KafkaServerUseCase) Start() {
 					CreatedAt:     &now,
 				}
 
-				if err := k.data.DB().WithContext(ctx).Create(&message).Error; err != nil {
-					k.log.Errorf("failed to create message, %v", err)
-				}
-
 				if chatMessageReq.MessageType == common.MESSAGE_TYPE_USER { // 发送给User
 					// 如果能找到ReceiveId，说明在线，可以发送，否则存表后跳过
 					// 因为在线的时候是通过websocket更新消息记录的，离线后通过存表，登录时只调用一次数据库操作
@@ -350,32 +371,51 @@ func (k *KafkaServerUseCase) Start() {
 					k.mutex.Lock()
 					if receiveClient, ok := k.Clients[message.ReceiveId]; ok {
 						receiveClient.SendBack <- messageBack
+						// 设置status
+						message.Status = common.MessageStatusSent // 1.已发送
 					}
 					if sendClient, ok := k.Clients[message.SendId]; ok {
 						sendClient.SendBack <- messageBack
 					}
 					k.mutex.Unlock()
 
+					// mysql
+					if err := k.data.DB().WithContext(ctx).Create(&message).Error; err != nil {
+						k.log.Errorf("failed to create message, %v", err)
+					}
+
 					// redis
 					key := "message_list_" + message.SendId + "_" + message.ReceiveId
-					rspString, exists, err := k.data.Cache().Get(ctx, key)
-					if err == nil && exists {
-						var rsp []res.GetMessageListRespond
-						if err := json.Unmarshal([]byte(rspString), &rsp); err != nil {
-							k.log.Errorf("failed to unmarshal message, %v", err)
+					messageListLen, err := k.data.Cache().LLen(ctx, key)
+					if err == nil && messageListLen != 0 {
+						// 当前消息列表存在于缓存中，直接追加
+						// 如果缓存消息列表不存在，则等用户下次获取消息列表时再写入缓存，在grpc协议GetMessageList中实现
+						msgBytes, err := json.Marshal(message)
+						if err != nil {
+							k.log.Errorf("failed to marshal message, %v", err)
 						} else {
-							rsp = append(rsp, messageRsp)
-							rspByte, err := json.Marshal(rsp)
-							if err != nil {
-								k.log.Errorf("failed to marshal message, %v", err)
-							} else {
-								if err := k.data.Cache().Set(ctx, key, string(rspByte), time.Minute*common.REDIS_TIMEOUT); err != nil {
-									k.log.Errorf("failed to set message, %v", err)
+							err := k.data.Cache().Pipeline(ctx, func(pipe redis.Pipeliner) error {
+								// 缓存到消息列表
+								if err := pipe.RPush(ctx, key, string(msgBytes)); err != nil {
+									k.log.Errorf("failed to rpush message in pipeline: %v", err)
 								}
+								// 只保留最近100条消息
+								if err := pipe.LTrim(ctx, key, -MessagListLength, -1).Err(); err != nil {
+									k.log.Errorf("failed to ltrim message list in pipeline: %v", err)
+								}
+								// 设置过期时间
+								if err := pipe.Expire(ctx, key, MessageListCacheTTL).Err(); err != nil {
+									k.log.Errorf("failed to set expire for message list: %v", err)
+								}
+								return nil
+							})
+							if err != nil {
+								k.log.Errorf("failed to set message list cache: %v", err)
 							}
 						}
-					} else if err != nil && !errors.Is(err, redis.Nil) {
-						k.log.Errorf("failed to get message, %v", err)
+					} else {
+						// redis 出错挂掉
+						k.log.Warnf("failed to get message, %v", err)
 					}
 				} else if chatMessageReq.MessageType == common.MESSAGE_TYPE_GROUP { // 发送给Group
 					messageRsp := res.GetGroupMessageListRespond{
@@ -431,6 +471,11 @@ func (k *KafkaServerUseCase) Start() {
 						}
 					}
 					k.mutex.Unlock()
+
+					// mysql
+					if err := k.data.DB().WithContext(ctx).Create(&message).Error; err != nil {
+						k.log.Errorf("failed to create message, %v", err)
+					}
 
 					// redis
 					key := "group_messagelist_" + message.ReceiveId

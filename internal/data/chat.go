@@ -6,10 +6,12 @@ import (
 	"fmt"
 
 	"github.com/go-kratos/kratos/v2/log"
+	"github.com/redis/go-redis/v9"
 
 	//v1 "kratos-realworld/api/conduit/v1"
 	bizChat "kratos-realworld/internal/biz/messageGroup"
 	"kratos-realworld/internal/common"
+	"kratos-realworld/internal/common/req"
 	"kratos-realworld/internal/common/res"
 	"kratos-realworld/internal/model"
 )
@@ -26,11 +28,11 @@ func NewMessageRepo(data *model.Data, logger log.Logger) bizChat.MessageRepo {
 	}
 }
 
-func ConvertToMessageList(messageList []bizChat.MessageTB) []res.GetMessageListRespond {
+func ConvertToMessageListRes(messageList []bizChat.MessageTB) []res.GetMessageListRespond {
 	var messageResponse []res.GetMessageListRespond
 	for _, message := range messageList {
 		messageResponse = append(messageResponse, res.GetMessageListRespond{
-			Type:         message.Type,
+			Type:         int32(message.Type),
 			Content:      message.Content,
 			Url:          message.Url,
 			SendId:       message.SendId,
@@ -48,8 +50,10 @@ func ConvertToMessageList(messageList []bizChat.MessageTB) []res.GetMessageListR
 }
 
 func (mr *MessageRepo) GetMessagesList(ctx context.Context, uuid1 string, uuid2 string) ([]res.GetMessageListRespond, error) {
-	rspString, ok, err := mr.data.Cache().Get(ctx, "message_list_"+uuid1+"_"+uuid2)
-	if !ok && err == nil {
+	key := "message_list_" + uuid1 + "_" + uuid2
+	messageListStr, err := mr.data.Cache().LRange(ctx, key, -MessageListLength, -1)
+
+	if err == nil && len(messageListStr) == 0 {
 		// 缓存没有命中
 		var messageList []bizChat.MessageTB
 		query := "(send_id = ? AND receive_id = ?) OR (send_id = ? AND receive_id = ?)"
@@ -58,19 +62,51 @@ func (mr *MessageRepo) GetMessagesList(ctx context.Context, uuid1 string, uuid2 
 			mr.log.Errorf("GetMessagesList err: %v\n", dbRes.Error)
 			return nil, dbRes.Error
 		}
+
 		// 设置缓存
-		
-		return ConvertToMessageList(messageList), nil
-	} else if ok && err == nil {
-		// 缓存命中
-		mr.log.Infof("GetMessagesList cache hit: %v\n", rspString)
-		var messageList []res.GetMessageListRespond
-		if err := json.Unmarshal([]byte(rspString), &messageList); err != nil {
-			mr.log.Errorf("GetMessagesList unmarshal err: %v\n", err)
-			return nil, err
+		err := mr.data.Cache().Pipeline(ctx, func(pipe redis.Pipeliner) error {
+			// 缓存到消息列表
+			for _, msg := range messageList {
+				msgBytes, err := json.Marshal(msg)
+				if err != nil {
+					mr.log.Errorf("failed to marshal message for cache: %v", err)
+					continue
+				}
+				if err := pipe.RPush(ctx, key, string(msgBytes)).Err(); err != nil {
+					mr.log.Errorf("failed to rpush message in pipeline: %v", err)
+				}
+			}
+			// 只保留最近100条消息
+			if err := pipe.LTrim(ctx, key, -MessageListLength, -1).Err(); err != nil {
+				mr.log.Errorf("failed to ltrim message list in pipeline: %v", err)
+			}
+			// 设置过期时间
+			if err := pipe.Expire(ctx, key, MessageListCacheTTL).Err(); err != nil {	
+				mr.log.Errorf("failed to set expire for message list: %v", err)
+			}
+			return nil
+		})
+		if err != nil {
+			mr.log.Errorf("failed to set message list cache: %v", err)
 		}
-		return messageList, nil
+		return ConvertToMessageListRes(messageList), nil
+	} else if err == nil && len(messageListStr) != 0 {
+		// 缓存命中
+		mr.log.Infof("GetMessagesList cache hit: %v\n", messageListStr)
+		var messageList []bizChat.MessageTB
+		for _, msgStr := range messageListStr {
+			var msg bizChat.MessageTB
+			if err := json.Unmarshal([]byte(msgStr), &msg); err != nil {
+				mr.log.Errorf("GetMessagesList unmarshal err: %v", err)
+				continue // 继续处理下一条消息
+			}
+			messageList = append(messageList, msg)
+		}
+		// 更新过期时间
+		mr.data.Cache().Expire(ctx, key, MessageListCacheTTL)
+		return ConvertToMessageListRes(messageList), nil
 	} else {
+		// redis 出错挂掉
 		mr.log.Errorf("GetMessagesList err: %v\n", err)
 		return nil, err
 	}
@@ -116,7 +152,7 @@ func (mr *MessageRepo) GetMessages(ctx context.Context, message req.MessageReque
 	}
 
 	// 转换为响应格式
-	return ConvertToMessageList(messageList), total, nil
+	return ConvertToMessageListRes(messageList), total, nil
 }
 
 func (mr *MessageRepo) FetchGroupMessage(ctx context.Context, toUuid string) ([]common.MessageResponse, error) {
