@@ -24,3 +24,13 @@ const (
 	MESSAGE_TYPE_SINGLE = 1
 	MESSAGE_TYPE_GROUP  = 2
 )
+
+const (
+	DefaultCacheTTL = 24 * time.Hour
+	GroupMyGroupListCacheTTL = 12 * time.Hour
+)
+
+const (
+	GroupAdmin = 1
+	GroupMember = 0
+)

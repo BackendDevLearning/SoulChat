@@ -20,5 +20,5 @@ func (gm *GroupMemberTB) TableName() string {
 }
 
 type GroupMemberRepo interface {
-
+	AddGroupMember(user_id uint32, group_id uint32) error
 }

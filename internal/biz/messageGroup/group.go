@@ -1,6 +1,9 @@
 package messageGroup
 
-import "time"
+import (
+	"time"
+	"kratos-realworld/internal/common/res"
+)
 
 type GroupTB struct {
 	ID     uint32 `gorm:"column:id;type:int(10) unsigned;primary_key;AUTO_INCREMENT" json:"id"`
@@ -26,5 +29,6 @@ func (g *GroupTB) TableName() string {
 }
 
 type GroupInfoRepo interface {
-	CreateGroup(group *GroupTB) (uint32, error)
+	CreateGroup(user_id uint32, name string, mode uint32, add_mode uint32, intro string) error
+	LoadMyGroup(UserId uint32) ([]res.LoadMyGroupData, error)
 }

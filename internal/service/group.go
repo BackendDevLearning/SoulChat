@@ -21,3 +21,18 @@ func (cs *ConduitService) CreateGroup(ctx context.Context, req *v1.CreateGroupRe
 		group_id: groupId,
 	}, nil
 }
+
+func (cs *ConduitService) LoadMyGroup(ctx context.Context, req *v1.LoadMyGroupRequest) (*v1.LoadMyGroupReply, error) {
+	info, err := cs.gc.LoadMyGroup(ctx, req.UserId)
+	if err != nil {
+		return &v1.LoadMyGroupReply{
+			Code: 1,
+			Res:  ErrorToRes(err),
+		}, nil
+	}
+	return &v1.LoadMyGroupReply{
+		Code:    0,
+		Res:     nil,
+		Data:    info
+	}, nil
+}
