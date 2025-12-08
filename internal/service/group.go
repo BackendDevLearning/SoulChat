@@ -36,3 +36,20 @@ func (cs *ConduitService) LoadMyGroup(ctx context.Context, req *v1.LoadMyGroupRe
 		Data:    info
 	}, nil
 }
+
+
+func (cs *ConduitService) LoadJoinGroup(ctx context.Context, req *v1.LoadJoinGroupRequest) (*v1.LoadJoinGroupReply, error) {
+	info, err := cs.gc.LoadJoinGroup(ctx, req.UserId)
+	if err != nil {
+		return &v1.LoadJoinGroupReply{
+			Code: 1,
+			Res:  ErrorToRes(err),
+		}, nil
+	}
+	return &v1.LoadJoinGroupReply{
+		Code: 0,
+		Res:  nil,
+		Data: info,
+	}, nil
+
+}

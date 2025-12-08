@@ -117,6 +117,12 @@ service Conduit {
     };
   }
 
+  rpc LoadJoinGroup(LoadJoinGroupRequest) returns (LoadJoinGroupReply) {
+    option (google.api.http) = {
+      get : "/api/group/loadJoinGroup"
+    };
+  }
+
 }
 
 // 前端错误信息查看
@@ -125,6 +131,16 @@ message Res {
   int32 code = 1;  // 业务状态码，例如 200、422
   string reason = 2;  // 原因
   string msg = 3;  // 详细描述信息
+}
+
+message LoadJoinGroupRequest {
+  uint32 userId = 1;
+}
+
+message LoadJoinGroupReply {
+  int32 code = 1;
+  Res res = 2;
+  repeated MyGroupData data = 3;
 }
 
 message LoadMyGroupRequest {

@@ -5,7 +5,7 @@ import (
 	"context"
 	"fmt"
 	"kratos-realworld/internal/common"
-	"kratos-realworld/inernal/common/res"
+	"kratos-realworld/internal/common/res"
 	"github.com/go-kratos/kratos/v2/log"
 	"errors"
 )
@@ -27,16 +27,20 @@ func (gc *GroupUseCase) NewGroupUseCase(gir bizGroup.GroupInfoRepo, gmr bizGroup
 }
 
 func (gc *GroupUseCase) CreateGroup(ctx context.Context, user_id uint32, name string, mode uint32, add_mode uint32, intro string) (uint32, error) {
-	err := gc.gir.CreateGroup(user_id, name, mode, add_mode, intro)
+	// 创建群组，获取群组ID
+	group_id, err := gc.gir.CreateGroup(user_id, name, mode, add_mode, intro)
 	if err != nil {
 		gc.log.Errorf("CreateGroup err: %v\n", err)
 		return 0, NewErr(ErrCodeDBQueryFailed, DB_QUERY_FAILED, "failed to create group")
 	}
+	
+	// 创建群组后，添加创建者为群成员
 	err = gc.gmr.AddGroupMember(user_id, group_id)
 	if err != nil {
 		gc.log.Errorf("AddGroupMember err: %v\n", err)
 		return 0, NewErr(ErrCodeDBQueryFailed, DB_QUERY_FAILED, "failed to add group member")
 	}
+	
 	return group_id, nil
 }
 
@@ -45,6 +49,21 @@ func (gc *GroupUseCase) LoadMyGroup(ctx context.Context, UserId uint32) ([]res.L
 	if err != nil {
 		gc.log.Errorf("LoadMyGroup err: %v\n", err)
 		return nil, NewErr(ErrCodeDBQueryFailed, DB_QUERY_FAILED, "failed to query my group")
+	}
+	
+	if len(groups) == 0 {
+		// 返回空数组而不是错误
+		return []res.LoadMyGroupData{}, nil
+	}
+	
+	return groups, nil
+}
+
+func (gc *GroupUseCase) LoadJoinGroup(ctx context.Context, UserId uint32) ([]res.LoadMyGroupData, error) {
+	groups, err := gc.gir.LoadJoinGroup(UserId)
+	if err != nil {
+		gc.log.Errorf("LoadJoinGroup err: %v\n", err)
+		return nil, NewErr(ErrCodeDBQueryFailed, DB_QUERY_FAILED, "failed to query join group")
 	}
 	
 	if len(groups) == 0 {
