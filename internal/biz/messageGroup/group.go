@@ -32,5 +32,6 @@ type GroupInfoRepo interface {
 	CreateGroup(user_id uint32, name string, mode uint32, add_mode uint32, intro string) (uint32, error)
 	LoadMyGroup(UserId uint32) ([]res.LoadMyGroupData, error)
 	LoadJoinGroup(UserId uint32) ([]res.LoadMyGroupData, error)
-	SetAdmin(UserId uint32, GroupId uint32) error
+	SetAdmin(UserId uint32, GroupId uint32, CallerId uint32) error
+	RemoveAdmin(UserId uint32, GroupId uint32, CallerId uint32) error
 }

@@ -130,6 +130,13 @@ service Conduit {
       body : "*",
     };
   }
+
+  rpc RemoveAdmin(RemoveAdminRequest) returns (RemoveAdminReply) {
+    option (google.api.http) = {
+      post : "/api/group/removeAdmin",
+      body : "*",
+    };
+  }
 }
 
 // 前端错误信息查看
@@ -140,10 +147,21 @@ message Res {
   string msg = 3;  // 详细描述信息
 }
 
+message RemoveAdminRequest {
+  uint32 userId = 1;
+  uint32 groupId = 2;
+  uint32 callerId = 3;
+}
+
+message RemoveAdminReply {
+  int32 code = 1;
+  Res res = 2;
+}
 
 message SetAdminRequest {
   uint32 userId = 1;
   uint32 groupId = 2;
+  uint32 callerId = 3;
 }
 
 message SetAdminReply {

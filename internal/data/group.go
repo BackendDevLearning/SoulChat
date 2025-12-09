@@ -180,13 +180,19 @@ func (r *GroupInfoRepo) LoadJoinGroup(UserId uint32) ([]res.LoadMyGroupData, err
 	return groups, nil
 }
 
-func (r *GroupInfoRepo) SetAdmin(UserId uint32, GroupId uint32) error {
+func (r *GroupInfoRepo) SetAdmin(UserId uint32, GroupId uint32, CallerId uint32) error {
 	// 1. 验证群组是否存在
 	var group bizGroup.GroupTB
 	err := r.data.DB().Where("id = ? AND deleted_at IS NULL", GroupId).First(&group).Error
 	if err != nil {
 		r.log.Errorf("SetAdmin: group not found, err: %v\n", err)
 		return biz.NewErr(biz.ErrCodeDBQueryFailed, biz.DB_QUERY_FAILED, "group not found")
+	}
+
+	// 验证CallerId是否是群主
+	if group.CreaterID != CallerId {
+		r.log.Errorf("SetAdmin: caller is not the group creator, err: %v\n", err)
+		return biz.NewErr(biz.ErrCodeDBQueryFailed, biz.DB_QUERY_FAILED, "caller is not the group creator")
 	}
 
 	// 2. 验证用户是否是群成员
@@ -242,6 +248,65 @@ func (r *GroupInfoRepo) SetAdmin(UserId uint32, GroupId uint32) error {
 		err = r.data.DB().Model(&group).Update("adminer", string(adminListBytes)).Error
 		if err != nil {
 			r.log.Errorf("SetAdmin: failed to update group adminer, err: %v\n", err)
+			return biz.NewErr(biz.ErrCodeDBQueryFailed, biz.DB_QUERY_FAILED, "failed to update group adminer")
+		}
+	}
+
+	return nil
+}
+
+func (r *GroupInfoRepo) RemoveAdmin(UserId uint32, GroupId uint32, CallerId uint32) error {
+	// 1. 验证群组是否存在
+	var group bizGroup.GroupTB
+	err := r.data.DB().Where("id = ? AND deleted_at IS NULL", GroupId).First(&group).Error
+	if err != nil {
+		r.log.Errorf("RemoveAdmin: group not found, err: %v\n", err)
+		return biz.NewErr(biz.ErrCodeDBQueryFailed, biz.DB_QUERY_FAILED, "group not found")
+	}
+
+	// 验证CallerId是否是群主
+	if group.CreaterID != CallerId {
+		r.log.Errorf("RemoveAdmin: caller is not the group creator, err: %v\n", err)
+		return biz.NewErr(biz.ErrCodeDBQueryFailed, biz.DB_QUERY_FAILED, "caller is not the group creator")
+	}
+
+	// 2. 验证用户是否是管理员
+	var groupMember bizGroup.GroupMemberTB
+	err = r.data.DB().Where("user_id = ? AND group_id = ? AND deleted_at IS NULL", UserId, GroupId).First(&groupMember).Error
+	if err != nil {
+		r.log.Errorf("RemoveAdmin: user is not a group member, err: %v\n", err)
+		return biz.NewErr(biz.ErrCodeDBQueryFailed, biz.DB_QUERY_FAILED, "user is not a group member")
+	}
+
+	// 移除用户的管理员
+	err = r.data.DB().Model(&groupMember).Update("role", common.GroupMember).Error
+	if err != nil {
+		r.log.Errorf("RemoveAdmin: failed to update group member role, err: %v\n", err)
+		return biz.NewErr(biz.ErrCodeDBQueryFailed, biz.DB_QUERY_FAILED, "failed to update group member role")
+	}
+
+	// 更新 GroupTB 表中的 Adminer 字段，将用户ID从管理员列表中移除
+	var adminList []uint32
+	if group.Adminer != "" {
+		err = json.Unmarshal([]byte(group.Adminer), &adminList)
+		if err != nil {
+			r.log.Errorf("RemoveAdmin: failed to unmarshal adminer list, err: %v\n", err)
+			return biz.NewErr(biz.ErrCodeDBQueryFailed, biz.DB_QUERY_FAILED, "failed to parse adminer list")
+		}
+		for i, adminId := range adminList {
+			if adminId == UserId {
+				adminList = append(adminList[:i], adminList[i+1:]...)
+				break
+			}
+		}
+		adminListBytes, err := json.Marshal(adminList)
+		if err != nil {
+			r.log.Errorf("RemoveAdmin: failed to marshal adminer list, err: %v\n", err)
+			return biz.NewErr(biz.ErrCodeDBQueryFailed, biz.DB_QUERY_FAILED, "failed to marshal adminer list")
+		}
+		err = r.data.DB().Model(&group).Update("adminer", string(adminListBytes)).Error
+		if err != nil {
+			r.log.Errorf("RemoveAdmin: failed to update group adminer, err: %v\n", err)
 			return biz.NewErr(biz.ErrCodeDBQueryFailed, biz.DB_QUERY_FAILED, "failed to update group adminer")
 		}
 	}

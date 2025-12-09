@@ -54,7 +54,7 @@ func (cs *ConduitService) LoadJoinGroup(ctx context.Context, req *v1.LoadJoinGro
 }
 
 func (cs *ConduitService) SetAdmin(ctx context.Context, req *v1.SetAdminRequest) (*v1.SetAdminReply, error) {
-	err := cs.gc.SetAdmin(ctx, req.UserId, req.GroupId)
+	err := cs.gc.SetAdmin(ctx, req.UserId, req.GroupId, req.CallerId)
 	if err != nil {
 		return &v1.SetAdminReply{
 			Code: 1,
@@ -62,6 +62,20 @@ func (cs *ConduitService) SetAdmin(ctx context.Context, req *v1.SetAdminRequest)
 		}, nil
 	}
 	return &v1.SetAdminReply{
+		Code: 0,
+		Res:  nil,
+	}, nil
+}
+
+func (cs *ConduitService) RemoveAdmin(ctx context.Context, req *v1.RemoveAdminRequest) (*v1.RemoveAdminReply, error) {
+	err := cs.gc.RemoveAdmin(ctx, req.UserId, req.GroupId, req.CallerId)
+	if err != nil {
+		return &v1.RemoveAdminReply{
+			Code: 1,
+			Res:  ErrorToRes(err),
+		}, nil
+	}
+	return &v1.RemoveAdminReply{
 		Code: 0,
 		Res:  nil,
 	}, nil
