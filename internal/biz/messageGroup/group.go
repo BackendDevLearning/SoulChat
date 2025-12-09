@@ -10,7 +10,7 @@ type GroupTB struct {
 	Uuid   string `gorm:"column:uuid;type:varchar(150);not null;uniqueIndex:idx_uuid;comment:uuid" json:"uuid"`
 	CreaterID uint32 `gorm:"column:user_id;type:int(10) unsigned;not null;index;comment:群主ID" json:"userId"`
 	Member string `gorm:"column:member;type:text;comment:群成员列表(JSON数组)" json:"member"`
-	Adminer string `gorm:"column:adminer;type:smallint;not null;default:0;comment:管理员ID" json:"adminer"`
+	Adminer string `gorm:"column:adminer;type:text;comment:管理员ID(JSON数组)" json:"adminer"`
 	Name   string `gorm:"column:name;type:varchar(150);not null;comment:群名称" json:"name"`
 	Notice string `gorm:"column:notice;type:varchar(350);comment:群公告" json:"notice"`
 	Mode   uint32 `gorm:"column:mode;type:int(10) unsigned;not null;default:0;comment:群模式 0-公开群 1-私密群" json:"mode"`
@@ -32,4 +32,5 @@ type GroupInfoRepo interface {
 	CreateGroup(user_id uint32, name string, mode uint32, add_mode uint32, intro string) (uint32, error)
 	LoadMyGroup(UserId uint32) ([]res.LoadMyGroupData, error)
 	LoadJoinGroup(UserId uint32) ([]res.LoadMyGroupData, error)
+	SetAdmin(UserId uint32, GroupId uint32) error
 }

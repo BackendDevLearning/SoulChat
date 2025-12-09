@@ -51,5 +51,18 @@ func (cs *ConduitService) LoadJoinGroup(ctx context.Context, req *v1.LoadJoinGro
 		Res:  nil,
 		Data: info,
 	}, nil
+}
 
+func (cs *ConduitService) SetAdmin(ctx context.Context, req *v1.SetAdminRequest) (*v1.SetAdminReply, error) {
+	err := cs.gc.SetAdmin(ctx, req.UserId, req.GroupId)
+	if err != nil {
+		return &v1.SetAdminReply{
+			Code: 1,
+			Res:  ErrorToRes(err),
+		}, nil
+	}
+	return &v1.SetAdminReply{
+		Code: 0,
+		Res:  nil,
+	}, nil
 }

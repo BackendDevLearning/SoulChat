@@ -73,3 +73,12 @@ func (gc *GroupUseCase) LoadJoinGroup(ctx context.Context, UserId uint32) ([]res
 	
 	return groups, nil
 }
+
+func (gc *GroupUseCase) SetAdmin(ctx context.Context, UserId uint32, GroupId uint32) error {
+	err := gc.gir.SetAdmin(UserId, GroupId)
+	if err != nil {
+		gc.log.Errorf("SetAdmin err: %v\n", err)
+		return NewErr(ErrCodeDBQueryFailed, DB_QUERY_FAILED, "failed to set admin")
+	}
+	return nil
+}

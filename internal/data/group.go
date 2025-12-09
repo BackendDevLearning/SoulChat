@@ -128,12 +128,12 @@ func (r *GroupInfoRepo) LoadJoinGroup(UserId uint32) ([]res.LoadMyGroupData, err
 			// 缓存未命中，从数据库查询
 			var groupsList []*bizGroup.GroupTB
 			
-			// 使用联表查询：通过 GroupMember 表关联查询用户加入的所有群组（不包括创建的）
+			// 使用联表查询：通过 GroupMember 表关联查询用户加入的所有群组
 			err := r.data.DB().
 				Table("t_group g").
 				Select("g.id as group_id, g.name, g.avatar").
 				Joins("INNER JOIN t_groupMember gm ON g.id = gm.group_id").
-				Where("gm.user_id = ? AND g.user_id != ? AND gm.deleted_at IS NULL AND g.deleted_at IS NULL", UserId, UserId).
+				Where("gm.user_id = ? AND gm.deleted_at IS NULL AND g.deleted_at IS NULL", UserId).
 				Scan(&groupsList).Error
 			
 			if err != nil {
@@ -179,4 +179,72 @@ func (r *GroupInfoRepo) LoadJoinGroup(UserId uint32) ([]res.LoadMyGroupData, err
 	}
 	return groups, nil
 }
-			
+
+func (r *GroupInfoRepo) SetAdmin(UserId uint32, GroupId uint32) error {
+	// 1. 验证群组是否存在
+	var group bizGroup.GroupTB
+	err := r.data.DB().Where("id = ? AND deleted_at IS NULL", GroupId).First(&group).Error
+	if err != nil {
+		r.log.Errorf("SetAdmin: group not found, err: %v\n", err)
+		return biz.NewErr(biz.ErrCodeDBQueryFailed, biz.DB_QUERY_FAILED, "group not found")
+	}
+
+	// 2. 验证用户是否是群成员
+	var groupMember bizGroup.GroupMemberTB
+	err = r.data.DB().Where("user_id = ? AND group_id = ? AND deleted_at IS NULL", UserId, GroupId).First(&groupMember).Error
+	if err != nil {
+		r.log.Errorf("SetAdmin: user is not a group member, err: %v\n", err)
+		return biz.NewErr(biz.ErrCodeDBQueryFailed, biz.DB_QUERY_FAILED, "user is not a group member")
+	}
+
+	// 3. 检查用户是否已经是管理员
+	if groupMember.Role == common.GroupAdmin {
+		r.log.Warnf("SetAdmin: user %d is already an admin of group %d\n", UserId, GroupId)
+		// 已经是管理员，直接返回成功
+		return nil
+	}
+
+	// 4. 更新 GroupMemberTB 表中的 Role 字段为管理员
+	err = r.data.DB().Model(&groupMember).Update("role", common.GroupAdmin).Error
+	if err != nil {
+		r.log.Errorf("SetAdmin: failed to update group member role, err: %v\n", err)
+		return biz.NewErr(biz.ErrCodeDBQueryFailed, biz.DB_QUERY_FAILED, "failed to update group member role")
+	}
+
+	// 5. 更新 GroupTB 表中的 Adminer 字段，将用户ID添加到管理员列表中
+	var adminList []uint32
+	if group.Adminer != "" {
+		err = json.Unmarshal([]byte(group.Adminer), &adminList)
+		if err != nil {
+			r.log.Errorf("SetAdmin: failed to unmarshal adminer list, err: %v\n", err)
+			return biz.NewErr(biz.ErrCodeDBQueryFailed, biz.DB_QUERY_FAILED, "failed to parse adminer list")
+		}
+	}
+
+	// 检查用户ID是否已经在管理员列表中
+	alreadyAdmin := false
+	for _, adminId := range adminList {
+		if adminId == UserId {
+			alreadyAdmin = true
+			break
+		}
+	}
+
+	// 如果不在列表中，则添加
+	if !alreadyAdmin {
+		adminList = append(adminList, UserId)
+		adminListBytes, err := json.Marshal(adminList)
+		if err != nil {
+			r.log.Errorf("SetAdmin: failed to marshal adminer list, err: %v\n", err)
+			return biz.NewErr(biz.ErrCodeDBQueryFailed, biz.DB_QUERY_FAILED, "failed to marshal adminer list")
+		}
+
+		err = r.data.DB().Model(&group).Update("adminer", string(adminListBytes)).Error
+		if err != nil {
+			r.log.Errorf("SetAdmin: failed to update group adminer, err: %v\n", err)
+			return biz.NewErr(biz.ErrCodeDBQueryFailed, biz.DB_QUERY_FAILED, "failed to update group adminer")
+		}
+	}
+
+	return nil
+}
