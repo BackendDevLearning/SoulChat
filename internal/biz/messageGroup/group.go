@@ -5,6 +5,7 @@ import (
 	"kratos-realworld/internal/common/res"
 )
 
+// 暂时没有用到member字段
 type GroupTB struct {
 	ID     uint32 `gorm:"column:id;type:int(10) unsigned;primary_key;AUTO_INCREMENT" json:"id"`
 	Uuid   string `gorm:"column:uuid;type:varchar(150);not null;uniqueIndex:idx_uuid;comment:uuid" json:"uuid"`
@@ -34,4 +35,7 @@ type GroupInfoRepo interface {
 	LoadJoinGroup(UserId uint32) ([]res.LoadMyGroupData, error)
 	SetAdmin(UserId uint32, GroupId uint32, CallerId uint32) error
 	RemoveAdmin(UserId uint32, GroupId uint32, CallerId uint32) error
+	IsGroupExist(GroupId uint32) (bool, error)
+	AddMemberToJSON(groupID uint32, userID uint32) error
+	updateMemberCount(GroupId uint32) error
 }

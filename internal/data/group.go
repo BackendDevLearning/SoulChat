@@ -12,6 +12,7 @@ import (
 	"kratos-realworld/internal/common"
 	"kratos-realworld/internal/common/res"
 	"kratos-realworld/internal/biz"
+	"gorm.io/gorm"
 )
 
 type GroupInfoRepo struct {
@@ -54,21 +55,55 @@ func (r *GroupInfoRepo) CreateGroup(user_id uint32, name string, mode uint32, ad
 	return nil
 }
 
-func (r *GroupInfoRepo) AddGroupMember(user_id uint32, group_id uint32) error {
-	groupMember := &bizGroup.GroupMemberTB{
-		UserID: user_id,
-		GroupID: group_id,
-		Nickname: "",
-		Mute: 0,
-		Role: common.GroupAdmin,
-	}
-	rv := r.data.DB().Create(groupMember)
-	if rv.Error != nil {
-		r.log.Errorf("AddGroupMember err: %v\n", rv.Error)
-		return rv.Error
-	}
-	return nil
+
+// 先查询现有的成员列表
+func (r *GroupInfoRepo) AddMemberToJSON(groupID uint32, userID uint32) error {
+    // 开启事务
+    return r.data.DB().Transaction(func(tx *gorm.DB) error {
+        var group bizGroup.GroupTB
+        if err := tx.Where("id = ?", groupID).First(&group).Error; err != nil {
+            return err
+        }
+        
+        // 解析现有的 member JSON
+        var memberIDs []uint32
+        if group.Member != "" && group.Member != "null" {
+            if err := json.Unmarshal([]byte(group.Member), &memberIDs); err != nil {
+                return fmt.Errorf("解析member JSON失败: %v", err)
+            }
+        }
+        
+        // 检查是否已存在
+        for _, id := range memberIDs {
+            if id == userID {
+				r.log.Warnf("AddMemberToJSON: user %d already in group %d\n", userID, groupID)
+                return biz.NewErr(biz.ErrCodeDBQueryFailed, biz.DB_QUERY_FAILED, "user already in group")
+            }
+        }
+        
+        // 添加新成员
+        memberIDs = append(memberIDs, userID)
+        
+        // 重新序列化为 JSON
+        newMemberJSON, err := json.Marshal(memberIDs)
+        if err != nil {
+			r.log.Errorf("AddMemberToJSON: failed to marshal member list, err: %v\n", err)
+            return biz.NewErr(biz.ErrCodeDBQueryFailed, biz.DB_QUERY_FAILED, "failed to marshal member list")
+        }
+        
+        // 更新数据库
+        if err := tx.Model(&bizGroup.GroupTB{}).
+            Where("id = ?", groupID).
+            Update("member", string(newMemberJSON)).
+            Error; err != nil {
+			r.log.Errorf("AddMemberToJSON: failed to update group member list, err: %v\n", err)
+            return biz.NewErr(biz.ErrCodeDBQueryFailed, biz.DB_QUERY_FAILED, "failed to update group member list")
+        }
+        
+        return nil
+    })
 }
+
 
 func (r *GroupInfoRepo) LoadMyGroup(UserId uint32) ([]res.LoadMyGroupData, error) {
 	// 先查redis
@@ -311,5 +346,24 @@ func (r *GroupInfoRepo) RemoveAdmin(UserId uint32, GroupId uint32, CallerId uint
 		}
 	}
 
+	return nil
+}
+
+func (r *GroupInfoRepo) IsGroupExist(GroupId uint32) (bool, error) {
+	var group bizGroup.GroupTB
+	err := r.data.DB().Where("id = ? AND deleted_at IS NULL", GroupId).First(&group).Error
+	if err != nil {
+		r.log.Errorf("IsAdmin: group not found, err: %v\n", err)
+		return false, biz.NewErr(biz.ErrCodeDBQueryFailed, biz.DB_QUERY_FAILED, "group not found")
+	}
+	return true, nil
+}
+
+func (r *GroupInfoRepo) updateMemberCount(GroupId uint32) error {
+	err := r.data.DB().Model(&bizGroup.GroupTB{}).Where("id = ?", GroupId).Update("member_count", gorm.Expr("member_count + 1")).Error
+	if err != nil {
+		r.log.Errorf("updateMemberCount: failed to update member count, err: %v\n", err)
+		return biz.NewErr(biz.ErrCodeDBQueryFailed, biz.DB_QUERY_FAILED, "failed to update member count")
+	}
 	return nil
 }

@@ -91,3 +91,48 @@ func (gc *GroupUseCase) RemoveAdmin(ctx context.Context, UserId uint32, GroupId 
 	}
 	return nil
 }
+
+func (gc *GroupUseCase) JoinGroup(ctx context.Context, UserId uint32, GroupId uint32) error {
+	// 验证群组是否存在
+	exists, err := gc.gir.IsGroupExist(GroupId)
+	if err != nil {
+		gc.log.Errorf("IsGroupExist err: %v\n", err)
+		return NewErr(ErrCodeDBQueryFailed, DB_QUERY_FAILED, "failed to check group exist")
+	}
+	if !exists {
+		return NewErr(ErrCodeDBQueryFailed, DB_QUERY_FAILED, "group not found")
+	}
+	
+	// 验证用户是否已经在群组中
+	userInGroup, err := gc.gmr.IsUserInGroup(UserId, GroupId)
+	if err != nil {
+		gc.log.Errorf("IsUserInGroup err: %v\n", err)
+		return NewErr(ErrCodeDBQueryFailed, DB_QUERY_FAILED, "failed to check user in group")
+	}
+	if userInGroup {
+		return NewErr(ErrCodeDBQueryFailed, DB_QUERY_FAILED, "user already in group")
+	}
+	
+	
+	// 添加用户为群成员
+	err = gc.gmr.AddGroupMember(UserId, GroupId)
+	if err != nil {
+		gc.log.Errorf("JoinGroup AddGroupMember err: %v\n", err)
+		return NewErr(ErrCodeDBQueryFailed, DB_QUERY_FAILED, "failed to join group")
+	}
+
+	// 更新群组成员列表
+	err = gc.gir.AddMemberToJSON(GroupId, UserId)
+	if err != nil {
+		gc.log.Errorf("JoinGroup AddMemberToJSON err: %v\n", err)
+		return NewErr(ErrCodeDBQueryFailed, DB_QUERY_FAILED, "failed to add member to group")
+	}
+
+	// 更新群组成员数量
+	err = gc.gir.updateMemberCount(GroupId)
+	if err != nil {
+		gc.log.Errorf("updateMemberCount err: %v\n", err)
+		return NewErr(ErrCodeDBQueryFailed, DB_QUERY_FAILED, "failed to update member count")
+	}
+	return nil
+}

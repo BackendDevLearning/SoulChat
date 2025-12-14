@@ -80,3 +80,17 @@ func (cs *ConduitService) RemoveAdmin(ctx context.Context, req *v1.RemoveAdminRe
 		Res:  nil,
 	}, nil
 }
+
+func (cs *ConduitService) JoinGroup(ctx context.Context, req *v1.JoinGroupRequest) (*v1.JoinGroupReply, error) {
+	err := cs.gc.JoinGroup(ctx, req.UserId, req.GroupId)
+	if err != nil {
+		return &v1.JoinGroupReply{
+			Code: 1,
+			Res:  ErrorToRes(err),
+		}, nil
+	}
+	return &v1.JoinGroupReply{
+		Code: 0,
+		Res:  nil,
+	}, nil
+}
